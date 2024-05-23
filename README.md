@@ -1,6 +1,6 @@
 # FWOptimizer
 
-## Developing and Testing
+## :writing_hand: Developing and Testing
 
 Se debe crear el virtual enviroment, activarlo e instalar las dependencias del pyproject.toml:
 

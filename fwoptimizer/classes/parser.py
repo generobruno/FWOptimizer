@@ -2,7 +2,7 @@
 """
 
 import re
-from utils.aliasDict import AliasDefaultDict
+from ..utils.aliasDict import AliasDefaultDict
 
 class Parser:
     """_summary_
@@ -11,7 +11,8 @@ class Parser:
     def __init__(self, syntaxTable):
         """_summary_
 
-        Args:
+        Args:clear
+        
             syntaxTable (_type_): _description_
         """
         self.syntaxTable = self.preprocess_syntax_table(syntaxTable)

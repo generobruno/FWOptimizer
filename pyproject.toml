@@ -18,5 +18,10 @@ dependencies = [
     "netaddr>=1.2.1"
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0"
+]
+
 [tool.setuptools]
 packages = ["fwoptimizer"]

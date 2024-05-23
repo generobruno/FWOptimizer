@@ -1,6 +1,10 @@
 *.png
 *.svg
+
+# Generated .egg file
 *.egg-info
-__pycache__
 .*
+__pycache__
+build
+
 example_set.txt

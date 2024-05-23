@@ -1,4 +1,6 @@
 *.png
 *.svg
+*.egg-info
 __pycache__
-.venv
+.*
+example_set.txt

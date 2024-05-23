@@ -1,4 +1,10 @@
 *.png
 *.svg
+
+# Generated .egg file
+*.egg-info
+.*
 __pycache__
-.venv
+build
+
+example_set.txt

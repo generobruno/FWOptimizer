@@ -1,0 +1,27 @@
+[project]
+name = 'FWOptimizer'
+description = 'Python tool for evaluating and optimizing firewall policies'
+readme = 'README.md'
+dynamic = ['version']
+keywords = [
+    'Networks',
+    'Graph',
+    'Network Security',
+]
+authors = [
+    {name = 'Bruno A. Genero'},
+    {name = 'Luciano Peschiutta'}
+]
+
+dependencies = [
+    "graphviz>=0.20.3",
+    "netaddr>=1.2.1"
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0"
+]
+
+[tool.setuptools]
+packages = ["fwoptimizer"]

@@ -2,19 +2,16 @@
 """
 
 #TODO REVISAR IMPORTS
-from fwoptimizer.classes import Parser
-from fwoptimizer.classes import RuleFactory
-
-import configs.syntaxes.iptables_syntax as iptables 
+from classes import parser, rules
 
 if __name__ == '__main__':
     
     print("TESTING...")
     
     #! Parse Instruction Set
-    parser = Parser(iptables.syntaxTable)
-    parser.parse("example_set.txt")
-    rules_parsed = parser.get_rules()
+    iptables_strat = parser.IpTablesParser()
+    parser = parser.Parser(iptables_strat)
+    rules_parsed = parser.parse("./example_set.txt")
 
     print("\nRule Set:")
     for table in rules_parsed:
@@ -24,7 +21,7 @@ if __name__ == '__main__':
                 print(rule)
 
     #! Create Rules from list
-    rule_factory = RuleFactory()
+    rule_factory = rules.RuleFactory()
     rules = {}
     
     for table in rules_parsed:
@@ -37,3 +34,5 @@ if __name__ == '__main__':
         for rule in chain_rules:
            print(rule)
     print()
+    
+    print(rules[('filter', 'INPUT')])

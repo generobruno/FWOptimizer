@@ -2,20 +2,38 @@
 """
 
 import re
-from ..utils.aliasDict import AliasDefaultDict
+from abc import ABC, abstractmethod
 
-class Parser:
-    """_summary_
+from utils.aliasDict import AliasDefaultDict
+from classes.rules import RuleSet
+
+import configs.syntaxes as syntaxes
+
+class ParserStrategy(ABC):
+    """
+    ParserStrategy interface declares operations common to all supported versions
+    of some algorithm.
+    
+    The Parser Context Class uses this interface to call the algorithm defined by
+    Concrete Strategies
     """
     
-    def __init__(self, syntaxTable):
-        """_summary_
+    @abstractmethod
+    def parse(self, file) -> RuleSet:
+        pass
+    
+class IpTablesParser(ParserStrategy):
+    """
+    """
+    
+    def __init__(self):
+        """
 
         Args:clear
         
             syntaxTable (_type_): _description_
         """
-        self.syntaxTable = self.preprocess_syntax_table(syntaxTable)
+        self.syntaxTable = self.preprocess_syntax_table(syntaxes.iptables)
         self.rules = {}
 
     def preprocess_syntax_table(self, syntaxTable):
@@ -40,13 +58,13 @@ class Parser:
                         #print(f'{table},{rule_type},{alias} = {preprocessed_table[table][rule_type][alias]}')
         return preprocessed_table
 
-    def parse(self, file_path):
+    def parse(self, path):
         """_summary_
 
         Args:
             file_path (_type_): _description_
         """
-        with open(file_path, 'r') as file:
+        with open(path, 'r') as file:
             current_table = None
             current_chain = None
             current_rule = {}
@@ -74,6 +92,8 @@ class Parser:
 
                     if current_rule:
                         self.rules[current_table][current_chain].append(current_rule)
+                        
+            return self.rules
                         
     def parse_options(self, line, line_num, current_table):
         """_summary_
@@ -130,3 +150,37 @@ class Parser:
             _type_: _description_
         """
         return self.rules
+    
+class Parser:
+    """
+    The Parser class is used to obtain a RuleSet from a given file,
+    which has the format of a given ParserStrategy.
+    """
+    
+    def __init__(self, strategy: ParserStrategy):
+        """
+
+        Args:
+            strategy (ParserStrategy): _description_
+        """
+        self.strategy = strategy
+        
+    def set_strategy(self, strategy: ParserStrategy):
+        """
+
+        Args:
+            strategy (ParserStrategy): _description_
+        """
+        self.strategy = strategy
+        
+    def parse(self, file) -> RuleSet:
+        """
+
+        Args:
+            file (_type_): _description_
+
+        Returns:
+            RuleSet: _description_
+        """
+        return self.strategy.parse(file)
+    

@@ -58,13 +58,18 @@ class Rule:
         """
         return self.id
 
-
 class Chain:
     """
     A Chain is a collection of Rules.
     """
     
     def __init__(self, name: str) -> None:
+        """
+        A Chain has a Name and a List of Rules
+
+        Args:
+            name (str): Name of the chain
+        """
         self.name = name
         self.rules = []
         
@@ -75,7 +80,20 @@ class Chain:
         Returns:
             str: Chain String representation
         """
-        return "Chain {}: {}".format(self.name, self.rules)
+        rules_str = "\n".join([str(rule) for rule in self.rules])
+        return "{}:\n{}".format(self.name, rules_str if rules_str else "")
+    
+    def __getitem__(self, idx):
+        """
+        Chain __getitem__
+
+        Args:
+            idx (int): Rule index
+
+        Returns:
+            Rule: Rule in Chain List
+        """
+        return self.rules[idx]
 
     def add_rule(self, rule: Rule):
         """
@@ -92,8 +110,14 @@ class Table:
     """
     
     def __init__(self, name: str) -> None:
+        """
+        A Table has a Name and a dict of Chains, of Chain.name to Chain Object
+
+        Args:
+            name (str): Table name
+        """
         self.name = name
-        self.chains = []
+        self.chains = {}
         
     def __repr__(self) -> str:
         """
@@ -102,7 +126,20 @@ class Table:
         Returns:
             str: Table String representation
         """
-        return "Table {}: {}".format(self.name, self.chains)
+        chains_str = "\n".join([str(chain) for chain in self.chains.values()])
+        return "{} - {}".format(self.name, chains_str)
+    
+    def __getitem__(self, chain_name):
+        """
+        Table __getitem__
+
+        Args:
+            chain_name (str): Chain Name
+
+        Returns:
+            Chain: Chain in List
+        """
+        return self.chains[chain_name]
 
     def add_chain(self, chain: Chain):
         """
@@ -113,23 +150,47 @@ class Table:
         """
         self.chains[chain.name] = chain
     
-
 class RuleSet:
     """
     A RuleSet represents the complete list of rules from a given policy.
     """
     
     def __init__(self) -> None:
-        self.tables = []
+        """
+        A RuleSet has a dictionary of Tables, of Table.name to Table object
+        """
+        self.tables = {}
         
     def __repr__(self) -> str:
         """
         RuleSet __repr__
 
         Returns:
-            str: RuleSet String representation
+            str: RuleSet representation
         """
         return "RuleSet: {}".format(self.tables)
+    
+    def __str__(self) -> str:
+        """
+        RuleSet __str__
+
+        Returns:
+            str: RuleSet string representation
+        """
+        tables_str = "\n".join([str(table) for table in self.tables.values()])
+        return "Rule Set:\n{}".format(tables_str)
+        
+    def __getitem__(self, table_name):
+        """
+        RuleSet __getitem__
+
+        Args:
+            table_name (str): Table Name
+
+        Returns:
+            Table: Table in Tables dict
+        """
+        return self.tables[table_name]
         
     def add_table(self, table: Table):
         """
@@ -140,52 +201,13 @@ class RuleSet:
         """
         self.tables[table.name] = table
 
-
-class RuleFactory:
-    """_summary_
-    """
-    
-    def __init__(self):
-        """_summary_
+    def print_all(self):
         """
-        self.next_rule_id = 1
-
-    def create_rule(self, parsed_rule):
-        """_summary_
-
-        Args:
-            parsed_rule (_type_): _description_
-
-        Returns:
-            _type_: _description_
+        Print all rules in RuleSet
         """
-        rule = Rule(self.next_rule_id)
-        self.next_rule_id += 1
-
-        
-        for option, value in parsed_rule.items():
-            if option == "-j":
-                if value in ["ACCEPT", "DROP"]:
-                    rule.decision = value
-                else:
-                    #TODO Modificar para tratar saltos a user_defined tables
-                    pass
-            else:
-                rule.predicates[option] = value
-
-        return rule
-
-    def create_rules(self, parsed_rules):
-        """_summary_
-
-        Args:
-            parsed_rules (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        rules = []
-        for parsed_rule in parsed_rules:
-            rule = self.create_rule(parsed_rule)
-            rules.append(rule)
-        return rules
+        for table_name, table in self.tables.items():
+            print(f"Table: {table_name}")
+            for chain_name, chain in table.chains.items():
+                print(f"Chain: {chain_name}")
+                for rule in chain.rules:
+                    print(f"\t{rule}")

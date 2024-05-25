@@ -2,7 +2,7 @@
 """
 
 #TODO REVISAR IMPORTS
-from classes import parser, rules
+from classes import parser
 
 if __name__ == '__main__':
     
@@ -14,25 +14,8 @@ if __name__ == '__main__':
     rules_parsed = parser.parse("./example_set.txt")
 
     print("\nRule Set:")
-    for table in rules_parsed:
-        for chain in rules_parsed[table]:
-            print(f'{table} - {chain}:')
-            for rule in rules_parsed[table][chain]:
-                print(rule)
+    rules_parsed.print_all()
 
-    #! Create Rules from list
-    rule_factory = rules.RuleFactory()
-    rules = {}
-    
-    for table in rules_parsed:
-        for chain in rules_parsed[table]:
-            rules[(table, chain)] = (rule_factory.create_rules(rules_parsed[table][chain]))
-        
-    print("\nRules Obtained:")        
-    for (table, chain), chain_rules in rules.items():
-        print(f"{table} - {chain}:")
-        for rule in chain_rules:
-           print(rule)
-    print()
-    
-    print(rules[('filter', 'INPUT')])
+    print("\nOnly INPUT in filter")
+    for rule in rules_parsed['filter']['INPUT']: # Tambien se puede acceder como: rules_parsed.tables['filter'].chains['INPUT']
+        print(rule)

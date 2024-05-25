@@ -5,7 +5,7 @@ import re
 from abc import ABC, abstractmethod
 
 from utils.aliasDict import AliasDefaultDict
-from classes.rules import RuleSet
+from classes import rules
 
 import configs.syntaxes as syntaxes
 
@@ -19,7 +19,7 @@ class ParserStrategy(ABC):
     """
     
     @abstractmethod
-    def parse(self, file) -> RuleSet:
+    def parse(self, file) -> rules.RuleSet:
         pass
     
 class IpTablesParser(ParserStrategy):
@@ -28,22 +28,21 @@ class IpTablesParser(ParserStrategy):
     
     def __init__(self):
         """
-
-        Args:clear
-        
-            syntaxTable (_type_): _description_
+        IpTables Parser Strategy
         """
         self.syntaxTable = self.preprocess_syntax_table(syntaxes.iptables)
-        self.rules = {}
+        self.ruleset = rules.RuleSet()
 
     def preprocess_syntax_table(self, syntaxTable):
-        """_summary_
+        """
+        Process the syntax table to obtain all the posible alias of the
+        different options
 
         Args:
-            syntaxTable (_type_): _description_
+            syntaxTable (dict): Syntax table for iptables
 
         Returns:
-            _type_: _description_
+            dict: Processed syntax table
         """
         preprocessed_table = {}
         for table, table_ops in syntaxTable.items(): # Create Dict for each Table
@@ -59,56 +58,59 @@ class IpTablesParser(ParserStrategy):
         return preprocessed_table
 
     def parse(self, path):
-        """_summary_
+        """Parse the iptables configuration file
 
         Args:
-            file_path (_type_): _description_
+            path (str): The path to the file to parse
+
+        Returns:
+            RuleSet: Parsed ruleset
         """
         with open(path, 'r') as file:
             current_table = None
             current_chain = None
-            current_rule = {}
-            line_num = 0
+            rule_id = 0
 
-            for line in file:                              # Parse Line-by-Line
-                line_num += 1
+            for line in file:  # Parse Line-by-Line
                 line = line.strip()
 
                 if line.startswith('*'):
-                    current_table = line[1:]
-                    self.rules[current_table] = {}                  # Current Table Level {'CURRENT_TABLE': {'chain': [rules]}}
+                    current_table = rules.Table(line[1:])
+                    self.ruleset.add_table(current_table)
                 elif line.startswith(':'):
-                    current_chain = line.split()[0][1:] 
-                    current_rule = {}
-                    self.rules[current_table][current_chain] = []   # Current Chain Level {'table': {'CURRENT_CHAIN': [rules]}}
-                elif line.startswith('['): #TODO Revisar que hacer con politicas default
-                    current_rule = {}
-                elif line == 'COMMIT':                              # End of File
+                    chain_name = line.split()[0][1:]
+                    current_chain = rules.Chain(chain_name)
+                    current_table.add_chain(current_chain)
+                elif line.startswith('['):  # Default policies
+                    continue #TODO Revisar que hacer
+                elif line == 'COMMIT':  # End of File
                     current_table = None
                     current_chain = None
                     break
-                else:                                               # Parsing Rule Options
-                    current_rule = self.parse_options(line, line_num, current_table)
-
+                else:  # Parsing Rule Options
+                    current_rule = self.parse_options(line, rule_id, current_table.name)
                     if current_rule:
-                        self.rules[current_table][current_chain].append(current_rule)
+                        rule = rules.Rule(rule_id)
+                        rule.predicates = {k: v for k, v in current_rule.items() if k != 'decision'}
+                        rule.decision = current_rule.get('decision')
+                        current_chain.add_rule(rule)
+                        rule_id += 1
                         
-            return self.rules
+            return self.ruleset
                         
-    def parse_options(self, line, line_num, current_table):
-        """_summary_
+    def parse_options(self, line, rule_id, current_table):
+        """Parse options from a line of the iptables configuration
 
         Args:
-            line (_type_): _description_
-            line_num (_type_): _description_
-            current_table (_type_): _description_
+            line (str): The line to parse
+            rule_id (int): The rule identifier
+            current_table (str): The current table name
 
         Raises:
-            ValueError: _description_
-            ValueError: _description_
+            ValueError: If a syntax error is detected
 
         Returns:
-            _type_: _description_
+            dict: Parsed rule options
         """
         current_rule = {}
         option_pattern = r'-\w+(?=\s*\S)|--\w+'
@@ -127,29 +129,37 @@ class IpTablesParser(ParserStrategy):
                     if value is not None:
                         match = re.match(regex, value)
                         if match:
-                            current_rule[option] = match.group()
-                            found_match = True
-                            continue
-                        else:   # Value does not follow regex
+                            if option == "-j":
+                                if value in ["ACCEPT", "DROP"]:
+                                    current_rule['decision'] = value
+                                else:
+                                    # TODO Modificar para tratar saltos a user_defined tables
+                                    pass
+                            else:
+                                current_rule[option] = match.group()
+                                found_match = True
+                                continue
+                        else:  # Value does not follow regex
                             print(f"Warning: Value '{value}' does not match the expected format for option '{option}' in line: {line}")
-                            raise ValueError(f"Syntax Error in line {line_num}")
-                    else:       # Value needed after option
+                            raise ValueError(f"Syntax Error in line {rule_id}")
+                    else:  # Value needed after option
                         print(f"Warning: Option '{option}' requires a value in line: {line}")
-                        raise ValueError(f"Syntax Error in line {line_num}")
+                        raise ValueError(f"Syntax Error in line {rule_id}")
 
             if not found_match and option not in ["-A", "-I", "-D", "-R"]:  # Option not recognized or is a Table Op
-                print(f"Warning (line {line_num}): Unrecognized option '{option}' in line: {line}")
+                print(f"Warning (line {rule_id}): Unrecognized option '{option}' in line: {line}")
                 continue
 
         return current_rule
 
     def get_rules(self):
-        """_summary_
+        """
+        Get all rules in RuleSet
 
         Returns:
-            _type_: _description_
+            RuleSet: Set of RuleSet
         """
-        return self.rules
+        return self.ruleset
     
 class Parser:
     """
@@ -173,7 +183,7 @@ class Parser:
         """
         self.strategy = strategy
         
-    def parse(self, file) -> RuleSet:
+    def parse(self, file) -> rules.RuleSet:
         """
 
         Args:

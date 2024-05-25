@@ -30,7 +30,7 @@ syntaxTable = {
 
             "-c | --set-counters": None,
             
-            "-m": "\w+", #TODO Revisar -> debe ir antes de --sport y --dport
+            "-m": "\w+", #TODO Revisar 
 
             "--source-port | --sport": "(?:!\s*)?\d+(?::\d+)?",
             "--destination-port | --dport": "(?:!\s*)?\d+(?::\d+)?",
@@ -39,7 +39,10 @@ syntaxTable = {
             "--syn": None,
             "--tcp-option": "(?:!\s*)?\d+",
 
-            "--icmp-type": "(?:!\s*)?\w+"
+            "--icmp-type": "(?:!\s*)?\w+",
+            
+             "--src-range": "((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})",
+             "--dst-range": "((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
         },
         "Extensions": {
             # Jump LOG Extensions

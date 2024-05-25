@@ -71,31 +71,36 @@ class IpTablesParser(ParserStrategy):
             current_chain = None
             rule_id = 0
 
-            for line in file:  # Parse Line-by-Line
+            for line in file:
                 line = line.strip()
 
-                if line.startswith('*'):
+                if line.startswith('#'):            # Ignore comments
+                    continue
+
+                if line.startswith('*'):            # Start of Table
                     current_table = rules.Table(line[1:])
                     self.ruleset.add_table(current_table)
-                elif line.startswith(':'):
+                elif line.startswith(':'):          # Define Chain
                     chain_name = line.split()[0][1:]
                     current_chain = rules.Chain(chain_name)
                     current_table.add_chain(current_chain)
-                elif line.startswith('['):  # Default policies
-                    continue #TODO Revisar que hacer
-                elif line == 'COMMIT':  # End of File
+                elif line.startswith('['):  # TODO REVISAR Default Policies
+                    continue 
+                elif line == 'COMMIT':              # End of Table
                     current_table = None
                     current_chain = None
-                    break
-                else:  # Parsing Rule Options
+                else:
+                    if line.startswith('-A'):       # Append Rule to Chain
+                        chain_name = line.split()[1]
+                        current_chain = current_table[chain_name]
                     current_rule = self.parse_options(line, rule_id, current_table.name)
-                    if current_rule:
+                    if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         rule.predicates = {k: v for k, v in current_rule.items() if k != 'decision'}
                         rule.decision = current_rule.get('decision')
                         current_chain.add_rule(rule)
                         rule_id += 1
-                        
+
             return self.ruleset
                         
     def parse_options(self, line, rule_id, current_table):

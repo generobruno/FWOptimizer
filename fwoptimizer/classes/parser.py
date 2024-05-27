@@ -45,16 +45,25 @@ class IpTablesParser(ParserStrategy):
             dict: Processed syntax table
         """
         preprocessed_table = {}
-        for table, table_ops in syntaxTable.items(): # Create Dict for each Table
+        for table, table_ops in syntaxTable.items():  # Create Dict for each Table
             preprocessed_table[table] = AliasDefaultDict(dict)
             for rule_type, rule_options in table_ops.items():  # Create Dict for each type of op
                 preprocessed_table[table][rule_type] = AliasDefaultDict(dict)
-                for option_set in rule_options: # Create alias and assign values
-                    regex = rule_options[option_set]
-                    aliases = [alias.strip() for alias in option_set.split('|')]
-                    for alias in aliases:   # Assign Value to all aliases
-                        preprocessed_table[table][rule_type][alias] = regex
-                        #print(f'{table},{rule_type},{alias} = {preprocessed_table[table][rule_type][alias]}')
+                if rule_type in ['Extensions', 'MatchModules']:
+                    for module_name, options in rule_options.items():
+                        preprocessed_table[table][rule_type][module_name] = AliasDefaultDict(dict)
+                        for option_set, regex in options.items():
+                            aliases = [alias.strip() for alias in option_set.split('|')]
+                            for alias in aliases:  # Assign Value to all aliases
+                                preprocessed_table[table][rule_type][module_name][alias] = regex
+                                #print(f'{table},{rule_type},{module_name},{alias} = {preprocessed_table[table][rule_type][module_name][alias]}')
+                else:   # Basic Operations
+                    for option_set in rule_options:  # Create alias and assign values
+                        regex = rule_options[option_set]
+                        aliases = [alias.strip() for alias in option_set.split('|')]
+                        for alias in aliases:  # Assign Value to all aliases
+                            preprocessed_table[table][rule_type][alias] = regex
+                            #print(f'{table},{rule_type},{alias} = {preprocessed_table[table][rule_type][alias]}')
         return preprocessed_table
 
     def parse(self, path):
@@ -70,9 +79,11 @@ class IpTablesParser(ParserStrategy):
             current_table = None
             current_chain = None
             rule_id = 0
+            line_num = 0
 
             for line in file:
                 line = line.strip()
+                line_num = line_num + 1
 
                 if line.startswith('#'):            # Ignore comments
                     continue
@@ -93,7 +104,7 @@ class IpTablesParser(ParserStrategy):
                     if line.startswith('-A'):       # Append Rule to Chain
                         chain_name = line.split()[1]
                         current_chain = current_table[chain_name]
-                    current_rule = self.parse_options(line, rule_id, current_table.name)
+                    current_rule = self.parse_options(line, line_num, rule_id, current_table.name)
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         rule.predicates = {k: v for k, v in current_rule.items() if k != 'decision'}
@@ -103,7 +114,7 @@ class IpTablesParser(ParserStrategy):
 
             return self.ruleset
                         
-    def parse_options(self, line, rule_id, current_table):
+    def parse_options(self, line, line_num, rule_id, current_table):
         """Parse options from a line of the iptables configuration
 
         Args:
@@ -118,42 +129,82 @@ class IpTablesParser(ParserStrategy):
             dict: Parsed rule options
         """
         current_rule = {}
-        option_pattern = r'-\w+(?=\s*\S)|--\w+'
-        option_value_pairs = re.findall(fr'({option_pattern})(?:\s*(\S+))?', line)
+        tokens = line.split()
+        
+        i = 0
+        current_prot = None
+        current_match_modules = []
 
-        for option, value in option_value_pairs:
+        while i < len(tokens):
+            option = tokens[i]
+            value = None
+
+            # Check if the token is an option (starts with '-' or '--')
+            if option.startswith('-'):
+                # Collect the value which might span multiple tokens
+                value_parts = []
+                i += 1
+                while i < len(tokens) and not tokens[i].startswith('-'):
+                    value_parts.append(tokens[i])
+                    i += 1
+                value = ' '.join(value_parts) if value_parts else None
+            else:
+                i += 1
+                continue
+
             found_match = False
-            # Get Regex of option
-            regex = self.syntaxTable[current_table]['RuleOperations'][option]
+
+            # Debug print statements
+            #print(f"Processing option: {option}, value: {value}")
+
+            # Protocol Handling
+            if option in ['-p', '--protocol']:
+                current_prot = value
+                current_rule[option] = value
+                continue
+
+            # Match Module Handling
+            if option in ['-m', '--match']:
+                current_match_modules.append(value)
+                current_rule[option] = value
+                continue
+
+            # Select Appropriate Regex
+            regex = None
+            if current_match_modules:
+                for match_module in reversed(current_match_modules):
+                    regex = self.syntaxTable[current_table]['MatchModules'].get(match_module, {}).get(option)
+                    if regex is not None:
+                        break
+            if regex is None and current_prot:
+                regex = self.syntaxTable[current_table]['MatchModules'].get(current_prot, {}).get(option)
+            if regex is None:
+                regex = self.syntaxTable[current_table]['BasicOperations'].get(option)
+
             if regex:
-                if regex is None: # TODO Revisar -> cambiar valor de opciones que son None
+                if regex is None:  # Options with no value (e.g., --log-ip-options)
                     current_rule[option] = None
                     found_match = True
-                    continue
                 else:
                     if value is not None:
                         match = re.match(regex, value)
                         if match:
-                            if option == "-j":
-                                if value in ["ACCEPT", "DROP"]:
-                                    current_rule['decision'] = value
-                                else:
-                                    # TODO Modificar para tratar saltos a user_defined tables
-                                    pass
-                            else:
+                            if option == "-j":  # Jump to Target
+                                current_rule['decision'] = value
+                                #print(f"Set decision: {value}")
+                            else:  # Other options
                                 current_rule[option] = match.group()
-                                found_match = True
-                                continue
+                            found_match = True
                         else:  # Value does not follow regex
                             print(f"Warning: Value '{value}' does not match the expected format for option '{option}' in line: {line}")
-                            raise ValueError(f"Syntax Error in line {rule_id}")
+                            raise ValueError(f"Syntax Error in line {line_num}")
                     else:  # Value needed after option
                         print(f"Warning: Option '{option}' requires a value in line: {line}")
-                        raise ValueError(f"Syntax Error in line {rule_id}")
+                        raise ValueError(f"Syntax Error in line {line_num}")
 
             if not found_match and option not in ["-A", "-I", "-D", "-R"]:  # Option not recognized or is a Table Op
-                print(f"Warning (line {rule_id}): Unrecognized option '{option}' in line: {line}")
-                continue
+                print(f"Warning (line {line_num}): Unrecognized option '{option}' in line: {line}")
+                raise ValueError(f"Syntax Error in line {line_num}")
 
         return current_rule
 

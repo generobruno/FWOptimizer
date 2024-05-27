@@ -59,7 +59,7 @@ syntaxTable = {
                 "--source-port | --sport": "(?:!\s*)?\d+(?::\d+)?",
                 "--destination-port | --dport": "(?:!\s*)?\d+(?::\d+)?",
                 "--tcp-flags": "(?:!\s*)?\w+(?:,\w+)?\s*(?:(?:!\s*)?\w+(?:,\w+)?)?",
-                "--syn": None,
+                "--syn": "NO_VALUE",
                 "--tcp-option": "(?:!\s*)?\d+"
             },
             "udp": {
@@ -91,9 +91,9 @@ syntaxTable = {
             },
             "set": {
                 "--match-set": "[\\w-]+\\s+(src|dst)(?:,\\s*(src|dst)){0,5}",
-                "--return-nomatch": None,
-                "! --update-counters": None,
-                "! --update-subcounters": None,
+                "--return-nomatch": "NO_VALUE",
+                "! --update-counters": "NO_VALUE",
+                "! --update-subcounters": "NO_VALUE",
                 "[!] --packets-eq": "\\d+",
                 "--packets-lt": "\\d+",
                 "--packets-gt": "\\d+",
@@ -135,22 +135,22 @@ syntaxTable = {
                 "--connlimit-upto": "\\d+",
                 "--connlimit-above": "\\d+",
                 "--connlimit-mask": "\\d{1,3}",
-                "--connlimit-saddr": None,
-                "--connlimit-daddr": None
+                "--connlimit-saddr": "NO_VALUE",
+                "--connlimit-daddr": "NO_VALUE"
             },
             "recent": {
                 "--name": "\\w+",
-                "! --set | --set": None,
-                "--rsource": None,
-                "--rdest": None,
+                "! --set | --set": "NO_VALUE",
+                "--rsource": "NO_VALUE",
+                "--rdest": "NO_VALUE",
                 "--mask": "\\d{1,3}",
-                "! --rcheck | --rcheck": None,
-                "! --update | --update": None,
-                "! --remove | --remove": None,
+                "! --rcheck | --rcheck": "NO_VALUE",
+                "! --update | --update": "NO_VALUE",
+                "! --remove | --remove": "NO_VALUE",
                 "--seconds": "\\d+",
-                "--reap": None,
+                "--reap": "NO_VALUE",
                 "--hitcount": "\\d+",
-                "--rttl": None
+                "--rttl": "NO_VALUE"
             }
         }
     },

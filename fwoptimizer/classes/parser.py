@@ -170,7 +170,7 @@ class IpTablesParser(ParserStrategy):
 
         # Tokenize line (considering quoted strings)
         tokens = re.findall(r'\"[^\"]*\"|\S+', line)
-        
+
         i = 0
         current_prot = None
         current_extension = None
@@ -230,8 +230,8 @@ class IpTablesParser(ParserStrategy):
                 regex = self.syntaxTable[current_table]['BasicOperations'].get(option)
 
             # Assign Rule Options
-            if regex:
-                if regex is None:  # Options with no value (e.g., --log-ip-options)
+            if regex is not None:
+                if regex == "NO_VALUE":  # Options with no value (e.g., --log-ip-options)
                     if current_extension:
                         extension_options[option] = None
                     else:
@@ -262,18 +262,18 @@ class IpTablesParser(ParserStrategy):
 
             if not found_match and option not in ["-A", "-I", "-D", "-R"]:  # Option not recognized or is a Table Op
                 print(f"Warning (line {line_num}): Unrecognized option '{option}' in line: {line}")
-                continue #TODO Raise Error
-                #raise ValueError(f"Syntax Error in line {line_num}")
+                raise ValueError(f"Syntax Error in line {line_num}")
 
         # Merge match module options into the main rule
         for match_module, options in match_modules.items():
-            current_rule[f'match_module_{match_module}'] = options
+            current_rule[f'm_{match_module}'] = options
 
         # Add extension options to the main rule
         if extension_options:
-            current_rule['extension_options'] = extension_options
+            current_rule['jump_extensions'] = extension_options
 
         return current_rule
+
 
     def get_rules(self):
         """

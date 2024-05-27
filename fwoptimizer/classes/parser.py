@@ -140,7 +140,7 @@ class IpTablesParser(ParserStrategy):
                     if line.startswith('-A'):       # Append Rule to Chain
                         chain_name = line.split()[1]
                         current_chain = current_table[chain_name]
-                    current_rule = self.parse_options(line, line_num, rule_id, current_table.name)
+                    current_rule = self.parse_options(line, line_num, current_table.name)
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         rule.predicates = {k: v for k, v in current_rule.items() if k != 'decision'}
@@ -150,12 +150,12 @@ class IpTablesParser(ParserStrategy):
 
             return self.ruleset
                         
-    def parse_options(self, line, line_num, rule_id, current_table):
+    def parse_options(self, line, line_num, current_table):
         """Parse options from a line of the iptables configuration
 
         Args:
             line (str): The line to parse
-            rule_id (int): The rule identifier
+            line_num (int): Line number in file
             current_table (str): The current table name
 
         Raises:

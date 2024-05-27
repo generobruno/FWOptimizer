@@ -21,9 +21,45 @@ class ParserStrategy(ABC):
     @abstractmethod
     def parse(self, file) -> rules.RuleSet:
         pass
+
+
+class Parser:
+    """
+    The Parser class is used to obtain a RuleSet from a given file,
+    which has the format of a given ParserStrategy.
+    """
     
+    def __init__(self, strategy: ParserStrategy):
+        """
+
+        Args:
+            strategy (ParserStrategy): _description_
+        """
+        self.strategy = strategy
+        
+    def set_strategy(self, strategy: ParserStrategy):
+        """
+
+        Args:
+            strategy (ParserStrategy): _description_
+        """
+        self.strategy = strategy
+        
+    def parse(self, file) -> rules.RuleSet:
+        """
+
+        Args:
+            file (_type_): _description_
+
+        Returns:
+            RuleSet: _description_
+        """
+        return self.strategy.parse(file)
+    
+ 
 class IpTablesParser(ParserStrategy):
     """
+    Parser Specific for IpTables
     """
     
     def __init__(self):
@@ -129,11 +165,15 @@ class IpTablesParser(ParserStrategy):
             dict: Parsed rule options
         """
         current_rule = {}
-        tokens = line.split()
+        match_modules = {}  # Store match modules and their options separately
+        extension_options = {}  # Store options for the -j extension
+
+        # Tokenize line (considering quoted strings)
+        tokens = re.findall(r'\"[^\"]*\"|\S+', line)
         
         i = 0
         current_prot = None
-        current_match_modules = []
+        current_extension = None
 
         while i < len(tokens):
             option = tokens[i]
@@ -154,7 +194,6 @@ class IpTablesParser(ParserStrategy):
 
             found_match = False
 
-            # Debug print statements
             #print(f"Processing option: {option}, value: {value}")
 
             # Protocol Handling
@@ -165,46 +204,74 @@ class IpTablesParser(ParserStrategy):
 
             # Match Module Handling
             if option in ['-m', '--match']:
-                current_match_modules.append(value)
+                current_match_module = value
+                match_modules[current_match_module] = {}  # Initialize a new match module entry
                 current_rule[option] = value
+                continue
+
+            # Jump to target handling
+            if option in ['-j', '--jump']:
+                current_extension = value
+                current_rule['decision'] = value
                 continue
 
             # Select Appropriate Regex
             regex = None
-            if current_match_modules:
-                for match_module in reversed(current_match_modules):
+            if match_modules:
+                for match_module in reversed(list(match_modules.keys())):
                     regex = self.syntaxTable[current_table]['MatchModules'].get(match_module, {}).get(option)
                     if regex is not None:
                         break
             if regex is None and current_prot:
                 regex = self.syntaxTable[current_table]['MatchModules'].get(current_prot, {}).get(option)
+            if regex is None and current_extension:
+                regex = self.syntaxTable[current_table]['Extensions'].get(current_extension, {}).get(option)
             if regex is None:
                 regex = self.syntaxTable[current_table]['BasicOperations'].get(option)
 
+            # Assign Rule Options
             if regex:
                 if regex is None:  # Options with no value (e.g., --log-ip-options)
-                    current_rule[option] = None
+                    if current_extension:
+                        extension_options[option] = None
+                    else:
+                        current_rule[option] = None
                     found_match = True
                 else:
                     if value is not None:
                         match = re.match(regex, value)
                         if match:
-                            if option == "-j":  # Jump to Target
-                                current_rule['decision'] = value
-                                #print(f"Set decision: {value}")
+                            if current_extension:  # If it's an extension option
+                                extension_options[option] = match.group()
                             else:  # Other options
-                                current_rule[option] = match.group()
+                                if option == "-j":  # Jump to Target
+                                    current_rule['decision'] = value
+                                else:
+                                    # Check if the option belongs to a match module
+                                    if match_modules:
+                                        match_modules[current_match_module][option] = match.group()
+                                    else:
+                                        current_rule[option] = match.group()
                             found_match = True
                         else:  # Value does not follow regex
-                            print(f"Warning: Value '{value}' does not match the expected format for option '{option}' in line: {line}")
+                            print(f"Warning (line {line_num}): Value '{value}' does not match the expected format for option '{option}' in line: {line}")
                             raise ValueError(f"Syntax Error in line {line_num}")
                     else:  # Value needed after option
-                        print(f"Warning: Option '{option}' requires a value in line: {line}")
+                        print(f"Warning (line {line_num}): Option '{option}' requires a value in line: {line}")
                         raise ValueError(f"Syntax Error in line {line_num}")
 
             if not found_match and option not in ["-A", "-I", "-D", "-R"]:  # Option not recognized or is a Table Op
                 print(f"Warning (line {line_num}): Unrecognized option '{option}' in line: {line}")
-                raise ValueError(f"Syntax Error in line {line_num}")
+                continue #TODO Raise Error
+                #raise ValueError(f"Syntax Error in line {line_num}")
+
+        # Merge match module options into the main rule
+        for match_module, options in match_modules.items():
+            current_rule[f'match_module_{match_module}'] = options
+
+        # Add extension options to the main rule
+        if extension_options:
+            current_rule['extension_options'] = extension_options
 
         return current_rule
 
@@ -216,37 +283,3 @@ class IpTablesParser(ParserStrategy):
             RuleSet: Set of RuleSet
         """
         return self.ruleset
-    
-class Parser:
-    """
-    The Parser class is used to obtain a RuleSet from a given file,
-    which has the format of a given ParserStrategy.
-    """
-    
-    def __init__(self, strategy: ParserStrategy):
-        """
-
-        Args:
-            strategy (ParserStrategy): _description_
-        """
-        self.strategy = strategy
-        
-    def set_strategy(self, strategy: ParserStrategy):
-        """
-
-        Args:
-            strategy (ParserStrategy): _description_
-        """
-        self.strategy = strategy
-        
-    def parse(self, file) -> rules.RuleSet:
-        """
-
-        Args:
-            file (_type_): _description_
-
-        Returns:
-            RuleSet: _description_
-        """
-        return self.strategy.parse(file)
-    

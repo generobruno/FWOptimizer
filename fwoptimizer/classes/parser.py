@@ -194,8 +194,6 @@ class IpTablesParser(ParserStrategy):
 
             found_match = False
 
-            #print(f"Processing option: {option}, value: {value}")
-
             # Protocol Handling
             if option in ['-p', '--protocol']:
                 current_prot = value
@@ -206,7 +204,7 @@ class IpTablesParser(ParserStrategy):
             if option in ['-m', '--match']:
                 current_match_module = value
                 match_modules[current_match_module] = {}  # Initialize a new match module entry
-                current_rule[option] = value
+                #current_rule[option] = value
                 continue
 
             # Jump to target handling

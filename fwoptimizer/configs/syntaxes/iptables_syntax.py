@@ -13,11 +13,10 @@
         ... more rules ...
         COMMIT
 """ 
-#TODO Revisar optional option value "[]"
+
 syntaxTable = {
 
     "filter": { 
-        
         "BasicOperations": {    # Basic Filter Match operations
             "-i | --in-interface": "(?:!\s*)?\w+",
             "-o | --out-interface": "(?:!\s*)?\w+",
@@ -26,7 +25,7 @@ syntaxTable = {
             "-p | --protocol": "(?:!\s*)?\w+",
             "-j | --jump": "\w+",
             "[!]-f | -f | --fragment": "\s", 
-            "-c | --set-counters": None,
+            "-c | --set-counters": "NO_VALUE",
             "-m | --match": "\w+"  # Match module identifier
         },
         
@@ -34,15 +33,15 @@ syntaxTable = {
             "LOG": { # -j LOG Extensions
                 "--log-level": "(emerg|alert|crit|error|warning|notice|info|debug|\\d+)",
                 "--log-prefix": "\"?[^\"]{0,29}\"?",
-                "--log-tcp-sequence": None,
-                "--log-tcp-options": None,
-                "--log-ip-options": None,
-                "--log-uid": None
+                "--log-tcp-sequence": "NO_VALUE",
+                "--log-tcp-options": "NO_VALUE",
+                "--log-ip-options": "NO_VALUE",
+                "--log-uid": "NO_VALUE"
             },
             "REJECT": { # -j REJECT Extensions
                 "--reject-with": "(?:icmp-\\w+|tcp-reset|echo-reply)",
-                "--log-tcp-sequence": None,
-                "--log-tcp-option": None
+                "--log-tcp-sequence": "NO_VALUE",
+                "--log-tcp-option": "NO_VALUE"
             },
             "ULOG": {
                 #TODO
@@ -164,30 +163,30 @@ syntaxTable = {
             "-p | --protocol": "(?:!\s*)?\w+",
             "-j | --jump": "\w+",
             "[!]-f | -f | --fragment": "\s", 
-            "-c | --set-counters": None,
+            "-c | --set-counters": "NO_VALUE",
             "-m | --match": "\w+"  # Match module identifier
         },
         
         "Extensions": {         # Target Match Extensions
             "SNAT": { 
                 "--to-source": "((\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(-(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))?)(?::(\\d+)(-(\\d+)))?",
-                "--random": None,
-                "--random-fully": None,
-                "--persistent": None
+                "--random": "NO_VALUE",
+                "--random-fully": "NO_VALUE",
+                "--persistent": "NO_VALUE"
             },
             "MASQUERADE": { 
                 "--to-ports": "(\\d+)(-(\\d+))?",
-                "--random": None,
-                "--random-fully": None
+                "--random": "NO_VALUE",
+                "--random-fully": "NO_VALUE"
             },
             "DNAT": {
                 "--to-destination": "((\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(-(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))?)(?::(\\d+)(-(\\d+)))?",
-                "--random": None,
-                "--persistent": None
+                "--random": "NO_VALUE",
+                "--persistent": "NO_VALUE"
             },
             "REDIRECT": {
                 "--to-ports": "(\\d+)(-(\\d+))?",
-                "--random": None
+                "--random": "NO_VALUE"
             },
             "BALANCE": {
                 "--to-destination": "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})-(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"
@@ -204,7 +203,7 @@ syntaxTable = {
                 "--source-port | --sport": "(?:!\s*)?\d+(?::\d+)?",
                 "--destination-port | --dport": "(?:!\s*)?\d+(?::\d+)?",
                 "--tcp-flags": "(?:!\s*)?\w+(?:,\w+)?\s*(?:(?:!\s*)?\w+(?:,\w+)?)?",
-                "--syn": None,
+                "--syn": "NO_VALUE",
                 "--tcp-option": "(?:!\s*)?\d+"
             },
             "udp": {
@@ -236,9 +235,9 @@ syntaxTable = {
             },
             "set": {
                 "--match-set": "[\\w-]+\\s+(src|dst)(?:,\\s*(src|dst)){0,5}",
-                "--return-nomatch": None,
-                "! --update-counters": None,
-                "! --update-subcounters": None,
+                "--return-nomatch": "NO_VALUE",
+                "! --update-counters": "NO_VALUE",
+                "! --update-subcounters": "NO_VALUE",
                 "[!] --packets-eq": "\\d+",
                 "--packets-lt": "\\d+",
                 "--packets-gt": "\\d+",
@@ -280,22 +279,22 @@ syntaxTable = {
                 "--connlimit-upto": "\\d+",
                 "--connlimit-above": "\\d+",
                 "--connlimit-mask": "\\d{1,3}",
-                "--connlimit-saddr": None,
-                "--connlimit-daddr": None
+                "--connlimit-saddr": "NO_VALUE",
+                "--connlimit-daddr": "NO_VALUE"
             },
             "recent": {
                 "--name": "\\w+",
-                "! --set | --set": None,
-                "--rsource": None,
-                "--rdest": None,
+                "! --set | --set": "NO_VALUE",
+                "--rsource": "NO_VALUE",
+                "--rdest": "NO_VALUE",
                 "--mask": "\\d{1,3}",
-                "! --rcheck | --rcheck": None,
-                "! --update | --update": None,
-                "! --remove | --remove": None,
+                "! --rcheck | --rcheck": "NO_VALUE",
+                "! --update | --update": "NO_VALUE",
+                "! --remove | --remove": "NO_VALUE",
                 "--seconds": "\\d+",
-                "--reap": None,
+                "--reap": "NO_VALUE",
                 "--hitcount": "\\d+",
-                "--rttl": None
+                "--rttl": "NO_VALUE"
             }
         }
     },

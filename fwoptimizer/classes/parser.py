@@ -1,4 +1,5 @@
-"""_summary_
+"""
+parser Module
 """
 
 import re

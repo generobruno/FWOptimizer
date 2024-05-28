@@ -1,7 +1,7 @@
 # classes Package
 
 # parser module
-#from .parser import Parser
+from .parser import Parser
 
 # rules module
 from .rules import Rule, RuleSet, Chain, Table

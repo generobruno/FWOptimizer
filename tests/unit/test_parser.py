@@ -1,4 +1,5 @@
-"""_summary_
+"""
+Tests for the parser Module
 """
 
 import pytest

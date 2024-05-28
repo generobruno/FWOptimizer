@@ -1,4 +1,5 @@
-"""_summary_
+"""
+rules Module
 """
 
 class Rule:
@@ -38,7 +39,7 @@ class Rule:
         Returns:
             value: Value of the option
         """
-        return self.predicates.get(option, None) #TODO Revisar si devolver "Any" aca o en otro lado
+        return self.predicates.get(option, None)
     
     def get_decision(self):
         """
@@ -83,7 +84,7 @@ class Chain:
         rules_str = "\n".join([str(rule) for rule in self.rules])
         return "{}:\n{}".format(self.name, rules_str if rules_str else "")
     
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> Rule:
         """
         Chain __getitem__
 
@@ -129,7 +130,7 @@ class Table:
         chains_str = "\n".join([str(chain) for chain in self.chains.values()])
         return "{} - {}".format(self.name, chains_str)
     
-    def __getitem__(self, chain_name):
+    def __getitem__(self, chain_name) -> Chain:
         """
         Table __getitem__
 
@@ -180,7 +181,7 @@ class RuleSet:
         tables_str = "\n".join([str(table) for table in self.tables.values()])
         return "Rule Set:\n{}".format(tables_str)
         
-    def __getitem__(self, table_name):
+    def __getitem__(self, table_name) -> Table:
         """
         RuleSet __getitem__
 
@@ -191,6 +192,29 @@ class RuleSet:
             Table: Table in Tables dict
         """
         return self.tables[table_name]
+    
+    def __len__(self) -> int:
+        """
+        Returns the total number of rules across all tables and chains.
+        
+        Returns:
+            int: Total number of rules
+        """
+        total_rules = 0
+        for table in self.tables.values():
+            for chain in table.chains.values():
+                total_rules += len(chain.rules)
+        return total_rules
+    
+    def number_of_chains(self) -> int:
+        """
+        Returns the total number of chains across all tables in the ruleset.
+        
+        Returns:
+            int: Total number of chains
+        """
+        total_chains = sum(len(table.chains) for table in self.tables.values())
+        return total_chains
         
     def add_table(self, table: Table):
         """

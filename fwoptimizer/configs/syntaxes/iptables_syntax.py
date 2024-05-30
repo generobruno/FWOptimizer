@@ -1,5 +1,6 @@
-""" syntaxTable
-        Tabla con la sintaxis de las distintas instrucciones de iptables.
+""" 
+syntaxTable
+        Table with the syntax of different iptables instructions.
         "Table": {
             "OperationType": {
                 "option": "regex of its value"
@@ -307,4 +308,25 @@ syntaxTable = {
             #TODO
     }
     
+}
+
+""" 
+FieldsFormat
+    Table with the assignments between iptables options and their corresponding field.
+    "options": "FieldName"
+"""
+
+FieldsFormat = {
+    # Filter
+    "-i | --in-interface": "InInterface",
+    "-o | --out-interface": "OutInterface",
+    "-s | --source | --src": "SrcIp",
+    "-d | --destination | --dst": "DstIp",
+    "-p | --protocol": "Protocol",
+    "--source-port | --sport | --sports": "SrcPort",
+    "--destination-port | --dport | --dports": "DstPort",
+    "--ctstate | --state": "State",
+    # NAT
+    "--to-source": "ToSrc",
+    "--to-destination": "ToDst"
 }

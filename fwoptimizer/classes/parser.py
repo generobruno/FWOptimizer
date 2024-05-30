@@ -61,6 +61,10 @@ class Parser:
 class IpTablesParser(ParserStrategy):
     """
     Parser Specific for IpTables
+    
+    Two tables are necessary to correctly parse the instructions:
+        1. Syntax Table: Syntax with information of the options to the format of their values
+        2. Fields Format: Relation between options and their corresponding Field Name
     """
     
     def __init__(self):
@@ -102,6 +106,26 @@ class IpTablesParser(ParserStrategy):
                             preprocessed_table[table][rule_type][alias] = regex
                             #print(f'{table},{rule_type},{alias} = {preprocessed_table[table][rule_type][alias]}')
         return preprocessed_table
+
+    def rename_options(self, rule):
+        """
+        Rename rule options based on FieldsFormat mapping.
+        
+        Args:
+            rule (str): Rule to be formated
+        
+        Returns:
+            new_rule (str): Formated Rule
+        """
+        new_rule = {}
+        for key, value in rule.items():
+            renamed_key = key
+            for pattern, new_key in syntaxes.fields.items():
+                if any(option == key for option in pattern.split(' | ')):
+                    renamed_key = new_key
+                    break
+            new_rule[renamed_key] = value
+        return new_rule
 
     def parse(self, path):
         """Parse the iptables configuration file
@@ -166,7 +190,7 @@ class IpTablesParser(ParserStrategy):
             dict: Parsed rule options
         """
         current_rule = {}
-        match_modules = {}  # Store match modules and their options separately
+        match_modules = []  # Store match modules
         extension_options = {}  # Store options for the -j extension
 
         # Tokenize line (considering quoted strings)
@@ -204,8 +228,8 @@ class IpTablesParser(ParserStrategy):
             # Match Module Handling
             if option in ['-m', '--match']:
                 current_match_module = value
-                match_modules[current_match_module] = {}  # Initialize a new match module entry
-                #current_rule[option] = value
+                match_modules.append(current_match_module)
+                current_rule[f'-m {current_match_module}'] = None  # Add match module to the rule
                 continue
 
             # Jump to target handling
@@ -217,7 +241,7 @@ class IpTablesParser(ParserStrategy):
             # Select Appropriate Regex
             regex = None
             if match_modules:
-                for match_module in reversed(list(match_modules.keys())):
+                for match_module in reversed(match_modules):
                     regex = self.syntaxTable[current_table]['MatchModules'].get(match_module, {}).get(option)
                     if regex is not None:
                         break
@@ -246,11 +270,7 @@ class IpTablesParser(ParserStrategy):
                                 if option == "-j":  # Jump to Target
                                     current_rule['decision'] = value
                                 else:
-                                    # Check if the option belongs to a match module
-                                    if match_modules:
-                                        match_modules[current_match_module][option] = match.group()
-                                    else:
-                                        current_rule[option] = match.group()
+                                    current_rule[option] = match.group()
                             found_match = True
                         else:  # Value does not follow regex
                             print(f"Warning (line {line_num}): Value '{value}' does not match the expected format for option '{option}' in line: {line}")
@@ -263,13 +283,12 @@ class IpTablesParser(ParserStrategy):
                 print(f"Warning (line {line_num}): Unrecognized option '{option}' in line: {line}")
                 raise ValueError(f"Syntax Error in line {line_num}")
 
-        # Merge match module options into the main rule
-        for match_module, options in match_modules.items():
-            current_rule[f'm_{match_module}'] = options
-
         # Add extension options to the main rule
         if extension_options:
             current_rule['jump_extensions'] = extension_options
+            
+        # Rename rule options based on FieldsFormat
+        current_rule = self.rename_options(current_rule)
 
         return current_rule
 

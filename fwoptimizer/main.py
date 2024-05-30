@@ -2,38 +2,24 @@
 """
 
 #TODO REVISAR IMPORTS
-from fwoptimizer.classes import Parser
-from fwoptimizer.classes import RuleFactory
-
-import configs.syntaxes.iptables_syntax as iptables 
+from classes import parser
 
 if __name__ == '__main__':
     
     print("TESTING...")
     
     #! Parse Instruction Set
-    parser = Parser(iptables.syntaxTable)
-    parser.parse("example_set.txt")
-    rules_parsed = parser.get_rules()
+    iptables_strat = parser.IpTablesParser()
+    parser = parser.Parser(iptables_strat)
+    rules_parsed = parser.parse("./example_set.txt")
 
     print("\nRule Set:")
-    for table in rules_parsed:
-        for chain in rules_parsed[table]:
-            print(f'{table} - {chain}:')
-            for rule in rules_parsed[table][chain]:
-                print(rule)
+    rules_parsed.print_all()
 
-    #! Create Rules from list
-    rule_factory = RuleFactory()
-    rules = {}
-    
-    for table in rules_parsed:
-        for chain in rules_parsed[table]:
-            rules[(table, chain)] = (rule_factory.create_rules(rules_parsed[table][chain]))
+    print("\nOnly INPUT in filter")
+    for rule in rules_parsed['filter']['INPUT']: # Tambien se puede acceder como: rules_parsed.tables['filter'].chains['INPUT']
+        print(rule)
         
-    print("\nRules Obtained:")        
-    for (table, chain), chain_rules in rules.items():
-        print(f"{table} - {chain}:")
-        for rule in chain_rules:
-           print(rule)
-    print()
+    print(f'\nTotal Number of Tables: {len(rules_parsed.tables)}')
+    print(f'Total Number of Chains: {rules_parsed.number_of_chains()}')
+    print(f'Total Number of Rules: {len(rules_parsed)}')

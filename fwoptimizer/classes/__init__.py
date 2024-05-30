@@ -4,7 +4,7 @@
 from .parser import Parser
 
 # rules module
-from .rules import Rule, RuleFactory, RuleSet, Chain, Table
+from .rules import Rule, RuleSet, Chain, Table
 
 # fdd module
 from .fdd import FDD, Level

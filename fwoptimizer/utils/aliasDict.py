@@ -84,3 +84,13 @@ class AliasDefaultDict:
         for alias, value in self.aliases.items():
             representation[value].append(alias)
         return "AliasDefaultDict({}, {})".format(repr(self.factory), repr([(aliases, self.data[value]) for value, aliases in representation.items()]))
+    
+    def get(self, key, default=None):
+        """
+        AliasDefaultDict get option value
+        """
+        keys = self.distinguish_keys(key)
+        if keys & self.aliases.keys():
+            return self.data[self.aliases[keys.pop()]]
+        else:
+            return default

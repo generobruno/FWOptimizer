@@ -4,6 +4,7 @@
 # Generated .egg file
 *.egg-info
 .*
+!.github
 __pycache__
 build
 

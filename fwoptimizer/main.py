@@ -2,7 +2,7 @@
 """
 
 #TODO REVISAR IMPORTS
-from classes import parser
+from classes import parser, fdd
 
 if __name__ == '__main__':
     

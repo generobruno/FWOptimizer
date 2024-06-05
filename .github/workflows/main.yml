@@ -40,13 +40,14 @@ jobs:
       run: |
         pip install -r requirements/default_reqs.txt
 
-    - name: Lint with PyLint
-      run: |
-        pylint $(git ls-files '*.py')
-      continue-on-error: true
+        - name: Lint with PyLint
+        run: |
+          pylint $(git ls-files '*.py') --output-format=json > .github/pylint_output.json || true
+          python annotate_pylint.py
 
     - name: Run tests
       env:
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        pytest --disable-warnings
+        pytest --disable-warnings --junitxml=.github/pytest_out.xml
+        python annotate_pytest.py

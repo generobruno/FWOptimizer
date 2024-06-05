@@ -31,7 +31,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install pip-tools
 
+    - name: Check if pyproject.toml is modified
+      id: check_pyproject
+      run: |
+        if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q 'pyproject.toml'; then
+          echo "PYPROJECT_CHANGED=true" >> $GITHUB_ENV
+        else
+          echo "PYPROJECT_CHANGED=false" >> $GITHUB_ENV
+        fi
+
     - name: Generate default_reqs.txt from pyproject.toml
+      if: env.PYPROJECT_CHANGED == 'true'
       run: |
         mkdir -p requirements
         pip-compile --extra=test --output-file=requirements/default_reqs.txt --generate-hashes pyproject.toml

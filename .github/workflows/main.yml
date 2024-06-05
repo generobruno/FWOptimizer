@@ -18,6 +18,14 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip # For Linux
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements/*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
     - name: Install pip-tools
       run: |
         python -m pip install --upgrade pip
@@ -32,10 +40,10 @@ jobs:
       run: |
         pip install -r requirements/default_reqs.txt
 
-        - name: Lint with PyLint
-        run: |
-          pylint $(git ls-files '*.py') --output-format=json > .github/pylint_output.json || true
-          python annotate_pylint.py
+    - name: Lint with PyLint
+      run: |
+        pylint $(git ls-files '*.py') --output-format=json > .github/pylint_output.json || true
+        python annotate_pylint.py
 
     - name: Run tests
       env:

@@ -42,12 +42,12 @@ jobs:
 
     - name: Lint with PyLint
       run: |
-        pylint $(git ls-files '*.py') --output-format=json > .github/pylint_output.json || true
-        python annotate_pylint.py
+        pylint $(git ls-files '*.py') --output-format=json > .github/pylint_out.json || true
+        python .github/annotate_pylint.py
 
     - name: Run tests
       env:
         PYTHONPATH: ${{ github.workspace }}
       run: |
         pytest --disable-warnings --junitxml=.github/pytest_out.xml
-        python annotate_pytest.py
+        python .github/annotate_pytest.py

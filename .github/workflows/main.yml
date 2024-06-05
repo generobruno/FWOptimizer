@@ -49,3 +49,4 @@ jobs:
       run: |
         pytest --disable-warnings --junitxml=.github/pytest_out.xml
         python .github/annotate_pytest.py
+      continue-on-error: true

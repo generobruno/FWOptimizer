@@ -1,6 +1,6 @@
 import json
 
-with open('pylint_out.json', encoding="utf-8") as f:
+with open('.github/pylint_out.json', encoding="utf-8") as f:
     reports = json.load(f)
 
 for report in reports:

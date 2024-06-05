@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 
-tree = ET.parse('pytest_output.xml')
+tree = ET.parse('.github/pytest_out.xml')
 root = tree.getroot()
 
 for testcase in root.findall('.//testcase'):

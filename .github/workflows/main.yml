@@ -32,7 +32,7 @@ jobs:
     - name: Generate default_reqs.txt from pyproject.toml
       run: |
         mkdir -p requirements
-        pip-compile --extra=test --output-file=requirements/default_reqs.txt --generate-hashes pyproject.toml --no-strip-extras
+        pip-compile --extra=test --output-file=requirements/default_reqs.txt --generate-hashes --no-strip-extras pyproject.toml
 
     - name: Install dependencies
       run: |

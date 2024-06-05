@@ -16,7 +16,7 @@ authors = [
 dependencies = [
     "graphviz>=0.20.3",
     "netaddr>=1.2.1",
-    "toml=0.10.2"
+    "toml>=0.10.2"
 ]
 
 [project.optional-dependencies]

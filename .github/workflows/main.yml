@@ -31,6 +31,7 @@ jobs:
 
     - name: Generate default_reqs.txt from pyproject.toml
       run: |
+        ls
         mkdir -p requirements
         pip-compile --extra=test --output-file=requirements/default_reqs.txt --generate-hashes pyproject.toml
 

@@ -1,9 +1,7 @@
 name: Python CI
 
 on:
-  push:
-    branches:
-      - ci_workflow
+  [push, pull_request]
 
 jobs:
   lint-and-test:

@@ -22,7 +22,7 @@ sample_input_file_path = 'tests/test_set.txt'
 
 # Test initialization
 def test_parser_initialization():
-    assert 2+2 == 4
+    assert 2+2 == 5
 
 
 # Run all tests

@@ -1,4 +1,4 @@
-""" 
+"""
 syntaxTable
         Table with the syntax of different iptables instructions.
         "Table": {
@@ -13,23 +13,32 @@ syntaxTable
         <optional_counter><rule>
         ... more rules ...
         COMMIT
-""" 
+"""
 
 syntaxTable = {
 
-    "filter": { 
+    "filter": {
         "BasicOperations": {    # Basic Filter Match operations
-            "-i | --in-interface": r"(?:!\s*)?\w+",
-            "-o | --out-interface": r"(?:!\s*)?\w+",
-            "-s | --source | --src": r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
-            "-d | --destination | --dst": r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
-            "-p | --protocol": r"(?:!\s*)?\w+",
-            "-j | --jump": r"\w+",
-            "[!]-f | -f | --fragment": r"\s", 
-            "-c | --set-counters": "NO_VALUE",
-            "-m | --match": r"\w+"  # Match module identifier
+            "-i | --in-interface": 
+                r"(?:!\s*)?\w+",
+            "-o | --out-interface": 
+                r"(?:!\s*)?\w+",
+            "-s | --source | --src": 
+                r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
+            "-d | --destination | --dst": 
+                r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
+            "-p | --protocol": 
+                r"(?:!\s*)?\w+",
+            "-j | --jump": 
+                r"\w+",
+            "[!]-f | -f | --fragment": 
+                r"\s", 
+            "-c | --set-counters": 
+                "NO_VALUE",
+            "-m | --match": 
+                r"\w+"  # Match module identifier
         },
-        
+
         "Extensions": {         # Target Match Extensions
             "LOG": { # -j LOG Extensions
                 "--log-level": r"(emerg|alert|crit|error|warning|notice|info|debug|\d+)",
@@ -48,7 +57,7 @@ syntaxTable = {
                 #TODO
             }
         },
-        
+
         "MatchModules": {       # Table Match Extensions
             "multiport": {
                 "--source-port | --sport | --sports": r"\d+(?:,\d+)*",
@@ -125,8 +134,10 @@ syntaxTable = {
                 "--dst-type": ""  
             },
             "iprange": {
-                "--src-range": r"((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})",
-                "--dst-range": r"((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
+                "--src-range": 
+                    r"((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})",
+                "--dst-range": 
+                    r"((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
             },
             "length": {
                 "--length": ""
@@ -157,17 +168,26 @@ syntaxTable = {
 
     "nat": {
         "BasicOperations": {    # Basic Filter Match operations
-            "-i | --in-interface": r"(?:!\s*)?\w+",
-            "-o | --out-interface": r"(?:!\s*)?\w+",
-            "-s | --source | --src": r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
-            "-d | --destination | --dst": r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
-            "-p | --protocol": r"(?:!\s*)?\w+",
-            "-j | --jump": r"\w+",
-            "[!]-f | -f | --fragment": r"\s", 
-            "-c | --set-counters": "NO_VALUE",
-            "-m | --match": r"\w+"  # Match module identifier
+            "-i | --in-interface": 
+                r"(?:!\s*)?\w+",
+            "-o | --out-interface": 
+                r"(?:!\s*)?\w+",
+            "-s | --source | --src": 
+                r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
+            "-d | --destination | --dst": 
+                r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
+            "-p | --protocol": 
+                r"(?:!\s*)?\w+",
+            "-j | --jump": 
+                r"\w+",
+            "[!]-f | -f | --fragment": 
+                r"\s", 
+            "-c | --set-counters": 
+                "NO_VALUE",
+            "-m | --match": 
+                r"\w+"  # Match module identifier
         },
-        
+
         "Extensions": {         # Target Match Extensions
             "SNAT": { 
                 "--to-source": r"((\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))?)(?::(\d+)(-(\d+)))?",
@@ -193,7 +213,7 @@ syntaxTable = {
                 "--to-destination": r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
             }
         },
-        
+
         "MatchModules": {       # Table Match Extensions
             "multiport": {
                 "--source-port | --sport | --sports": r"\d+(?:,\d+)*",
@@ -303,14 +323,14 @@ syntaxTable = {
     "mangle": {
             #TODO
     },
-    
+
     "raw": {
             #TODO
     }
-    
+
 }
 
-""" 
+"""
 FieldsFormat
     Table with the assignments between iptables options and their corresponding field.
     "options": "FieldName"

@@ -40,7 +40,7 @@ jobs:
 
     - name: Lint with PyLint
       run: | # || true to continue on error
-        pylint $(git ls-files '*.py') --output-format=json > .github/pylint_out.json || true 
+        pylint $(git ls-files '*.py') --rcfile .github/.pylintrc --output-format=json > .github/pylint_out.json || true 
         python .github/annotate_pylint.py
 
     - name: Run tests

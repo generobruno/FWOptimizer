@@ -6,8 +6,8 @@ class Rule:
     """
     The Rule Class represent a given rule in a policy, with its predicates and decision.
     """
-    
-    def __init__(self, id: int):
+
+    def __init__(self, rule_id: int):
         """
         A Rule has an identificator number, which represents its priority in the
         policy set, a dictionary of predicates of options to values, and a 
@@ -16,10 +16,10 @@ class Rule:
         Args:
             id (int): Rule identifier or priority (0 = top priority)
         """
-        self.id = id
+        self.id = rule_id
         self.predicates = {}
         self.decision = None
-        
+
     def __repr__(self) -> str:
         """
         Rule __repr__
@@ -27,9 +27,9 @@ class Rule:
         Returns:
             str: Rule String representation
         """
-        return "Rule {}: {} -> {}".format(self.id, self.predicates, self.decision)
-    
-    def get_option(self, option):
+        return f"Rule {self.id}: {self.predicates} -> {self.decision}"
+
+    def getOption(self, option):
         """
         Get a given option value from the rule predicates
 
@@ -40,8 +40,8 @@ class Rule:
             value: Value of the option
         """
         return self.predicates.get(option, None)
-    
-    def get_decision(self):
+
+    def getDecision(self):
         """
         Get the rule's decision
 
@@ -49,8 +49,8 @@ class Rule:
             decision: Rule's decision
         """
         return self.decision
-    
-    def get_id(self):
+
+    def getId(self):
         """
         Get the rule's identifier (priority)
 
@@ -63,7 +63,7 @@ class Chain:
     """
     A Chain is a collection of Rules.
     """
-    
+
     def __init__(self, name: str) -> None:
         """
         A Chain has a Name and a List of Rules
@@ -73,7 +73,7 @@ class Chain:
         """
         self.name = name
         self.rules = []
-        
+
     def __repr__(self) -> str:
         """
         Chain __repr__
@@ -82,8 +82,8 @@ class Chain:
             str: Chain String representation
         """
         rules_str = "\n".join([str(rule) for rule in self.rules])
-        return "{}:\n{}".format(self.name, rules_str if rules_str else "")
-    
+        return f"{self.name}:\n{rules_str if rules_str else ''}"
+
     def __getitem__(self, idx) -> Rule:
         """
         Chain __getitem__
@@ -96,7 +96,7 @@ class Chain:
         """
         return self.rules[idx]
 
-    def add_rule(self, rule: Rule):
+    def addRule(self, rule: Rule):
         """
         Add a rule to the chain
         
@@ -109,7 +109,7 @@ class Table:
     """
     A Table is a collection of Chains.
     """
-    
+
     def __init__(self, name: str) -> None:
         """
         A Table has a Name and a dict of Chains, of Chain.name to Chain Object
@@ -119,7 +119,7 @@ class Table:
         """
         self.name = name
         self.chains = {}
-        
+
     def __repr__(self) -> str:
         """
         Table __repr__
@@ -128,8 +128,8 @@ class Table:
             str: Table String representation
         """
         chains_str = "\n".join([str(chain) for chain in self.chains.values()])
-        return "{} - {}".format(self.name, chains_str)
-    
+        return f"{self.name} - {chains_str}"
+
     def __getitem__(self, chain_name) -> Chain:
         """
         Table __getitem__
@@ -142,7 +142,7 @@ class Table:
         """
         return self.chains[chain_name]
 
-    def add_chain(self, chain: Chain):
+    def addChain(self, chain: Chain):
         """
         Add a chain to the table
         
@@ -150,18 +150,18 @@ class Table:
             chain (Chain): Chain to add
         """
         self.chains[chain.name] = chain
-    
+
 class RuleSet:
     """
     A RuleSet represents the complete list of rules from a given policy.
     """
-    
+
     def __init__(self) -> None:
         """
         A RuleSet has a dictionary of Tables, of Table.name to Table object
         """
         self.tables = {}
-        
+
     def __repr__(self) -> str:
         """
         RuleSet __repr__
@@ -169,8 +169,8 @@ class RuleSet:
         Returns:
             str: RuleSet representation
         """
-        return "RuleSet: {}".format(self.tables)
-    
+        return f"RuleSet: {self.tables}"
+
     def __str__(self) -> str:
         """
         RuleSet __str__
@@ -179,8 +179,8 @@ class RuleSet:
             str: RuleSet string representation
         """
         tables_str = "\n".join([str(table) for table in self.tables.values()])
-        return "Rule Set:\n{}".format(tables_str)
-        
+        return f"Rule Set:\n{tables_str}"
+
     def __getitem__(self, table_name) -> Table:
         """
         RuleSet __getitem__
@@ -192,7 +192,7 @@ class RuleSet:
             Table: Table in Tables dict
         """
         return self.tables[table_name]
-    
+
     def __len__(self) -> int:
         """
         Returns the total number of rules across all tables and chains.
@@ -205,8 +205,8 @@ class RuleSet:
             for chain in table.chains.values():
                 total_rules += len(chain.rules)
         return total_rules
-    
-    def number_of_chains(self) -> int:
+
+    def numberOfChains(self) -> int:
         """
         Returns the total number of chains across all tables in the ruleset.
         
@@ -215,8 +215,8 @@ class RuleSet:
         """
         total_chains = sum(len(table.chains) for table in self.tables.values())
         return total_chains
-        
-    def add_table(self, table: Table):
+
+    def addTable(self, table: Table):
         """
         Add a table to the ruleset
         
@@ -225,7 +225,7 @@ class RuleSet:
         """
         self.tables[table.name] = table
 
-    def print_all(self):
+    def printAll(self):
         """
         Print all rules in RuleSet
         """

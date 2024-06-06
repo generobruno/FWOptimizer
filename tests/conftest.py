@@ -1,4 +1,7 @@
-# tests/conftest.py
+"""
+tests/conftest.py
+"""
+
 import sys
 import os
 

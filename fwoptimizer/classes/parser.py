@@ -5,10 +5,10 @@ parser Module
 import re
 from abc import ABC, abstractmethod
 
-from utils.aliasDict import AliasDefaultDict
-from classes import rules
+from fwoptimizer.utils.aliasDict import AliasDefaultDict
+from fwoptimizer.classes import rules
 
-import configs.syntaxes as syntaxes
+from fwoptimizer.configs import syntaxes
 
 class ParserStrategy(ABC):
     """
@@ -18,46 +18,56 @@ class ParserStrategy(ABC):
     The Parser Context Class uses this interface to call the algorithm defined by
     Concrete Strategies
     """
-    
-    @abstractmethod
-    def parse(self, file) -> rules.RuleSet:
-        pass
 
+    @abstractmethod
+    def parse(self, path) -> rules.RuleSet:
+        """
+        Parse a rule file to obtain a RuleSet
+
+        Args:
+            path : File with rules
+            
+        Returns:
+            rules.RuleSet: Set of Rules in the file
+        """
 
 class Parser:
     """
     The Parser class is used to obtain a RuleSet from a given file,
     which has the format of a given ParserStrategy.
     """
-    
+
     def __init__(self, strategy: ParserStrategy):
         """
+        Create a new Parser
 
         Args:
-            strategy (ParserStrategy): _description_
+            strategy (ParserStrategy): Parse Strategy
         """
         self.strategy = strategy
-        
-    def set_strategy(self, strategy: ParserStrategy):
+
+    def setStrategy(self, strategy: ParserStrategy):
         """
+        Set the parser Strategy
 
         Args:
-            strategy (ParserStrategy): _description_
+            strategy (ParserStrategy): Parse Strategy
         """
         self.strategy = strategy
-        
-    def parse(self, file) -> rules.RuleSet:
+
+    def parse(self, path) -> rules.RuleSet:
         """
+        Parse File
 
         Args:
-            file (_type_): _description_
+            path: File to parse
 
         Returns:
-            RuleSet: _description_
+            RuleSet: Set of Rules in file
         """
-        return self.strategy.parse(file)
-    
- 
+        return self.strategy.parse(path)
+
+
 class IpTablesParser(ParserStrategy):
     """
     Parser Specific for IpTables
@@ -66,15 +76,15 @@ class IpTablesParser(ParserStrategy):
         1. Syntax Table: Syntax with information of the options to the format of their values
         2. Fields Format: Relation between options and their corresponding Field Name
     """
-    
+
     def __init__(self):
         """
         IpTables Parser Strategy
         """
-        self.syntaxTable = self.preprocess_syntax_table(syntaxes.iptables)
+        self.syntax_table = self.preprocessSyntaxTable(syntaxes.iptables)
         self.ruleset = rules.RuleSet()
 
-    def preprocess_syntax_table(self, syntaxTable):
+    def preprocessSyntaxTable(self, syntax_table):
         """
         Process the syntax table to obtain all the posible alias of the
         different options
@@ -86,7 +96,7 @@ class IpTablesParser(ParserStrategy):
             dict: Processed syntax table
         """
         preprocessed_table = {}
-        for table, table_ops in syntaxTable.items():  # Create Dict for each Table
+        for table, table_ops in syntax_table.items():  # Create Dict for each Table
             preprocessed_table[table] = AliasDefaultDict(dict)
             for rule_type, rule_options in table_ops.items():  # Create Dict for each type of op
                 preprocessed_table[table][rule_type] = AliasDefaultDict(dict)
@@ -97,17 +107,15 @@ class IpTablesParser(ParserStrategy):
                             aliases = [alias.strip() for alias in option_set.split('|')]
                             for alias in aliases:  # Assign Value to all aliases
                                 preprocessed_table[table][rule_type][module_name][alias] = regex
-                                #print(f'{table},{rule_type},{module_name},{alias} = {preprocessed_table[table][rule_type][module_name][alias]}')
                 else:   # Basic Operations
                     for option_set in rule_options:  # Create alias and assign values
                         regex = rule_options[option_set]
                         aliases = [alias.strip() for alias in option_set.split('|')]
                         for alias in aliases:  # Assign Value to all aliases
                             preprocessed_table[table][rule_type][alias] = regex
-                            #print(f'{table},{rule_type},{alias} = {preprocessed_table[table][rule_type][alias]}')
         return preprocessed_table
 
-    def rename_options(self, rule):
+    def renameOptions(self, rule):
         """
         Rename rule options based on FieldsFormat mapping.
         
@@ -136,7 +144,7 @@ class IpTablesParser(ParserStrategy):
         Returns:
             RuleSet: Parsed ruleset
         """
-        with open(path, 'r') as file:
+        with open(path, 'r', encoding="utf-8") as file:
             current_table = None
             current_chain = None
             rule_id = 0
@@ -151,13 +159,13 @@ class IpTablesParser(ParserStrategy):
 
                 if line.startswith('*'):            # Start of Table
                     current_table = rules.Table(line[1:])
-                    self.ruleset.add_table(current_table)
+                    self.ruleset.addTable(current_table)
                 elif line.startswith(':'):          # Define Chain
                     chain_name = line.split()[0][1:]
                     current_chain = rules.Chain(chain_name)
-                    current_table.add_chain(current_chain)
+                    current_table.addChain(current_chain)
                 elif line.startswith('['):  # TODO REVISAR Default Policies
-                    continue 
+                    continue
                 elif line == 'COMMIT':              # End of Table
                     current_table = None
                     current_chain = None
@@ -165,17 +173,17 @@ class IpTablesParser(ParserStrategy):
                     if line.startswith('-A'):       # Append Rule to Chain
                         chain_name = line.split()[1]
                         current_chain = current_table[chain_name]
-                    current_rule = self.parse_options(line, line_num, current_table.name)
+                    current_rule = self.parseOptions(line, line_num, current_table.name)
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         rule.predicates = {k: v for k, v in current_rule.items() if k != 'decision'}
                         rule.decision = current_rule.get('decision')
-                        current_chain.add_rule(rule)
+                        current_chain.addRule(rule)
                         rule_id += 1
 
             return self.ruleset
-                        
-    def parse_options(self, line, line_num, current_table):
+
+    def parseOptions(self, line, line_num, current_table):
         """Parse options from a line of the iptables configuration
 
         Args:
@@ -242,15 +250,24 @@ class IpTablesParser(ParserStrategy):
             regex = None
             if match_modules:
                 for match_module in reversed(match_modules):
-                    regex = self.syntaxTable[current_table]['MatchModules'].get(match_module, {}).get(option)
+                    regex = self.syntax_table[current_table]['MatchModules'].get(
+                        match_module, {}
+                    ).get(option)
                     if regex is not None:
                         break
+
             if regex is None and current_prot:
-                regex = self.syntaxTable[current_table]['MatchModules'].get(current_prot, {}).get(option)
+                regex = self.syntax_table[current_table]['MatchModules'].get(
+                    current_prot, {}
+                ).get(option)
+
             if regex is None and current_extension:
-                regex = self.syntaxTable[current_table]['Extensions'].get(current_extension, {}).get(option)
+                regex = self.syntax_table[current_table]['Extensions'].get(
+                    current_extension, {}
+                ).get(option)
+
             if regex is None:
-                regex = self.syntaxTable[current_table]['BasicOperations'].get(option)
+                regex = self.syntax_table[current_table]['BasicOperations'].get(option)
 
             # Assign Rule Options
             if regex is not None:
@@ -273,27 +290,33 @@ class IpTablesParser(ParserStrategy):
                                     current_rule[option] = match.group()
                             found_match = True
                         else:  # Value does not follow regex
-                            print(f"Warning (line {line_num}): Value '{value}' does not match the expected format for option '{option}' in line: {line}")
+                            print(
+                                f"Warning (line {line_num}): Value '{value}' "
+                                f"does not match the expected format for option '{option}' "
+                                f"in line: {line}")
                             raise ValueError(f"Syntax Error in line {line_num}")
                     else:  # Value needed after option
-                        print(f"Warning (line {line_num}): Option '{option}' requires a value in line: {line}")
+                        print(
+                            f"Warning (line {line_num}): Option '{option}'" 
+                            f"requires a value in line: {line}")
                         raise ValueError(f"Syntax Error in line {line_num}")
 
-            if not found_match and option not in ["-A", "-I", "-D", "-R"]:  # Option not recognized or is a Table Op
+            # Option not recognized or is a Table Op
+            if not found_match and option not in ["-A", "-I", "-D", "-R"]:
                 print(f"Warning (line {line_num}): Unrecognized option '{option}' in line: {line}")
                 raise ValueError(f"Syntax Error in line {line_num}")
 
         # Add extension options to the main rule
         if extension_options:
             current_rule['jump_extensions'] = extension_options
-            
+
         # Rename rule options based on FieldsFormat
-        current_rule = self.rename_options(current_rule)
+        current_rule = self.renameOptions(current_rule)
 
         return current_rule
 
 
-    def get_rules(self):
+    def getRules(self):
         """
         Get all rules in RuleSet
 

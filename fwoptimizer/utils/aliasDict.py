@@ -7,23 +7,27 @@ from collections import defaultdict
 class AliasDefaultDict:
     """_summary_
     """
-    
-    def __init__(self, default_factory, initial=[]):
-        """_summary_
+
+    def __init__(self, default_factory, initial=None):
+        """
+        Create a new AliasDefaultDictionary
 
         Args:
             default_factory (_type_): _description_
             initial (list, optional): _description_. Defaults to [].
         """
+        if initial is None:
+            initial = []
+        
         self.aliases = {}
         self.data = {}
         self.factory = default_factory
         
         for aliases, value in initial:
             self[aliases] = value
-            
+
     @staticmethod
-    def distinguish_keys(key):
+    def distinguishKeys(key):
         """_summary_
 
         Args:
@@ -34,9 +38,9 @@ class AliasDefaultDict:
         """
         if isinstance(key, Iterable) and not isinstance(key, str):
             return set(key)
-        else:
-            return {key}
         
+        return {key}
+
     def __getitem__(self, key):
         """_summary_
 
@@ -46,34 +50,36 @@ class AliasDefaultDict:
         Returns:
             _type_: _description_
         """
-        keys = self.distinguish_keys(key)
+        keys = self.distinguishKeys(key)
         if keys & self.aliases.keys():
             return self.data[self.aliases[keys.pop()]]
-        else:
-            value = self.factory()
-            self[keys] = value
-            return value
-    
+
+        value = self.factory()
+        self[keys] = value
+        return value
+
     def __setitem__(self, key, value):
-        """_summary_
+        """Sets the value for the given key or keys.
 
         Args:
-            key (_type_): _description_
-            value (_type_): _description_
+            key: A single key or an iterable of keys.
+            value: The value to set.
 
         Returns:
-            _type_: _description_
+            value: The value that was set.
         """
-        keys = self.distinguish_keys(key)
+        keys = self.distinguishKeys(key)
         if keys & self.aliases.keys():
             self.data[self.aliases[keys.pop()]] = value
         else:
             new_key = object()
             self.data[new_key] = value
-            for key in keys:
-                self.aliases[key] = new_key
+            for alias in keys:
+                self.aliases[alias] = new_key
             return value
         
+        return None
+
     def __repr__(self):
         """_summary_
 
@@ -83,14 +89,14 @@ class AliasDefaultDict:
         representation = defaultdict(list)
         for alias, value in self.aliases.items():
             representation[value].append(alias)
-        return "AliasDefaultDict({}, {})".format(repr(self.factory), repr([(aliases, self.data[value]) for value, aliases in representation.items()]))
-    
+        return f"AliasDefaultDict({repr(self.factory)}, {repr([(aliases, self.data[value]) for value, aliases in representation.items()])})"
+
     def get(self, key, default=None):
         """
         AliasDefaultDict get option value
         """
-        keys = self.distinguish_keys(key)
+        keys = self.distinguishKeys(key)
         if keys & self.aliases.keys():
             return self.data[self.aliases[keys.pop()]]
-        else:
-            return default
+        
+        return default

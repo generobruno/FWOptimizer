@@ -5,6 +5,7 @@
 *.egg-info
 .*
 !.github
+!.pylintrc
 pytest_out.xml
 pylint_out.json
 __pycache__

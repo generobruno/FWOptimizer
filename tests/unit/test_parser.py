@@ -22,6 +22,8 @@ sample_input_file_path = 'tests/test_set.txt'
 
 # Test initialization
 def test_parser_initialization():
+    """_summary_
+    """
     assert 2+2 == 4
 
 

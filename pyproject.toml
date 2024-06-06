@@ -16,12 +16,14 @@ authors = [
 dependencies = [
     "graphviz>=0.20.3",
     "netaddr>=1.2.1",
-    "toml=0.10.2"
+    "toml>=0.10.2"
 ]
 
 [project.optional-dependencies]
 test = [
-    "pytest>=7.0.0"
+    "pytest>=7.0.0",
+    "pylint>=3.0.0",
+    "setuptools>=50.0.0"
 ]
 
 [tool.setuptools]

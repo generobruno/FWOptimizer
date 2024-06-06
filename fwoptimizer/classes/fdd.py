@@ -2,7 +2,7 @@
 Firewall Decision Diagram (FDD) module
 """
 
-from firewall import Field
+from classes.firewall import Field
 
 from typing import List
 import graphviz

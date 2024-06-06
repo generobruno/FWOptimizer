@@ -19,28 +19,28 @@ syntaxTable = {
 
     "filter": { 
         "BasicOperations": {    # Basic Filter Match operations
-            "-i | --in-interface": "(?:!\s*)?\w+",
-            "-o | --out-interface": "(?:!\s*)?\w+",
-            "-s | --source | --src": "(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
-            "-d | --destination | --dst": "(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
-            "-p | --protocol": "(?:!\s*)?\w+",
-            "-j | --jump": "\w+",
-            "[!]-f | -f | --fragment": "\s", 
+            "-i | --in-interface": r"(?:!\s*)?\w+",
+            "-o | --out-interface": r"(?:!\s*)?\w+",
+            "-s | --source | --src": r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
+            "-d | --destination | --dst": r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
+            "-p | --protocol": r"(?:!\s*)?\w+",
+            "-j | --jump": r"\w+",
+            "[!]-f | -f | --fragment": r"\s", 
             "-c | --set-counters": "NO_VALUE",
-            "-m | --match": "\w+"  # Match module identifier
+            "-m | --match": r"\w+"  # Match module identifier
         },
         
         "Extensions": {         # Target Match Extensions
             "LOG": { # -j LOG Extensions
-                "--log-level": "(emerg|alert|crit|error|warning|notice|info|debug|\\d+)",
-                "--log-prefix": "\"?[^\"]{0,29}\"?",
+                "--log-level": r"(emerg|alert|crit|error|warning|notice|info|debug|\d+)",
+                "--log-prefix": r"\"?[^\"]{0,29}\"?",
                 "--log-tcp-sequence": "NO_VALUE",
                 "--log-tcp-options": "NO_VALUE",
                 "--log-ip-options": "NO_VALUE",
                 "--log-uid": "NO_VALUE"
             },
             "REJECT": { # -j REJECT Extensions
-                "--reject-with": "(?:icmp-\\w+|tcp-reset|echo-reply)",
+                "--reject-with": r"(?:icmp-\w+|tcp-reset|echo-reply)",
                 "--log-tcp-sequence": "NO_VALUE",
                 "--log-tcp-option": "NO_VALUE"
             },
@@ -51,27 +51,27 @@ syntaxTable = {
         
         "MatchModules": {       # Table Match Extensions
             "multiport": {
-                "--source-port | --sport | --sports": "\\d+(?:,\\d+)*",
-                "--destination-port | --dport | --dports": "\\d+(?:,\\d+)*",
-                "--port": "\\d+(?:,\\d+)*"
+                "--source-port | --sport | --sports": r"\d+(?:,\d+)*",
+                "--destination-port | --dport | --dports": r"\d+(?:,\d+)*",
+                "--port": r"\d+(?:,\d+)*"
             },
             "tcp": {
-                "--source-port | --sport": "(?:!\s*)?\d+(?::\d+)?",
-                "--destination-port | --dport": "(?:!\s*)?\d+(?::\d+)?",
-                "--tcp-flags": "(?:!\s*)?\w+(?:,\w+)?\s*(?:(?:!\s*)?\w+(?:,\w+)?)?",
+                "--source-port | --sport": r"(?:!\s*)?\d+(?::\d+)?",
+                "--destination-port | --dport": r"(?:!\s*)?\d+(?::\d+)?",
+                "--tcp-flags": r"(?:!\s*)?\w+(?:,\w+)?\s*(?:(?:!\s*)?\w+(?:,\w+)?)?",
                 "--syn": "NO_VALUE",
-                "--tcp-option": "(?:!\s*)?\d+"
+                "--tcp-option": r"(?:!\s*)?\d+"
             },
             "udp": {
-                "--source-port | --sport": "(?:!\s*)?\d+(?::\d+)?",
-                "--destination-port | --dport": "(?:!\s*)?\d+(?::\d+)?"
+                "--source-port | --sport": r"(?:!\s*)?\d+(?::\d+)?",
+                "--destination-port | --dport": r"(?:!\s*)?\d+(?::\d+)?"
             },
             "icmp": {
-                "--icmp-type": "(?:!\s*)?\w+"
+                "--icmp-type": r"(?:!\s*)?\w+"
             },
             "limit": {
-                "--limit": "\\d+(?:/\\w+)?",
-                "--limit-burst": "\\d+"
+                "--limit": r"\d+(?:/\w+)?",
+                "--limit-burst": r"\d+"
             },
             "dstlimit": {
                 "--dstlimit": "",
@@ -84,22 +84,22 @@ syntaxTable = {
                 "--dstlimit-htable-expire": ""
             },
             "conntrack": {
-                "--ctstate": "(NEW|ESTABLISHED|RELATED|INVALID)"
+                "--ctstate": r"(NEW|ESTABLISHED|RELATED|INVALID)"
             },
             "state": {
-                "--state": "(NEW|ESTABLISHED|RELATED|INVALID)"
+                "--state": r"(NEW|ESTABLISHED|RELATED|INVALID)"
             },
             "set": {
-                "--match-set": "[\\w-]+\\s+(src|dst)(?:,\\s*(src|dst)){0,5}",
+                "--match-set": r"[\w-]+\s+(src|dst)(?:,\s*(src|dst)){0,5}",
                 "--return-nomatch": "NO_VALUE",
                 "! --update-counters": "NO_VALUE",
                 "! --update-subcounters": "NO_VALUE",
-                "[!] --packets-eq": "\\d+",
-                "--packets-lt": "\\d+",
-                "--packets-gt": "\\d+",
-                "[!] --bytes-eq": "\\d+",
-                "--bytes-lt": "\\d+",
-                "--bytes-gt": "\\d+"
+                "[!] --packets-eq": r"\d+",
+                "--packets-lt": r"\d+",
+                "--packets-gt": r"\d+",
+                "[!] --bytes-eq": r"\d+",
+                "--bytes-lt": r"\d+",
+                "--bytes-gt": r"\d+"
             },
             "mac": {
                 "--mac-source": ""
@@ -125,31 +125,31 @@ syntaxTable = {
                 "--dst-type": ""  
             },
             "iprange": {
-                "--src-range": "((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})",
-                "--dst-range": "((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
+                "--src-range": r"((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})",
+                "--dst-range": r"((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
             },
             "length": {
                 "--length": ""
             },
             "connlimit": {
-                "--connlimit-upto": "\\d+",
-                "--connlimit-above": "\\d+",
-                "--connlimit-mask": "\\d{1,3}",
+                "--connlimit-upto": r"\d+",
+                "--connlimit-above": r"\d+",
+                "--connlimit-mask": r"\d{1,3}",
                 "--connlimit-saddr": "NO_VALUE",
                 "--connlimit-daddr": "NO_VALUE"
             },
             "recent": {
-                "--name": "\\w+",
+                "--name": r"\w+",
                 "! --set | --set": "NO_VALUE",
                 "--rsource": "NO_VALUE",
                 "--rdest": "NO_VALUE",
-                "--mask": "\\d{1,3}",
+                "--mask": r"\d{1,3}",
                 "! --rcheck | --rcheck": "NO_VALUE",
                 "! --update | --update": "NO_VALUE",
                 "! --remove | --remove": "NO_VALUE",
-                "--seconds": "\\d+",
+                "--seconds": r"\d+",
                 "--reap": "NO_VALUE",
-                "--hitcount": "\\d+",
+                "--hitcount": r"\d+",
                 "--rttl": "NO_VALUE"
             }
         }
@@ -157,66 +157,66 @@ syntaxTable = {
 
     "nat": {
         "BasicOperations": {    # Basic Filter Match operations
-            "-i | --in-interface": "(?:!\s*)?\w+",
-            "-o | --out-interface": "(?:!\s*)?\w+",
-            "-s | --source | --src": "(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
-            "-d | --destination | --dst": "(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
-            "-p | --protocol": "(?:!\s*)?\w+",
-            "-j | --jump": "\w+",
-            "[!]-f | -f | --fragment": "\s", 
+            "-i | --in-interface": r"(?:!\s*)?\w+",
+            "-o | --out-interface": r"(?:!\s*)?\w+",
+            "-s | --source | --src": r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
+            "-d | --destination | --dst": r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
+            "-p | --protocol": r"(?:!\s*)?\w+",
+            "-j | --jump": r"\w+",
+            "[!]-f | -f | --fragment": r"\s", 
             "-c | --set-counters": "NO_VALUE",
-            "-m | --match": "\w+"  # Match module identifier
+            "-m | --match": r"\w+"  # Match module identifier
         },
         
         "Extensions": {         # Target Match Extensions
             "SNAT": { 
-                "--to-source": "((\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(-(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))?)(?::(\\d+)(-(\\d+)))?",
+                "--to-source": r"((\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))?)(?::(\d+)(-(\d+)))?",
                 "--random": "NO_VALUE",
                 "--random-fully": "NO_VALUE",
                 "--persistent": "NO_VALUE"
             },
             "MASQUERADE": { 
-                "--to-ports": "(\\d+)(-(\\d+))?",
+                "--to-ports": r"(\d+)(-(\d+))?",
                 "--random": "NO_VALUE",
                 "--random-fully": "NO_VALUE"
             },
             "DNAT": {
-                "--to-destination": "((\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(-(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))?)(?::(\\d+)(-(\\d+)))?",
+                "--to-destination": r"((\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))?)(?::(\d+)(-(\d+)))?",
                 "--random": "NO_VALUE",
                 "--persistent": "NO_VALUE"
             },
             "REDIRECT": {
-                "--to-ports": "(\\d+)(-(\\d+))?",
+                "--to-ports": r"(\d+)(-(\d+))?",
                 "--random": "NO_VALUE"
             },
             "BALANCE": {
-                "--to-destination": "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})-(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"
+                "--to-destination": r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
             }
         },
         
         "MatchModules": {       # Table Match Extensions
             "multiport": {
-                "--source-port | --sport | --sports": "\\d+(?:,\\d+)*",
-                "--destination-port | --dport | --dports": "\\d+(?:,\\d+)*",
-                "--port": "\\d+(?:,\\d+)*"
+                "--source-port | --sport | --sports": r"\d+(?:,\d+)*",
+                "--destination-port | --dport | --dports": r"\d+(?:,\d+)*",
+                "--port": r"\d+(?:,\d+)*"
             },
             "tcp": {
-                "--source-port | --sport": "(?:!\s*)?\d+(?::\d+)?",
-                "--destination-port | --dport": "(?:!\s*)?\d+(?::\d+)?",
-                "--tcp-flags": "(?:!\s*)?\w+(?:,\w+)?\s*(?:(?:!\s*)?\w+(?:,\w+)?)?",
+                "--source-port | --sport": r"(?:!\s*)?\d+(?::\d+)?",
+                "--destination-port | --dport": r"(?:!\s*)?\d+(?::\d+)?",
+                "--tcp-flags": r"(?:!\s*)?\w+(?:,\w+)?\s*(?:(?:!\s*)?\w+(?:,\w+)?)?",
                 "--syn": "NO_VALUE",
-                "--tcp-option": "(?:!\s*)?\d+"
+                "--tcp-option": r"(?:!\s*)?\d+"
             },
             "udp": {
-                "--source-port | --sport": "(?:!\s*)?\d+(?::\d+)?",
-                "--destination-port | --dport": "(?:!\s*)?\d+(?::\d+)?"
+                "--source-port | --sport": r"(?:!\s*)?\d+(?::\d+)?",
+                "--destination-port | --dport": r"(?:!\s*)?\d+(?::\d+)?"
             },
             "icmp": {
-                "--icmp-type": "(?:!\s*)?\w+"
+                "--icmp-type": r"(?:!\s*)?\w+"
             },
             "limit": {
-                "--limit": "\\d+(?:/\\w+)?",
-                "--limit-burst": "\\d+"
+                "--limit": r"\d+(?:/\w+)?",
+                "--limit-burst": r"\d+"
             },
             "dstlimit": {
                 "--dstlimit": "",
@@ -229,22 +229,22 @@ syntaxTable = {
                 "--dstlimit-htable-expire": ""
             },
             "conntrack": {
-                "--ctstate": "(NEW|ESTABLISHED|RELATED|INVALID)"
+                "--ctstate": r"(NEW|ESTABLISHED|RELATED|INVALID)"
             },
             "state": {
-                "--state": "(NEW|ESTABLISHED|RELATED|INVALID)"
+                "--state": r"(NEW|ESTABLISHED|RELATED|INVALID)"
             },
             "set": {
-                "--match-set": "[\\w-]+\\s+(src|dst)(?:,\\s*(src|dst)){0,5}",
+                "--match-set": r"[\w-]+\s+(src|dst)(?:,\s*(src|dst)){0,5}",
                 "--return-nomatch": "NO_VALUE",
                 "! --update-counters": "NO_VALUE",
                 "! --update-subcounters": "NO_VALUE",
-                "[!] --packets-eq": "\\d+",
-                "--packets-lt": "\\d+",
-                "--packets-gt": "\\d+",
-                "[!] --bytes-eq": "\\d+",
-                "--bytes-lt": "\\d+",
-                "--bytes-gt": "\\d+"
+                "[!] --packets-eq": r"\d+",
+                "--packets-lt": r"\d+",
+                "--packets-gt": r"\d+",
+                "[!] --bytes-eq": r"\d+",
+                "--bytes-lt": r"\d+",
+                "--bytes-gt": r"\d+"
             },
             "mac": {
                 "--mac-source": ""
@@ -270,31 +270,31 @@ syntaxTable = {
                 "--dst-type": ""  
             },
             "iprange": {
-                "--src-range": "((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})",
-                "--dst-range": "((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
+                "--src-range": r"((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})",
+                "--dst-range": r"((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-((?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
             },
             "length": {
                 "--length": ""
             },
             "connlimit": {
-                "--connlimit-upto": "\\d+",
-                "--connlimit-above": "\\d+",
-                "--connlimit-mask": "\\d{1,3}",
+                "--connlimit-upto": r"\d+",
+                "--connlimit-above": r"\d+",
+                "--connlimit-mask": r"\d{1,3}",
                 "--connlimit-saddr": "NO_VALUE",
                 "--connlimit-daddr": "NO_VALUE"
             },
             "recent": {
-                "--name": "\\w+",
+                "--name": r"\w+",
                 "! --set | --set": "NO_VALUE",
                 "--rsource": "NO_VALUE",
                 "--rdest": "NO_VALUE",
-                "--mask": "\\d{1,3}",
+                "--mask": r"\d{1,3}",
                 "! --rcheck | --rcheck": "NO_VALUE",
                 "! --update | --update": "NO_VALUE",
                 "! --remove | --remove": "NO_VALUE",
-                "--seconds": "\\d+",
+                "--seconds": r"\d+",
                 "--reap": "NO_VALUE",
-                "--hitcount": "\\d+",
+                "--hitcount": r"\d+",
                 "--rttl": "NO_VALUE"
             }
         }

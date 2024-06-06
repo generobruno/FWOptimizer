@@ -4,6 +4,9 @@
 # Generated .egg file
 *.egg-info
 .*
+!.github
+pytest_out.xml
+pylint_out.json
 __pycache__
 build
 

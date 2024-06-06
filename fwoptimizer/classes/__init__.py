@@ -1,4 +1,6 @@
-# classes Package
+"""
+classes Package
+"""
 
 # parser module
 from .parser import Parser
@@ -11,4 +13,3 @@ from .fdd import FDD, Level
 
 # firewall module
 from .firewall import Firewall, FieldList, Field
-

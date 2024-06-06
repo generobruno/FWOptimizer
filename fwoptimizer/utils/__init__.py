@@ -1,4 +1,6 @@
-# utils Package
+"""
+utils Package
+"""
 
 # AliasDict module
 from .aliasDict import AliasDefaultDict

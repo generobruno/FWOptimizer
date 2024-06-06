@@ -1,0 +1,3 @@
+[FORMAT]
+method-naming-style=camelCase
+disable=line-too-long, trailing-whitespace, fixme

@@ -2,7 +2,6 @@
 Tests for the Field, FieldList and Firewall classes
 """
 
-import pytest
 import fwoptimizer.classes.firewall as f
 
 sampleInput = 'tests/test_fdd_config.toml'
@@ -23,6 +22,3 @@ def test_fieldList():
 
         assert fields[i].getName() == expected_output[i]['name']
         assert fields[i].getType() == expected_output[i]['type']
-
-
-    

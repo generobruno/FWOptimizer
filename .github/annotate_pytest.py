@@ -1,3 +1,7 @@
+"""
+Annotate Pytest warnings and errors in github actions
+"""
+
 import xml.etree.ElementTree as ET
 
 tree = ET.parse('.github/pytest_out.xml')

@@ -11,4 +11,4 @@ def test_registry():
     
     for i in expectedRegistred:
 
-        assert i in e.ElementSetRegistry.getRegistry().keys()
+        assert i in e.ElementSetRegistry.getRegistry()

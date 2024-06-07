@@ -17,7 +17,7 @@ class ElementSetRegistry(type):
 
     _REGISTRY_ = {}
 
-    def __new__(cls, name, base, attrs):
+    def __new__(mcs, name, base, attrs):
         """_summary_
 
         Args:
@@ -29,18 +29,18 @@ class ElementSetRegistry(type):
             _type_: _description_
         """
 
-        new_cls = type.__new__(cls, name, base, attrs)
-        cls._REGISTRY_[new_cls.__name__] = new_cls
+        new_cls = type.__new__(mcs, name, base, attrs)
+        mcs._REGISTRY_[new_cls.__name__] = new_cls
         return new_cls
     
     @classmethod
-    def getRegistry(cls):
+    def getRegistry(mcs):
         """_summary_
 
         Returns:
             _type_: _description_
         """
-        return cls._REGISTRY_
+        return mcs._REGISTRY_
 
 
 
@@ -51,17 +51,17 @@ class ElementSet(metaclass = ElementSetRegistry):
     _domain_ = set()
 
     @abstractmethod
-    def __init__(self) -> None:
+    def __init__(self, values: List[str]) -> None:
         """_summary_
         """
 
     @abstractmethod
-    def addSet(self):
+    def addSet(self, otherSet: "ElementSet"):
         """_summary_
         """
 
     @abstractmethod
-    def isOverlapping(self):
+    def isOverlapping(self, otherSet: "ElementSet"):
         """_summary_
         """
 
@@ -71,12 +71,12 @@ class ElementSet(metaclass = ElementSetRegistry):
         """
 
     @abstractmethod
-    def intersectionSet(self):
+    def intersectionSet(self, otherSet: "ElementSet"):
         """_summary_
         """
 
     @abstractmethod
-    def remove(self):
+    def remove(self, otherSet: "ElementSet"):
         """_summary_
         """
 

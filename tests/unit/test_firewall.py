@@ -6,19 +6,21 @@ import fwoptimizer.classes.firewall as f
 
 sampleInput = 'tests/test_fdd_config.toml'
 
-expected_output =  [
+expectedOutput =  [
     {'name' : 'SrcIP', 'type' : 'DirSet'},
     {'name' : 'DstIP', 'type' : 'DirSet'},
     {'name' : 'Protocol', 'type' : 'ProtSet'}
 ]
 
 def test_fieldList():
+    """_summary_
+    """
 
     fieldList = f.FieldList()
     fieldList.loadConfig(sampleInput)
     fields = fieldList.getFields()
 
-    for i in range(len(fields)):
+    for i, field in enumerate(fields):
 
-        assert fields[i].getName() == expected_output[i]['name']
-        assert fields[i].getType() == expected_output[i]['type']
+        assert field.getName() == expectedOutput[i]['name']
+        assert field.getType() == expectedOutput[i]['type']

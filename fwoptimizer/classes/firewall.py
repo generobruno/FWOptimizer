@@ -8,15 +8,15 @@ class Field:
     """_summary_
     """
 
-    def __init__(self, name, type):
+    def __init__(self, fieldName, fieldType):
         """_summary_
 
         Args:
-            name (_type_): _description_
-            type (_type_): _description_
+            fieldName (_type_): _description_
+            fieldType (_type_): _description_
         """
-        self._name_ = name
-        self._type_ = type
+        self._fieldName_ = fieldName
+        self._fieldType_ = fieldType
 
     def getName(self):
         """_summary_
@@ -24,7 +24,7 @@ class Field:
         Returns:
             _type_: _description_
         """
-        return self._name_
+        return self._fieldName_
 
     def getType(self):
         """_summary_
@@ -32,7 +32,7 @@ class Field:
         Returns:
             _type_: _description_
         """
-        return self._type_
+        return self._fieldType_
 
 
 
@@ -70,8 +70,8 @@ class FieldList:
     def printCofig(self):
         """_summary_
         """
-        for i in range(len(self._fields_)):
-            print(f'{i} [{self._fields_[i].getName()}, {self._fields_[i].getType()}]')
+        for i, field in enumerate(self._fields_):
+            print(f'{i} [{field.getName()}, {field.getType()}]')
 
 
 

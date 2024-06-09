@@ -107,8 +107,7 @@ class ElementSet(metaclass = ElementSetRegistry):
         registry = ElementSetRegistry.getRegistry()
         if elementType in registry:
             return registry[elementType](values)
-        else:
-            raise TypeError()
+        raise TypeError()
 
 
 

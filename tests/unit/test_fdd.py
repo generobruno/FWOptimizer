@@ -2,10 +2,9 @@
 Tests for the Edge, Node, Level and FDD classes
 """
 
-import pytest
 import fwoptimizer.classes.fdd as fdd
-from fwoptimizer.classes.firewall import *
-from fwoptimizer.utils.elementSet import *
+from fwoptimizer.classes.firewall import Field
+from fwoptimizer.utils.elementSet import DirSet
 
 
 def test_edge():
@@ -83,3 +82,4 @@ def test_node():
 
     assert n1 not in lvl1.getNodes()
     assert n2 not in lvl2.getNodes()
+

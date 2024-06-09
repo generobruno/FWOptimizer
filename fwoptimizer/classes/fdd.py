@@ -3,12 +3,12 @@ Firewall Decision Diagram (FDD) module
 """
 
 from typing import List
-
-from fwoptimizer.classes.firewall import *
-from fwoptimizer.classes.rules import *
-from fwoptimizer.utils.elementSet import *
-
 import graphviz
+
+from fwoptimizer.classes.firewall import Field, FieldList
+from fwoptimizer.classes.rules import Chain
+from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
+
 
 class Level:
     """
@@ -326,11 +326,11 @@ class FDD:
 
         dot = graphviz.Digraph()
             
-        for i in range(len(self._levels_)):
+        for level in self._levels_:
 
-            for j in range(len(self._levels_[i].getNodes())):
+            for node in level.getNodes():
 
-                dot.node(self._levels_[i].getNodes()[j].getName(), weight=str(j))    
+                dot.node(node.getName())    
 
         for level in self._levels_:
 

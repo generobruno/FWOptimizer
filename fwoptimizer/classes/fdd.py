@@ -4,23 +4,25 @@ Firewall Decision Diagram (FDD) module
 
 from typing import List
 
-from fwoptimizer.classes.firewall import Field
+from fwoptimizer.classes.firewall import *
+from fwoptimizer.classes.rules import *
+from fwoptimizer.utils.elementSet import *
+
+import graphviz
 
 class Level:
     """
     Represents a level in the node hierarchy.
     """
-    def __init__(self, name: str, field: Field):
+    def __init__(self, field: Field):
         """
         Create a new Level
 
         Args:
-            name (str): Name of the Level
             field (Field): Field of the Level
         """
         if not isinstance(field, Field):
             raise ValueError("Domain of Level should be of Field Class.")
-        self._name_ = name        # Name of the Level
         self._field_ = field      # Domain of the Level
         self._nodes_ = []         # List of Nodes in the Level
 
@@ -50,6 +52,15 @@ class Level:
             List: Nodes for this level
         """
         return self._nodes_
+    
+    def getField(self):
+        """
+        Return the field for this level
+
+        Returns:
+            Field: The field of this level
+        """
+        return self._field_
 
 
 class Node:
@@ -105,13 +116,25 @@ class Node:
         Return the list of outgoings edges
         """
         return self._outgoing_
+    
+    def getLevel(self):
+        """
+        Return the level for this node
+        """
+        return self._level_
+    
+    def getName(self):
+        """
+        Return the name of this node
+        """
+        return self._name_
 
 
 class Edge:
     """
     Edge Class
     """
-    def __init__(self, origin: Node, destination: Node, node_id, **attrs) -> None:
+    def __init__(self, node_id, origin: Node, destination: Node, elementSet: ElementSet, **attrs) -> None:
         """
         Create a new Edge
 
@@ -124,6 +147,8 @@ class Edge:
         self._id_: int = node_id
         self._origin_: Node = origin
         self._destination_: Node = destination
+        self._elementSet_ = elementSet
+        self._markedAny_ = False
         self._attributes_ = attrs if attrs else {}
 
     def __repr__(self) -> str:
@@ -142,9 +167,11 @@ class Edge:
         Args:
             other (Edge): Edge to compare
         """
-        return (self._origin_ == other.getOrigin() and
+        return (self._id_ == other.getId() and
+                self._origin_ == other.getOrigin() and
                 self._destination_ == other.getDestination() and
-                self._id_ == other.getId())
+                self._elementSet_ == other.getElementSet()
+                )
 
     def __hash__(self):
         """
@@ -177,7 +204,7 @@ class Edge:
         Returns:
             Edge: Edge to copy
         """
-        return Edge(self._origin_, self._destination_, self._id_, **self._attributes_)
+        return Edge(self._id_, self._origin_, self._destination_, self._elementSet_.replicate(),**self._attributes_)
 
     def setOrigin(self, origin: "Node"):
         """
@@ -214,8 +241,112 @@ class Edge:
             int: Edge id
         """
         return self._id_
+    
+    def getElementSet(self):
+        """
+        Return the elementSet of this Edge
+
+        Returns:
+            ElementSet: Edge elementSet
+        """
+        return self._elementSet_
 
 class FDD:
-    """_summary_
     """
-    
+    Fdd class
+    """
+
+    def __init__(self):
+        """_summary_
+        """
+        self._levels_ = []
+        # Un diccionario de decisiones, deberíamos ver bien como tratarlo en el futuro
+        self._decisions_ = {}
+
+    def genPre(self, fieldList: FieldList, chain: Chain):
+        """sumary
+        """
+
+        # Primero creamos la lista de niveles del arbol, usando las configuraciones extraidas de la FieldList
+        # Lanzamos un Type error si alguno de los tipos especificados para el nivel no es valido (no existe su ElementSet correspondiente)
+        for field in fieldList.getFields():
+
+            if field.getType() in ElementSetRegistry.getRegistry():
+
+                self._levels_.append(Level(field))
+            
+            else:
+
+                raise TypeError()
+            
+        # Creamos el ultimo nivel, que corresponde a los nodos hoja y equivalen a las decisiones del FDD
+        self._levels_.append(Level(Field('Decision', 'Decision')))
+
+        # Creamos un unico nodo root en el primer nivel del arbol.
+        root = Node(self._levels_[0].getField().getName(), self._levels_[0])
+        root.autoConnect()
+        
+        # Recorremos la lista de Rules
+        for rule in chain.getRules():
+
+            # Creamos una lista de Nodos temporal, que usaremos para conectar los edges en un bucle
+            # La lista se inicia con el nodo root
+            nodes = [self._levels_[0].getNodes()[0]]
+
+            #Agregamos un nodo por cada nivel, exptuando el primero y el ultimo
+            for level in self._levels_[1:-1]:
+
+                newNode = Node(f"{level.getField().getName()}_{rule.getId()}", level)
+                newNode.autoConnect()
+                nodes.append(newNode)
+
+            # Revisamos la decision de la regla, si ya existe un nodo en el diccionario de decisiones para dicha decision, lo usamos
+            # Si no existe, creamos el nodo y lo agregamos tanto al arbol como al diccionario de decisiones
+            decision = rule.getDecision()
+            if decision in self._decisions_:
+                nodes.append(self._decisions_[decision])
+            else:
+                self._decisions_[decision] = Node(decision, self._levels_[-1])
+                self._decisions_[decision].autoConnect()
+                nodes.append(self._decisions_[decision])
+
+            # Recorremos la lista temporal de nodos y vamos añadiendo los Edges que los conectan
+            for j in range(1, len(nodes)):
+
+                elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
+                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
+                newEdge = Edge(rule.getId(), nodes[j-1], nodes[j], elementSet)
+                newEdge.autoConnect()
+
+
+
+    def printFDD(self, name: str):
+        """sumary
+        """
+
+        dot = graphviz.Digraph()
+            
+        for i in range(len(self._levels_)):
+
+            for j in range(len(self._levels_[i].getNodes())):
+
+                dot.node(self._levels_[i].getNodes()[j].getName(), weight=str(j))    
+
+        for level in self._levels_:
+
+            for node in level.getNodes():
+
+                for edge in node.getOutgoing():
+
+                    dot.edge(edge.getOrigin().getName(), edge.getDestination().getName(), label=str(str(edge.getId()) + str(edge.getElementSet().getElementsList())))    
+
+        dot.render(name, format='png', view=False, cleanup=True)
+
+
+
+        
+            
+        
+
+
+        

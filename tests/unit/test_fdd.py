@@ -4,7 +4,8 @@ Tests for the Edge, Node, Level and FDD classes
 
 import pytest
 import fwoptimizer.classes.fdd as fdd
-from fwoptimizer.classes.firewall import Field
+from fwoptimizer.classes.firewall import *
+from fwoptimizer.utils.elementSet import *
 
 
 def test_edge():
@@ -13,20 +14,22 @@ def test_edge():
 
     f1 = Field("IPSrc", "DirSet")
 
-    lvl1 = fdd.Level("uno",f1)
-    lvl2 = fdd.Level("dos", f1)
+    lvl1 = fdd.Level(f1)
+    lvl2 = fdd.Level(f1)
 
     n1 = fdd.Node("a", lvl1)
     n2 = fdd.Node("a", lvl2)
 
-    e1 = fdd.Edge(n1, n2, 1)
-    e2 = fdd.Edge(n1, n2, 1)
-    e3 = fdd.Edge(n1, n2, 2)
-    e4 = e3.replicate()
+    e1 = fdd.Edge(1, n1, n2, DirSet(['0.0.10.0/24']))
+    e2 = fdd.Edge(1, n1, n2, DirSet(['0.0.10.0/24']))
+    e3 = fdd.Edge(1, n1, n2, DirSet(['0.0.11.0/24']))
+    e4 = fdd.Edge(2, n1, n2, DirSet(['0.0.12.0/24']))
+    e5 = e4.replicate()
 
     assert e1 == e2
     assert e1 != e3
-    assert e3 == e4
+    assert e1 != e4
+    assert e4 == e5
 
     assert e1 not in n1.getOutgoing()
     assert e1 not in n2.getIncoming()
@@ -58,8 +61,8 @@ def test_node():
 
     f1 = Field("IPSrc", "DirSet")
 
-    lvl1 = fdd.Level("uno",f1)
-    lvl2 = fdd.Level("dos", f1)
+    lvl1 = fdd.Level(f1)
+    lvl2 = fdd.Level(f1)
 
     n1 = fdd.Node("a", lvl1)
     n2 = fdd.Node("a", lvl2)

@@ -1,7 +1,8 @@
 """_summary_
 """
 
-import fwoptimizer.utils.elementSet as e
+from fwoptimizer.utils.elementSet import *
+
 
 def test_registry():
     """_summary_
@@ -11,4 +12,32 @@ def test_registry():
     
     for i in expectedRegistred:
 
-        assert i in e.ElementSetRegistry.getRegistry()
+        assert i in ElementSetRegistry.getRegistry()
+
+
+def test_createElementSet():
+    """
+    sumary
+    """
+
+    dir = ElementSet.createElementSet('DirSet', ['0.0.10.0/24'])
+    prot = ElementSet.createElementSet('ProtSet', ['TCP'])
+
+    assert isinstance(dir, DirSet)
+    assert isinstance(prot, ProtSet)
+
+    dcomp1 = DirSet(['0.0.10.0/24'])
+    dcomp2 = DirSet(['0.0.11.0/24'])
+
+    assert dir == dcomp1
+    assert dir != dcomp2
+
+    pcomp1 = ProtSet(['TCP'])
+    pcomp2 = ProtSet(['UDP'])
+
+    assert prot == pcomp1
+    assert prot != pcomp2
+
+    
+
+    

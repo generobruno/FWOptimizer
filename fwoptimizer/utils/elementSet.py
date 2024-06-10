@@ -56,6 +56,10 @@ class ElementSet(metaclass = ElementSetRegistry):
         """
 
     @abstractmethod
+    def __eq__(self, value: object) -> bool:
+        pass
+
+    @abstractmethod
     def addSet(self, otherSet: "ElementSet"):
         """_summary_
         """
@@ -90,6 +94,22 @@ class ElementSet(metaclass = ElementSetRegistry):
         """_summary_
         """
 
+    @abstractmethod
+    def replicate(self):
+        """_summary_
+        """
+
+    @classmethod
+    def createElementSet(cls, elementType: str, values: List[str]):
+        """
+        sumary
+        """
+        registry = ElementSetRegistry.getRegistry()
+        if elementType in registry:
+            return registry[elementType](values)
+        raise TypeError()
+
+
 
 class DirSet(ElementSet):
     """_summary_
@@ -112,6 +132,15 @@ class DirSet(ElementSet):
         self._elements = nt.IPSet()
         for value in values:
             self._elements.add(value)
+
+    def __eq__(self, other: "DirSet") -> bool:
+        """
+        DirSet __eq__
+
+        Args:
+            other (DirSet): DirSet to compare
+        """
+        return self._elements == other.getElements()
 
     def addSet(self, otherSet: "DirSet") -> None:
         """_summary_
@@ -175,6 +204,15 @@ class DirSet(ElementSet):
         """
         return [str(net) for net in self._elements.iter_cidrs()] 
     
+    def replicate(self):
+        """
+        Duplicate the DirSet and its info
+
+        Returns:
+            DirSet: Copied DirSet
+        """
+        return DirSet(self.getElementsList())
+    
 
 
 class ProtSet(ElementSet):
@@ -196,6 +234,15 @@ class ProtSet(ElementSet):
             values (List[str]): _description_
         """
         self._elements = set(values)
+
+    def __eq__(self, other: "ProtSet") -> bool:
+        """
+        PrtoSet __eq__
+
+        Args:
+            other (ProtSet): ProtSet to compare
+        """
+        return self._elements == other.getElements()
 
     def addSet(self, otherSet: "ProtSet") -> None:
         """_summary_
@@ -258,3 +305,12 @@ class ProtSet(ElementSet):
             _type_: _description_
         """
         return list(self._elements)
+    
+    def replicate(self):
+        """
+        Duplicate the ProtSet and its info
+
+        Returns:
+           ProtSet: Copied ProtSet
+        """
+        return ProtSet(self.getElementsList())

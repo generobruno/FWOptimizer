@@ -340,8 +340,8 @@ FieldsFormat = {
     # Filter
     "-i | --in-interface": "InInterface",
     "-o | --out-interface": "OutInterface",
-    "-s | --source | --src": "SrcIp",
-    "-d | --destination | --dst": "DstIp",
+    "-s | --source | --src": "SrcIP",
+    "-d | --destination | --dst": "DstIP",
     "-p | --protocol": "Protocol",
     "--source-port | --sport | --sports": "SrcPort",
     "--destination-port | --dport | --dports": "DstPort",

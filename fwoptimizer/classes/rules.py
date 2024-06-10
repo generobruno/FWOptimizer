@@ -28,6 +28,16 @@ class Rule:
             str: Rule String representation
         """
         return f"Rule {self.id}: {self.predicates} -> {self.decision}"
+    
+    def setPredicate(self, fieldName, value):
+        """sumary
+        """
+        self.predicates[fieldName] = value
+
+    def setDecision(self, decision):
+        """sumary
+        """
+        self.decision = decision
 
     def getOption(self, option):
         """
@@ -104,6 +114,15 @@ class Chain:
             rule (Rule): Rule to add
         """
         self.rules.append(rule)
+
+    def getRules(self):
+        """
+        Return the list of rules for this chain
+        
+        Returns:
+            List<Rule>: list of rules
+        """
+        return self.rules
 
 class Table:
     """

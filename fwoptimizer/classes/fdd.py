@@ -204,6 +204,7 @@ class Edge:
         self._destination_: Node = destination
         self._elementSet_ = elementSet
         self._markedAny_ = False
+        self._load_ = 0 #TODO Revisar, quizas no hace falta markedAny, ya que un arco marcado tiene load = 1
         self._attributes_ = attrs if attrs else {}
 
     def __repr__(self) -> str:
@@ -269,6 +270,15 @@ class Edge:
             mark (bool, optional): Value to set the Marked attribute. Defaults to True.
         """
         self._markedAny_ = mark
+        
+    def getMarking(self):
+        """
+        Get Edge Marking
+
+        Returns:
+            markedAny (bool): Marking of the Edge
+        """
+        return self._markedAny_
 
     def setOrigin(self, origin: "Node"):
         """
@@ -649,55 +659,37 @@ class FDD:
         Since all the edge's labels do not change, the semantics of a marked and a non-marked FDD are the same.
         """
         # Step 1: Initialize the load of each terminal node to 1
-        for level in self._levels_: #TODO CAMBIAR, SOLO EL ULTIMO NIVEL TIENE NODOS TERMINALES
-            for node in level.getNodes():
-                if not node.getOutgoing():
-                    node.load = 1
-        
+        last_level = self._levels_[-1]  # Last Level has terminal Nodes
+        for node in last_level.getNodes():
+            if not node.getOutgoing():
+                node.setLoad(1)
+
         # Step 2: Compute the load for non-terminal nodes
         changed = True
         while changed:
             changed = False
             for level in self._levels_:
                 for node in level.getNodes():
-                    if node.load == 0 and all(dest.load != 0 for dest in (e.destination for e in node.outgoing)):
-                        # (a) Select the edge with the largest (load(e_j)-1) * load(v_j)
-                        best_edge = max(node.outgoing, key=lambda e: (e.destination.load - 1) * e.destination.load)
+                    if node.getLoad() == 0 and all(dest.getLoad() != 0 for dest in (e.getDestination() for e in node.getOutgoing())):
+                        # (a) Select the edge with the largest (load(e_j) - 1) * load(v_j)
+                        best_edge = max(node.getOutgoing(), key=lambda e: (self._edgeLoad(e) - 1) * e.getDestination().getLoad())
                         best_edge.markEdge()
+                        print(f'Marking Edge {best_edge}')
+                        best_edge.setAttributes(color='blue')
+
                         # (b) Compute the load of v
-                        node.load = sum((e.destination.load if e.marked_all else self._loadInterval(e)) * e.destination.load
-                                        for e in node.outgoing)
+                        node_load = sum(self._edgeLoad(e) * e.getDestination().getLoad() for e in node.getOutgoing())
+                        node.setLoad(node_load)
                         changed = True
                         
-    def _loadInterval(self, edge):
+    def _edgeLoad(self, edge):
         """
-        Compute the load of an edge based on its interval label.
+        Compute the load of an edge based on its marking and its element set.
         """
-        # Assuming edge.attributes contains the interval information, for example, as a list of ranges
-        intervals = edge.attributes.get("intervals", []) #TODO Buscar intervalos en el arco
-        return self._calculateLoad(intervals)
-    
-    def _calculateoad(self, intervals):
-        """
-        Calculate the load of a set of intervals.
-        This function computes the minimum number of non-overlapping intervals that cover the set.
-        """
-        if not intervals:
-            return 0
-
-        # Sort intervals by starting point
-        intervals.sort()
-        non_overlapping_count = 0
-        current_end = -float('inf')
-        
-        for start, end in intervals:
-            if start > current_end:
-                non_overlapping_count += 1
-                current_end = end
-            else:
-                current_end = max(current_end, end)
-        
-        return non_overlapping_count
+        if edge.getMarking():
+            return 1
+        else:
+            return len(edge.getElementSet().getElementsList()) #TODO Revisar si esto esta bien o hay que calcularlo de otra forma
 
         
             

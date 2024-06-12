@@ -80,6 +80,7 @@ class Node:
         """
         self._level_: Level = level
         self._name_: str = name
+        self._load_ : int = 0
         self._attributes_ = attrs if attrs else {}
         self._incoming_: List[Edge] = []
         self._outgoing_: List[Edge] = []
@@ -104,6 +105,26 @@ class Node:
         Remove Node from its Level list
         """
         self._level_.delNodeFromLvl(self)
+        
+    def addIncoming(self, incoming: "Edge"):
+        """
+        Add edge to the incoming incidence of the
+        Node
+
+        Args:
+            incoming (Edge): Edge to add
+        """
+        self._incoming_.append(incoming)
+        
+    def addOutgoing(self, outgoing: "Edge"):
+        """
+        Add edge to the outgoing incidence of the
+        Node
+
+        Args:
+            outgoinging (Edge): Edge to add
+        """
+        self._outgoing_.append(outgoing)
 
     def getIncoming(self):
         """
@@ -122,6 +143,40 @@ class Node:
         Return the level for this node
         """
         return self._level_
+    
+    def getAttributes(self, attr_name=None):
+        """
+        Return the Node attributes or a specific attribute if specified
+
+        Args:
+            attr_name (str, optional): The name of the attribute to get. 
+                                       Defaults to None.
+
+        Returns:
+            dict or any: The Node attributes or the value of the specified attribute.
+        """
+        if attr_name is None:
+            return self._attributes_
+        else:
+            return self._attributes_.get(attr_name, None)
+        
+    def getLoad(self):
+        """
+        Get The Node's Load
+
+        Returns:
+            load (int): Node's Load
+        """
+        return self._load_
+    
+    def setLoad(self, load:int):
+        """
+        Set the Node' Load
+
+        Args:
+            load (int): New Node's Load
+        """
+        self._load_ = load
     
     def getName(self):
         """
@@ -205,6 +260,15 @@ class Edge:
             Edge: Edge to copy
         """
         return Edge(self._id_, self._origin_, self._destination_, self._elementSet_.replicate(),**self._attributes_)
+    
+    def markEdge(self, mark:bool=True):
+        """
+        Set Edge Marked attribute
+
+        Args:
+            mark (bool, optional): Value to set the Marked attribute. Defaults to True.
+        """
+        self._markedAny_ = mark
 
     def setOrigin(self, origin: "Node"):
         """
@@ -224,6 +288,15 @@ class Edge:
         """
         return self._origin_
     
+    def setDestination(self, destination: "Node"):
+        """
+        Set the Edge destination Node
+
+        Args:
+            destination (Node): Destination Node
+        """
+        self._destination_ = destination
+    
     def getDestination(self):
         """
         Return the Edge destination node
@@ -242,6 +315,31 @@ class Edge:
         """
         return self._id_
     
+    def getAttributes(self, attr_name=None):
+        """
+        Return the Edge attributes or a specific attribute if specified
+
+        Args:
+            attr_name (str, optional): The name of the attribute to get. 
+                                       Defaults to None.
+
+        Returns:
+            dict or any: The Edge attributes or the value of the specified attribute.
+        """
+        if attr_name is None:
+            return self._attributes_
+        else:
+            return self._attributes_.get(attr_name, None)
+        
+    def setAttributes(self, **new_attrs):
+        """
+        Update the Node attributes with new values.
+
+        Args:
+            new_attrs: New attributes to update.
+        """
+        self._attributes_.update(new_attrs)
+    
     def getElementSet(self):
         """
         Return the elementSet of this Edge
@@ -250,16 +348,25 @@ class Edge:
             ElementSet: Edge elementSet
         """
         return self._elementSet_
+    
+    def setElementSet(self, elementSet: ElementSet):
+        """
+        Set the Edge's ElementSet
+
+        Args:
+            elementSet (ElementSet): New ElementSet
+        """
+        self._elementSet_ = elementSet
 
 class FDD:
     """
     Fdd class
     """
 
-    def __init__(self):
+    def __init__(self, levels=None):
         """_summary_
         """
-        self._levels_ = []
+        self._levels_ = levels if levels else []
         # Un diccionario de decisiones, deberíamos ver bien como tratarlo en el futuro
         self._decisions_ = {}
 
@@ -329,7 +436,7 @@ class FDD:
         for level in self._levels_:
 
             for node in level.getNodes():
-
+                
                 dot.node(node.getName())    
 
         for level in self._levels_:
@@ -337,12 +444,260 @@ class FDD:
             for node in level.getNodes():
 
                 for edge in node.getOutgoing():
-
-                    dot.edge(edge.getOrigin().getName(), edge.getDestination().getName(), label=str(str(edge.getId()) + str(edge.getElementSet().getElementsList())))    
+                    
+                    origin_name = edge.getOrigin().getName()
+                    destination_name = edge.getDestination().getName()
+                    label = f"{edge.getId()},{edge.getElementSet().getElementsList()}"
+                    edge_attributes = edge.getAttributes()
+                    
+                    # Include the additional attributes in the label if needed
+                    dot.edge(origin_name, destination_name, label=label, _attributes=edge_attributes)
+                    
+        print(f'\n{dot}')
 
         dot.render(name, format='png', view=False, cleanup=True)
 
 
+    def reduction(self):
+        """
+        Reduce the FDD by applying the 3 reductions:
+            1. If there is a node v that has only one outgoing edge e, assuming e points to node
+            v', then remove both node v and edge e, and let all the edges that point to v point
+            to v'.
+            2. If there are two nodes v and v' that are isomorphic, then remove v' together with
+            all its outgoing edges, and let all the edges that point to v point to v'
+            3. If there are two edges e and e' that both are between the same pair of nodes, then
+            remove e' and change the label of e from I(e) to I(e) U I(e').
+            
+        An FDD f is reduced if it satisﬁes all of the following three conditions:
+            1. No node in f has only one outgoing edge.
+            2. No two nodes in f are isomorphic.
+            3. No two nodes have more than one edge between them.
+        """
+        changed = True
+        while changed:
+            changed = False
+            changed |= self._removeSimpleNodes()
+            changed |= self._removeIsomorphicNodes()
+            changed |= self._mergeEdges()
+            
+    def _removeSimpleNodes(self):
+        """
+        Apply the first reduction rule:
+        If there is a node v that has only one outgoing edge e, assuming e points to node
+        v', then remove both node v and edge e, and let all the edges that point to v point
+        to v'.
+        """
+        changed = False
+        for level in self._levels_:
+            nodes_to_remove = []
+            for node_v in level.getNodes():
+                v_out = node_v.getOutgoing()
+                if len(v_out) == 1:  # Simple Node
+                    print(f"REMOVING SIMPLE NODE {node_v}")
+                    e = v_out[0]    # Get the edge
+                    v_prime = e.getDestination()
+                    incoming_edges = list(node_v.getIncoming())  # Make a copy of the list to iterate safely
+                    
+                    for incoming_edge in incoming_edges:
+                        # All edges now point to Node v'
+                        incoming_edge.autoDisconnect()
+                        incoming_edge.setDestination(v_prime)
+                        print(f'\tAdding {incoming_edge} to incoming edges of {v_prime}')
+                        print(f'\t\tEdge {incoming_edge} label: {incoming_edge.getElementSet().getElements()}')
+                        incoming_edge.autoConnect() 
+                    
+                    # Mark Node v for removal
+                    nodes_to_remove.append(node_v)
+                    print(f'\tMarked {node_v} for removal from {level.getField().getName()} Level')
+                    changed = True
+            
+            # Remove all marked nodes after iteration
+            for node in nodes_to_remove:
+                node.autoDisconnect()
+                print(f'\tRemoved Simple node {node} from {level.getField().getName()} Level')
+        
+        return changed
+            
+    def _removeIsomorphicNodes(self):
+        """
+        Apply the second reduction rule:
+        If there are two nodes v and v' that are isomorphic, then remove v' along with all 
+        its outgoing edges, and make all edges that pointed to v' now point to v.
+        """
+        changed = False
+        for level in self._levels_:
+            nodes_to_remove = []
+            
+            # Convert nodes list to a temporary list to avoid modification issues
+            nodes = list(level.getNodes())
+            
+            # Check consecutive Nodes using indices
+            for i in range(len(nodes)):
+                node_v = nodes[i]
+                for j in range(i + 1, len(nodes)):
+                    node_v_prime = nodes[j]
+                    # Check if Nodes are Isomorphic
+                    if self._areIsomorphic(node_v, node_v_prime):
+                        print(f'\tREMOVING ISOMORPHIC NODES {node_v} - {node_v_prime}')
+                        
+                        # v_prime Edges now point to v
+                        print(f'\t{node_v_prime} Edges now point to {node_v}:')
+                        for incoming_edge in node_v_prime.getIncoming():
+                            incoming_edge.setDestination(node_v)
+                            print(f'\tUpdated Edge {incoming_edge}')
+                            incoming_edge.autoConnect()
+                        
+                        # Remove v_prime's outgoing incidence #TODO REVISAR SI HACERLO ACA O FUERA DEL LOOP
+                        for edge in node_v_prime.getIncoming():
+                            edge.autoDisconnect()
+                        
+                        # Mark node_v_prime for removal
+                        nodes_to_remove.append(node_v_prime)
+                        changed = True
+            
+            # Remove all marked nodes after iteration
+            for node in nodes_to_remove:
+                if node in level.getNodes():
+                    node.autoDisconnect()
+                    print(f'Removed Isomorphic node {node} from {level.getField().getName()} Level')
+        
+        return changed
+        
+    def _mergeEdges(self):
+        """
+        Apply the third reduction rule:
+        If there are two edges e and e' that both are between the same pair of nodes, then
+        remove e' and change the label of e from I(e) to I(e) U I(e').
+        """
+        changed = False
+        for level in self._levels_:
+            for node in level.getNodes():
+                seen_edges = {}
+                for edge in node.getOutgoing():
+                    # Pair of nodes
+                    key = (edge.getOrigin(), edge.getDestination())
+                    if key in seen_edges:
+                        seen_edge = seen_edges[key]
+                        # Merge element sets
+                        print(f'MERGING edges {seen_edge} and {edge}: '
+                              f'{seen_edge.getElementSet().getElements()} U {edge.getElementSet().getElements()}')
+                        seen_edge.setElementSet(seen_edge.getElementSet().unionSet(edge.getElementSet()))
+                        edge.autoDisconnect()
+                        changed = True
+                    else:
+                        seen_edges[key] = edge
+        return changed
+        
+    def _areIsomorphic(self, node_a: Node, node_b: Node) -> bool:
+        """
+        Check if two Nodes are isomorphic.
+        
+        Two nodes v and v' in an FDD are isomorphic if and only if
+        v and v' satisfy one of the following two conditions:
+            1. Both v and v' are terminal nodes with identical
+            labels.
+            2. Both v and v' are non-terminal nodes and there is
+            a one-to-one correspondence between the outgoing edges 
+            of v and the outgoing edges of v' such that every pair 
+            of corresponding edges have identical labels and they 
+            both point to the same node.
+
+        Args:
+            node_a (Node): Node A to compare
+            node_b (Node): Node B to compare
+
+        Returns:
+            bool: True if both nodes are isomorphic
+        """
+        print(f'Checking ISOMORPHISM between {node_a} and {node_b}')
+        if len(node_a.getOutgoing()) == 0 or len(node_a.getOutgoing()) != len(node_b.getOutgoing()):
+            return False
+        
+        for edge_v in node_a.getOutgoing():
+            match = False
+            for edge_v_prime in node_b.getOutgoing():
+                print(f'\t{edge_v}: {edge_v.getElementSet().getElements()}\n'
+                      f'\t{edge_v_prime}: {edge_v_prime.getElementSet().getElements()}')
+                if (edge_v.getDestination() == edge_v_prime.getDestination() 
+                    and edge_v.getElementSet() == edge_v_prime.getElementSet()): #TODO REVISAR OTRA COSA?
+                    match = True
+                else:
+                    match = False
+                    break
+            if not match:
+                return False
+        
+        return True
+    
+
+    def marking(self):
+        """
+        Compute the load for each node in the FDD.
+            1. Compute the load of each terminal node v in f as follows: load(v) := 1
+            2. WHILE 
+            there is a node v whose load has not yet been computed, suppose v has k
+            out edges e_1, ..., e_k and these edges point to nodes v_1, ..., v_k respectively,
+            and the loads of these k nodes have been computed
+            DO
+                a. Among the k edges e_1, ..., e_k, choose an edge e_j with the largest values
+                of (load(e_j) - 1) * load(v_j), and mark edge e_j with "all"
+                b. Compute the load of v as follows: load(v) := Sum (from i=1 to i=k) (load(e_i) * load(v_i))
+            END
+            
+        In a Marked version of an FDD exactly one outgoing edge of each non-terminal node is marked "All" (or "Any").
+        Since all the edge's labels do not change, the semantics of a marked and a non-marked FDD are the same.
+        """
+        # Step 1: Initialize the load of each terminal node to 1
+        for level in self._levels_: #TODO CAMBIAR, SOLO EL ULTIMO NIVEL TIENE NODOS TERMINALES
+            for node in level.getNodes():
+                if not node.getOutgoing():
+                    node.load = 1
+        
+        # Step 2: Compute the load for non-terminal nodes
+        changed = True
+        while changed:
+            changed = False
+            for level in self._levels_:
+                for node in level.getNodes():
+                    if node.load == 0 and all(dest.load != 0 for dest in (e.destination for e in node.outgoing)):
+                        # (a) Select the edge with the largest (load(e_j)-1) * load(v_j)
+                        best_edge = max(node.outgoing, key=lambda e: (e.destination.load - 1) * e.destination.load)
+                        best_edge.markEdge()
+                        # (b) Compute the load of v
+                        node.load = sum((e.destination.load if e.marked_all else self._loadInterval(e)) * e.destination.load
+                                        for e in node.outgoing)
+                        changed = True
+                        
+    def _loadInterval(self, edge):
+        """
+        Compute the load of an edge based on its interval label.
+        """
+        # Assuming edge.attributes contains the interval information, for example, as a list of ranges
+        intervals = edge.attributes.get("intervals", []) #TODO Buscar intervalos en el arco
+        return self._calculateLoad(intervals)
+    
+    def _calculateoad(self, intervals):
+        """
+        Calculate the load of a set of intervals.
+        This function computes the minimum number of non-overlapping intervals that cover the set.
+        """
+        if not intervals:
+            return 0
+
+        # Sort intervals by starting point
+        intervals.sort()
+        non_overlapping_count = 0
+        current_end = -float('inf')
+        
+        for start, end in intervals:
+            if start > current_end:
+                non_overlapping_count += 1
+                current_end = end
+            else:
+                current_end = max(current_end, end)
+        
+        return non_overlapping_count
 
         
             

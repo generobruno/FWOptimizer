@@ -78,6 +78,11 @@ class ElementSet(metaclass = ElementSetRegistry):
     def intersectionSet(self, otherSet: "ElementSet"):
         """_summary_
         """
+        
+    @abstractmethod
+    def unionSet(self, otherSet: "ElementSet"):
+        """_summary_
+        """
 
     @abstractmethod
     def remove(self, otherSet: "ElementSet"):
@@ -180,6 +185,17 @@ class DirSet(ElementSet):
         """
         return DirSet([str(x) for x in self._elements.intersection(otherSet.getElements())])
     
+    def unionSet(self, otherSet: "DirSet"):
+        """_summary_
+
+        Args:
+            otherSet (ElementSet): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        return DirSet([str(x) for x in self._elements.union(otherSet.getElements())])
+    
     def remove(self, otherSet: "DirSet") -> None:
         """_summary_
 
@@ -281,6 +297,17 @@ class ProtSet(ElementSet):
             ProtSet: _description_
         """
         return ProtSet([str(x) for x in self._elements & otherSet.getElements()])
+    
+    def unionSet(self, otherSet: "ProtSet"):
+        """_summary_
+
+        Args:
+            otherSet (ProtSet): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        return ProtSet([str(x) for x in self._elements | otherSet.getElements()])
     
     def remove(self, otherSet: "ProtSet") -> None:
         """_summary_

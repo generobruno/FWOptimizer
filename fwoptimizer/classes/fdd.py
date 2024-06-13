@@ -6,7 +6,7 @@ from typing import List
 import graphviz
 
 from fwoptimizer.classes.firewall import Field, FieldList
-from fwoptimizer.classes.rules import Chain
+from fwoptimizer.classes.rules import Chain, Rule
 from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
 
 
@@ -690,10 +690,95 @@ class FDD:
             return 1
         else:
             return len(edge.getElementSet().getElementsList()) #TODO Revisar si esto esta bien o hay que calcularlo de otra forma
-
         
+    def firewallGen(self) -> Chain:
+        """
+        Generate a sequence of rules from the FDD, equivalent to this one,
+        and then compact this set of rules.
+        
+        ---------------------------------------------------------------------------------------------
+        
+        The first step (FIREWALL GENERATION) is done making a depth-first traversal of 
+        the FDD f, such that for each non-terminal node v, the outgoing edge marked 
+        "All" (or "Any") of v is traversed after all the other outgoing edges of v have 
+        been traversed.
+        Whenever a terminal node is encountered, assuming <v_1 e_1 ... v_k e_k v_k+1> is
+        the decision path where for every i (1 <= i <= k), e_i is the most recently traversed
+        outgoing edge of node v_i, output a rule r as follows:
             
+            F_1 ∈ S_1 ∧ ... ∧ F_d ∈ S_d -> F(v_k+1)
+            
+        Where:  S_i = I(e_j)    if the decision path has a node v_j that 
+                                is labeled with field F_i and e_j is not marked
+                S_i = D(F_i)    otherwise
         
+        For the above rule r, the predicate "F_1 ∈ S_1 ∧ ... ∧ F_d ∈ S_d" is called the
+        MATCHING PREDICATE of r.
+        The rule represented by the path <v_1 e_1 ... v_k e_k v_k+1> is 
+        F_1 ∈ T_1 ∧ ... ∧ F_d ∈ T_d -> F(v_k+1), where:
+        
+                T_i = I(e_j)    if the decision path has a node v_j that
+                                is labeled with field F_i
+                T_i = D(F_i)    otherwise
+                
+        We call the predicate "F_1 ∈ T_1 ∧ ... ∧ F_d ∈ T_d" the RESOLVING PREDICATE of r.
+        
+        The ith rule output by Algorithm is the ith rule in the ﬁrewall generated. 
+        The correctness of this algorithm follows directly from the semantics of FDDs 
+        and ﬁrewalls.
+        
+        ---------------------------------------------------------------------------------------------
+        
+        The second step (FIREWALL COMPACTION) removes redundant rules from a ﬁrewall
+        producing an equivalent ﬁrewall but with fewer rules.
+        
+        
+        ---------------------------------------------------------------------------------------------
 
+        Returns:
+            Chain: Set of Rules equivalent to the FDD
+        """
+        #TODO Ver si pasarle el nombre de la chain o setearlo despues? -> Tambien ver si guardar el nombre de la chain original en el fdd
+        chain = Chain("FirewallGenChain")
+        visited = set()
+    
+        # O(N+E) Efficiency, where N=Number of Nodes and E=Number of Edges 
+        def dfs(node, decision_path):
+            if node in visited:
+                return
+            visited.add(node)
+            
+            if not node.getOutgoing():  # Terminal node
+                rule = Rule(len(chain.getRules()))
+                matching_predicate = {}
+                resolving_predicate = {}
+    
+                for _, (v, e) in enumerate(decision_path):
+                    field = v.getLevel().getField().getName()
+                    element_set = e.getElementSet()
+    
+                    if not e.getMarking():  # Not marked with "all"
+                        matching_predicate[field] = element_set.getElements()
+                    else:
+                        matching_predicate[field] = element_set.getDomain() 
+                        
+                    resolving_predicate[field] = element_set.getElements()
+    
+                # Set the predicates and decision for the rule
+                for field, values in matching_predicate.items():
+                    rule.setPredicate(field, values)
+                rule.setDecision(node.getName())
+                chain.addRule(rule)
+                return
+            
+            # Recursively visit the Node Children
+            for edge in node.getOutgoing():
+                dfs(edge.getDestination(), decision_path + [(node, edge)])
+        
+        # Step 1: Generate Rules from FDD
+        dfs(self._levels_[0].getNodes()[0], [])
+        return chain
+    
+        # Step 2: Compact Rules
 
         

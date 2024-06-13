@@ -58,6 +58,11 @@ class ElementSet(metaclass = ElementSetRegistry):
     @abstractmethod
     def __eq__(self, value: object) -> bool:
         pass
+    
+    @abstractmethod
+    def getDomain(self):
+        """_summary_
+        """
 
     @abstractmethod
     def addSet(self, otherSet: "ElementSet"):
@@ -146,6 +151,15 @@ class DirSet(ElementSet):
             other (DirSet): DirSet to compare
         """
         return self._elements == other.getElements()
+    
+    def getDomain(self):
+        """
+        Get the ElementSet Domain
+
+        Returns:
+            Domain: ElementSet Domain
+        """
+        return self._domain_
 
     def addSet(self, otherSet: "DirSet") -> None:
         """_summary_
@@ -259,6 +273,15 @@ class ProtSet(ElementSet):
             other (ProtSet): ProtSet to compare
         """
         return self._elements == other.getElements()
+    
+    def getDomain(self):
+        """
+        Get the ElementSet Domain
+
+        Returns:
+            Domain: ElementSet Domain
+        """
+        return self._domain_
 
     def addSet(self, otherSet: "ProtSet") -> None:
         """_summary_

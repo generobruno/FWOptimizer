@@ -740,29 +740,29 @@ class FDD:
         """
         #TODO Ver si pasarle el nombre de la chain o setearlo despues? -> Tambien ver si guardar el nombre de la chain original en el fdd
         chain = Chain("FirewallGenChain")
-        visited = set()
+        #visited = set()
     
         # O(N+E) Efficiency, where N=Number of Nodes and E=Number of Edges 
         def dfs(node, decision_path):
-            if node in visited:
-                return
-            visited.add(node)
+            #if node in visited:
+            #    return
+            #visited.add(node)
             
             if not node.getOutgoing():  # Terminal node
                 rule = Rule(len(chain.getRules()))
                 matching_predicate = {}
                 resolving_predicate = {}
     
-                for _, (v, e) in enumerate(decision_path):
+                for v, e in decision_path:
                     field = v.getLevel().getField().getName()
-                    element_set = e.getElementSet()
+                    element_set = e.getElementSet() 
     
                     if not e.getMarking():  # Not marked with "all"
                         matching_predicate[field] = element_set.getElements()
                     else:
                         matching_predicate[field] = element_set.getDomain() 
                         
-                    resolving_predicate[field] = element_set.getElements()
+                    resolving_predicate[field] = element_set.getElements() 
     
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():
@@ -771,8 +771,16 @@ class FDD:
                 chain.addRule(rule)
                 return
             
-            # Recursively visit the Node Children
-            for edge in node.getOutgoing():
+            # Separate marked and unmarked edges
+            unmarked_edges = [e for e in node.getOutgoing() if not e.getMarking()]
+            marked_edges = [e for e in node.getOutgoing() if e.getMarking()]
+
+            # First traverse all unmarked edges
+            for edge in unmarked_edges:
+                dfs(edge.getDestination(), decision_path + [(node, edge)])
+            
+            # Then traverse marked edges (should only be one if exists)
+            for edge in marked_edges:
                 dfs(edge.getDestination(), decision_path + [(node, edge)])
         
         # Step 1: Generate Rules from FDD

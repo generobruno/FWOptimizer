@@ -356,7 +356,7 @@ class FDD:
 
 
     def _sanityStep1(self):
-        """ Sanitizes all first-level nodes of the decision tree, except the last one, as it requires a different treatment. 
+        """ Sanitizes all first-level nodes of the FDD, except the last one, as it requires a different treatment. 
         """
 
         newIndex = 0
@@ -464,7 +464,7 @@ class FDD:
                     
 
     def _sanityStep2(self):
-        """Sanitizes the last-level nodes of the decision tree.
+        """Sanitizes the last-level nodes of the FDD.
         """
 
         level = self._levels_[-2]
@@ -539,6 +539,8 @@ class FDD:
 
 
     def sanity(self):
+        """Sanitize the FDD.
+        """
 
         self._sanityStep1()
         self._sanityStep2()

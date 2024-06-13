@@ -225,7 +225,7 @@ class ProtSet(ElementSet):
         _type_: _description_
     """
 
-    _domain_ = {'TCP', 'UDP', 'ICMP'}
+    _domain_ = {'tcp', 'udp', 'icmp'}
 
     def __init__(self, values: List[str]) -> None:
         """_summary_

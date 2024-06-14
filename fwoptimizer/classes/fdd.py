@@ -436,7 +436,6 @@ class FDD:
                 newEdge.autoConnect()
 
 
-
     def printFDD(self, name: str):
         """sumary
         """
@@ -732,24 +731,22 @@ class FDD:
         The second step (FIREWALL COMPACTION) removes redundant rules from a ﬁrewall
         producing an equivalent ﬁrewall but with fewer rules.
         
+        A rule in a ﬁrewall is redundant if removing the rule does not change the semantics
+        of the ﬁrewall. 
         
         ---------------------------------------------------------------------------------------------
 
         Returns:
             Chain: Set of Rules equivalent to the FDD
         """
-        #TODO Ver si pasarle el nombre de la chain o setearlo despues? -> Tambien ver si guardar el nombre de la chain original en el fdd
+        #TODO Ver si pasarle el nombre de la chain o setearlo despues? -> Tambien ver si guardar el nombre de la chain original en el fdd para usar este
         chain = Chain("FirewallGenChain")
-        #visited = set()
     
-        # O(N+E) Efficiency, where N=Number of Nodes and E=Number of Edges 
+        # We don't mark visited nodes since we need to traverse all paths (rules)
+        # There is no risk of divergence since there are no cycles (DAG) 
         def dfs(node, decision_path):
-            #if node in visited:
-            #    return
-            #visited.add(node)
-            
             if not node.getOutgoing():  # Terminal node
-                rule = Rule(len(chain.getRules()))
+                rule = Rule(len(chain.getRules())) #TODO REVISAR CUAL DEBERIA SER EL rule_id
                 matching_predicate = {}
                 resolving_predicate = {}
     
@@ -762,7 +759,7 @@ class FDD:
                     else:
                         matching_predicate[field] = element_set.getDomain() 
                         
-                    resolving_predicate[field] = element_set.getElements() 
+                    resolving_predicate[field] = element_set.getElements() #TODO SACAR?
     
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():
@@ -784,9 +781,57 @@ class FDD:
                 dfs(edge.getDestination(), decision_path + [(node, edge)])
         
         # Step 1: Generate Rules from FDD
-        dfs(self._levels_[0].getNodes()[0], [])
-        return chain
+        dfs(self._levels_[0].getNodes()[0], []) 
     
         # Step 2: Compact Rules
+        redundant = [False] * len(chain.getRules())
 
+        # Mark redundant rules
+        for i in range(len(chain.getRules()) - 1, -1, -1):
+            for k in range(i + 1, len(chain.getRules())):
+                if not redundant[k] and self._sameDecision(chain[i], chain[k]) and self._implies(chain[i], chain[k]):
+                    all_conditions_hold = True
+                    for j in range(i + 1, k):
+                        if not (redundant[j] or self._sameDecision(chain[i], chain[j]) or not self._satisfiesBoth(chain[i], chain[j])):
+                            all_conditions_hold = False
+                            break
+                    if all_conditions_hold:
+                        redundant[i] = True
+                        break
+
+        # Remove redundant rules
+        chain._rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
+
+        return chain     
+    
+    def _sameDecision(self, rule1: Rule, rule2: Rule) -> bool:
+        """
+        Check if two rules have the same decision.
+        """
+        print(f'Check sameDecision: Rule_{rule1.getId()} & Rule_{rule2.getId()} = {rule1.getDecision() == rule2.getDecision()}')
+        return rule1.getDecision() == rule2.getDecision()
+
+    def _implies(self, rule1: Rule, rule2: Rule) -> bool:
+        """
+        Check if rule1's resolving predicate implies rule2's matching predicate.
         
+        'r_i.rp implies r_k.mp' means that for any packet p, if p satisfies 
+        r_i.rp, then p satisﬁes r_k.mp. Checking whether r_i.rp implies r_k.mp is simple. 
+        Let r_i.rp be F_1 ∈ T_1 ∧ ... ∧ F_d ∈ T_d and let r_k.mp be F_1 ∈ S_1 ∧ ... ∧ F_d ∈ S_d. 
+        Then, r_i.rp implies r_k.mp if and only if for every j, where 1 <= j <= d, the condition T_j ⊆ S_j holds.
+        """
+        for field in rule1.getPredicates().keys():
+            print(f'Checking predicates {rule1.getOption(field)} - {rule2.getOption(field, [])}: {rule1.getOption(field) > rule2.getOption(field, [])}')
+            if rule1.getOption(field) > rule2.getOption(field, []):
+                return False
+        return True
+
+    def _satisfiesBoth(self, rule1: Rule, rule2: Rule) -> bool:
+        """
+        Check if no packet satisfies both rule1's resolving predicate and rule2's matching predicate.
+        """
+        for field in rule1.getPredicates():
+            print(f'Checking satisfies both {rule2.getPredicates()} AND {rule1.getOption(field).isdisjoint(rule2.getOption(field))} ')
+            if field in rule2.getPredicates() and rule1.getOption(field).isdisjoint(rule2.getOption(field)):
+                return False
+        return True

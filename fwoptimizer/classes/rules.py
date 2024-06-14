@@ -16,9 +16,9 @@ class Rule:
         Args:
             id (int): Rule identifier or priority (0 = top priority)
         """
-        self.id = rule_id
-        self.predicates = {}
-        self.decision = None
+        self._id = rule_id
+        self._predicates = {}
+        self._decision = None
 
     def __repr__(self) -> str:
         """
@@ -27,19 +27,28 @@ class Rule:
         Returns:
             str: Rule String representation
         """
-        return f"Rule {self.id}: {self.predicates} -> {self.decision}"
+        return f"Rule {self._id}: {self._predicates} -> {self._decision}"
     
     def setPredicate(self, fieldName, value):
         """sumary
         """
-        self.predicates[fieldName] = value
+        self._predicates[fieldName] = value
 
     def setDecision(self, decision):
         """sumary
         """
-        self.decision = decision
+        self._decision = decision
+        
+    def getPredicates(self):
+        """
+        Get all the predicates dictionary
 
-    def getOption(self, option):
+        Returns:
+            predicates: Rule predicates
+        """
+        return self._predicates
+
+    def getOption(self, option, default=None):
         """
         Get a given option value from the rule predicates
 
@@ -49,7 +58,7 @@ class Rule:
         Returns:
             value: Value of the option
         """
-        return self.predicates.get(option, None)
+        return self._predicates.get(option, default)
 
     def getDecision(self):
         """
@@ -58,7 +67,7 @@ class Rule:
         Returns:
             decision: Rule's decision
         """
-        return self.decision
+        return self._decision
 
     def getId(self):
         """
@@ -67,7 +76,7 @@ class Rule:
         Returns:
             id: Rule id
         """
-        return self.id
+        return self._id
 
 class Chain:
     """
@@ -81,8 +90,8 @@ class Chain:
         Args:
             name (str): Name of the chain
         """
-        self.name = name
-        self.rules = []
+        self._name = name
+        self._rules = []
 
     def __repr__(self) -> str:
         """
@@ -91,8 +100,8 @@ class Chain:
         Returns:
             str: Chain String representation
         """
-        rules_str = "\n".join([str(rule) for rule in self.rules])
-        return f"{self.name}:\n{rules_str if rules_str else ''}"
+        rules_str = "\n".join([str(rule) for rule in self._rules])
+        return f"{self._name}:\n{rules_str if rules_str else ''}"
 
     def __getitem__(self, idx) -> Rule:
         """
@@ -104,7 +113,7 @@ class Chain:
         Returns:
             Rule: Rule in Chain List
         """
-        return self.rules[idx]
+        return self._rules[idx]
 
     def addRule(self, rule: Rule):
         """
@@ -113,7 +122,7 @@ class Chain:
         Args:
             rule (Rule): Rule to add
         """
-        self.rules.append(rule)
+        self._rules.append(rule)
 
     def getRules(self):
         """
@@ -122,7 +131,7 @@ class Chain:
         Returns:
             List<Rule>: list of rules
         """
-        return self.rules
+        return self._rules
 
 class Table:
     """
@@ -136,8 +145,8 @@ class Table:
         Args:
             name (str): Table name
         """
-        self.name = name
-        self.chains = {}
+        self._name = name
+        self._chains = {}
 
     def __repr__(self) -> str:
         """
@@ -146,8 +155,8 @@ class Table:
         Returns:
             str: Table String representation
         """
-        chains_str = "\n".join([str(chain) for chain in self.chains.values()])
-        return f"{self.name} - {chains_str}"
+        chains_str = "\n".join([str(chain) for chain in self._chains.values()])
+        return f"{self._name} - {chains_str}"
 
     def __getitem__(self, chain_name) -> Chain:
         """
@@ -159,7 +168,7 @@ class Table:
         Returns:
             Chain: Chain in List
         """
-        return self.chains[chain_name]
+        return self._chains[chain_name]
 
     def addChain(self, chain: Chain):
         """
@@ -168,7 +177,16 @@ class Table:
         Args:
             chain (Chain): Chain to add
         """
-        self.chains[chain.name] = chain
+        self._chains[chain._name] = chain
+    
+    def getChains(self):
+        """
+        Get all chains in table
+
+        Returns:
+            Chain: Chains in Table
+        """
+        return self._chains
 
 class RuleSet:
     """
@@ -179,7 +197,7 @@ class RuleSet:
         """
         A RuleSet has a dictionary of Tables, of Table.name to Table object
         """
-        self.tables = {}
+        self._tables = {}
 
     def __repr__(self) -> str:
         """
@@ -188,7 +206,7 @@ class RuleSet:
         Returns:
             str: RuleSet representation
         """
-        return f"RuleSet: {self.tables}"
+        return f"RuleSet: {self._tables}"
 
     def __str__(self) -> str:
         """
@@ -197,7 +215,7 @@ class RuleSet:
         Returns:
             str: RuleSet string representation
         """
-        tables_str = "\n".join([str(table) for table in self.tables.values()])
+        tables_str = "\n".join([str(table) for table in self._tables.values()])
         return f"Rule Set:\n{tables_str}"
 
     def __getitem__(self, table_name) -> Table:
@@ -210,7 +228,7 @@ class RuleSet:
         Returns:
             Table: Table in Tables dict
         """
-        return self.tables[table_name]
+        return self._tables[table_name]
 
     def __len__(self) -> int:
         """
@@ -220,9 +238,9 @@ class RuleSet:
             int: Total number of rules
         """
         total_rules = 0
-        for table in self.tables.values():
-            for chain in table.chains.values():
-                total_rules += len(chain.rules)
+        for table in self._tables.values():
+            for chain in table.getChains().values():
+                total_rules += len(chain.getRules())
         return total_rules
 
     def numberOfChains(self) -> int:
@@ -232,7 +250,7 @@ class RuleSet:
         Returns:
             int: Total number of chains
         """
-        total_chains = sum(len(table.chains) for table in self.tables.values())
+        total_chains = sum(len(table.getChains()) for table in self._tables.values())
         return total_chains
 
     def addTable(self, table: Table):
@@ -242,15 +260,15 @@ class RuleSet:
         Args:
             table (Table): Table to add
         """
-        self.tables[table.name] = table
+        self._tables[table._name] = table
 
     def printAll(self):
         """
         Print all rules in RuleSet
         """
-        for table_name, table in self.tables.items():
+        for table_name, table in self._tables.items():
             print(f"Table: {table_name}")
-            for chain_name, chain in table.chains.items():
+            for chain_name, chain in table.getChains().items():
                 print(f"Chain: {chain_name}")
-                for rule in chain.rules:
+                for rule in chain.getRules():
                     print(f"\t{rule}")

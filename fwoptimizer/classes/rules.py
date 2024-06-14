@@ -123,6 +123,15 @@ class Chain:
             rule (Rule): Rule to add
         """
         self._rules.append(rule)
+        
+    def setRules(self, rules):
+        """
+        Set the rules for this chain, replacing existing rules.
+
+        Args:
+            rules (list): List of Rule objects to set as rules for this chain.
+        """
+        self._rules = rules
 
     def getRules(self):
         """

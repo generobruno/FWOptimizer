@@ -1016,7 +1016,8 @@ class FDD:
                         break
 
         # Remove redundant rules
-        chain._rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
+        new_rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
+        chain.setRules(new_rules)
         #TODO ACOMODAR RULE_IDs DESPUES DE ELIMINAR REGLAS REDUNDANTES
         print(f'Removed {n - len(chain.getRules())} REDUNDANT rules from the chain.\n')
 

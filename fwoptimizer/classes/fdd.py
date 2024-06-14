@@ -432,7 +432,7 @@ class FDD:
             if decision in self._decisions_:
                 nodes.append(self._decisions_[decision])
             else:
-                self._decisions_[decision] = Node(decision, self._levels_[-1])
+                self._decisions_[decision] = Node(decision, self._levels_[-1], shape='box', fontsize='25')
                 self._decisions_[decision].autoConnect()
                 nodes.append(self._decisions_[decision])
 
@@ -451,31 +451,38 @@ class FDD:
     def printFDD(self, name: str):
         """sumary
         """
-
         dot = graphviz.Digraph()
-            
+
+        # Create a dictionary to hold subgraphs for each field level
+        field_subgraphs = {}
+
+        # Iterate through the levels to create subgraphs
         for level in self._levels_:
+            field_name = level.getField().getName()  # Get the field name for the level
 
+            if field_name not in field_subgraphs:
+                # Create a new subgraph for this field level if it doesn't exist
+                field_subgraphs[field_name] = graphviz.Digraph(name=f'cluster_{field_name}')
+                field_subgraphs[field_name].attr(label=f"{field_name} Level", style='invis')
+
+            # Add nodes to the corresponding subgraph
             for node in level.getNodes():
-                
-                dot.node(node.getName())    
+                node_name = node.getName()
+                field_subgraphs[field_name].node(node_name, _attributes=node.getAttributes())
 
-        for level in self._levels_:
-
-            for node in level.getNodes():
-
+                # Add edges to the main graph
                 for edge in node.getOutgoing():
-                    
                     origin_name = edge.getOrigin().getName()
                     destination_name = edge.getDestination().getName()
-                    label = f"{edge.getId()},{edge.getElementSet().getElementsList()}"
+                    label = f"{edge.getId()},{edge.getElementSet().getElementsList()}" 
                     edge_attributes = edge.getAttributes()
-                    
-                    # Include the additional attributes in the label if needed
                     dot.edge(origin_name, destination_name, label=label, _attributes=edge_attributes)
-                    
-        print(f'\n{dot}')
 
+        # Add each subgraph to the main graph
+        for subgraph in field_subgraphs.values():
+            dot.subgraph(subgraph)
+
+        # Render the graph to a file
         dot.render(name, format='png', view=False, cleanup=True)
 
     def _sanityStep1(self):
@@ -984,25 +991,34 @@ class FDD:
         
         # Step 1: Generate Rules from FDD
         dfs(self._levels_[0].getNodes()[0], []) 
-    
+        #return chain
+
         # Step 2: Compact Rules
         redundant = [False] * len(chain.getRules())
 
         # Mark redundant rules #TODO Revisar
-        for i in range(len(chain.getRules()) - 1, -1, -1):
-            for k in range(i + 1, len(chain.getRules())):
-                if not redundant[k] and self._sameDecision(chain[i], chain[k]) and self._implies(chain[i], chain[k]):
-                    all_conditions_hold = True
+        n = len(chain.getRules())
+        for i in range(n - 1, -1, -1):
+            for k in range(i + 1, n):
+                if (    not redundant[k] and
+                        self._sameDecision(chain[i], chain[k]) and
+                        self._implies(chain[i], chain[k])):
+                    # Check if rule i is redundant based on rule k
+                    is_redundant = True
                     for j in range(i + 1, k):
-                        if not (redundant[j] or self._sameDecision(chain[i], chain[j]) or not self._satisfiesBoth(chain[i], chain[j])):
-                            all_conditions_hold = False
+                        if (    not redundant[j] and
+                                not self._sameDecision(chain[i], chain[j]) and
+                                not self._mutuallyExclusive(chain[i], chain[j])):
+                            is_redundant = False
                             break
-                    if all_conditions_hold:
+                    if is_redundant:
                         redundant[i] = True
                         break
 
         # Remove redundant rules
         chain._rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
+        #TODO ACOMODAR RULE_IDs DESPUES DE ELIMINAR REGLAS REDUNDANTES
+        print(f'Removed {n - len(chain.getRules())} REDUNDANT rules from the chain.\n')
 
         return chain     
     
@@ -1022,9 +1038,22 @@ class FDD:
         Let r_i.rp be F_1 ∈ T_1 ∧ ... ∧ F_d ∈ T_d and let r_k.mp be F_1 ∈ S_1 ∧ ... ∧ F_d ∈ S_d. 
         Then, r_i.rp implies r_k.mp if and only if for every j, where 1 <= j <= d, the condition T_j ⊆ S_j holds.
         """
-        for field in rule1.getPredicates().keys():
-            print(f'Checking predicates {rule1.getOption(field)} - {rule2.getOption(field, [])}: {rule1.getOption(field) > rule2.getOption(field, [])}')
-            if rule1.getOption(field) > rule2.getOption(field, []):
+        fields = set(rule1.getPredicates().keys()).union(rule2.getPredicates().keys())
+        for field in fields:
+            option1 = rule1.getOption(field, set())
+            option2 = rule2.getOption(field, set())
+            print(f'Checking predicates {option1} - {option2}: {option1.issubset(option2)}')
+            if not option1.issubset(option2):
+                return False
+        return True
+    
+    def _mutuallyExclusive(self, rule1, rule2):
+        fields = set(rule1.getPredicates().keys()).union(rule2.getPredicates().keys())
+        for field in fields:
+            option1 = rule1.getOption(field, set())
+            option2 = rule2.getOption(field, set())
+            print(f'Checking Mutual Exclusion {option1} - {option2}: {option1.isdisjoint(option2)}')
+            if not option1.isdisjoint(option2):  # Check if they have no common elements
                 return False
         return True
 

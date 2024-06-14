@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     print(f'\nTotal Number of Tables: {len(rules_parsed._tables)}')
     print(f'Total Number of Chains: {rules_parsed.numberOfChains()}')
-    print(f'Total Number of Rules: {len(rules_parsed)}\n\n')
+    print(f'Total Number of Rules: {len(rules_parsed)}\n')
 
     fieldList = FieldList()
     fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
@@ -41,9 +41,18 @@ if __name__ == '__main__':
     fdd.genPre(fieldList, rules_parsed['filter']['INPUT'])
     fdd.printFDD("preFDD")
 
+    print("\nFORMATINIG FDD:")
     fdd.sanity()
     fdd.printFDD("SanityFDD")
     
-    print("REDUCING:")
+    print("\nREDUCING:")
     fdd.reduction()
     fdd.printFDD("reducedFDD")
+    
+    print("\nMARKING:")
+    fdd.marking()
+    fdd.printFDD("MarkedFDD")
+    
+    print("\nCREATING RULES:")
+    firewall_chain = fdd.firewallGen()
+    print(firewall_chain)

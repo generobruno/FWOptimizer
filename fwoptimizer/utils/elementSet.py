@@ -58,6 +58,11 @@ class ElementSet(metaclass = ElementSetRegistry):
     @abstractmethod
     def __eq__(self, value: object) -> bool:
         pass
+    
+    @abstractmethod
+    def getDomain(self):
+        """_summary_
+        """
 
     @abstractmethod
     def addSet(self, otherSet: "ElementSet"):
@@ -76,6 +81,11 @@ class ElementSet(metaclass = ElementSetRegistry):
 
     @abstractmethod
     def intersectionSet(self, otherSet: "ElementSet"):
+        """_summary_
+        """
+        
+    @abstractmethod
+    def unionSet(self, otherSet: "ElementSet"):
         """_summary_
         """
 
@@ -141,6 +151,15 @@ class DirSet(ElementSet):
             other (DirSet): DirSet to compare
         """
         return self._elements == other.getElements()
+    
+    def getDomain(self):
+        """
+        Get the ElementSet Domain
+
+        Returns:
+            Domain: ElementSet Domain
+        """
+        return self._domain_
 
     def addSet(self, otherSet: "DirSet") -> None:
         """_summary_
@@ -179,6 +198,17 @@ class DirSet(ElementSet):
             DirSet: _description_
         """
         return DirSet([str(x) for x in self._elements.intersection(otherSet.getElements())])
+    
+    def unionSet(self, otherSet: "DirSet"):
+        """_summary_
+
+        Args:
+            otherSet (ElementSet): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        return DirSet([str(x) for x in self._elements.union(otherSet.getElements())])
     
     def remove(self, otherSet: "DirSet") -> None:
         """_summary_
@@ -243,6 +273,15 @@ class ProtSet(ElementSet):
             other (ProtSet): ProtSet to compare
         """
         return self._elements == other.getElements()
+    
+    def getDomain(self):
+        """
+        Get the ElementSet Domain
+
+        Returns:
+            Domain: ElementSet Domain
+        """
+        return self._domain_
 
     def addSet(self, otherSet: "ProtSet") -> None:
         """_summary_
@@ -281,6 +320,17 @@ class ProtSet(ElementSet):
             ProtSet: _description_
         """
         return ProtSet([str(x) for x in self._elements & otherSet.getElements()])
+    
+    def unionSet(self, otherSet: "ProtSet"):
+        """_summary_
+
+        Args:
+            otherSet (ProtSet): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        return ProtSet([str(x) for x in self._elements | otherSet.getElements()])
     
     def remove(self, otherSet: "ProtSet") -> None:
         """_summary_

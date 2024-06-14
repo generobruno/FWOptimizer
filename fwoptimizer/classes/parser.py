@@ -173,11 +173,11 @@ class IpTablesParser(ParserStrategy):
                     if line.startswith('-A'):       # Append Rule to Chain
                         chain_name = line.split()[1]
                         current_chain = current_table[chain_name]
-                    current_rule = self.parseOptions(line, line_num, current_table.name)
+                    current_rule = self.parseOptions(line, line_num, current_table._name)
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
-                        rule.predicates = {k: v for k, v in current_rule.items() if k != 'decision'}
-                        rule.decision = current_rule.get('decision')
+                        [rule.setPredicate(k, v) for k, v in current_rule.items() if k != 'decision']
+                        rule.setDecision(current_rule.get('decision'))
                         current_chain.addRule(rule)
                         rule_id += 1
 

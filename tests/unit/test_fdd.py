@@ -19,10 +19,10 @@ def test_edge():
     n1 = fdd.Node("a", lvl1)
     n2 = fdd.Node("a", lvl2)
 
-    e1 = fdd.Edge(1, n1, n2, DirSet(['0.0.10.0/24']))
-    e2 = fdd.Edge(1, n1, n2, DirSet(['0.0.10.0/24']))
-    e3 = fdd.Edge(1, n1, n2, DirSet(['0.0.11.0/24']))
-    e4 = fdd.Edge(2, n1, n2, DirSet(['0.0.12.0/24']))
+    e1 = fdd.Edge([1], n1, n2, DirSet(['0.0.10.0/24']))
+    e2 = fdd.Edge([1], n1, n2, DirSet(['0.0.10.0/24']))
+    e3 = fdd.Edge([1], n1, n2, DirSet(['0.0.11.0/24']))
+    e4 = fdd.Edge([2], n1, n2, DirSet(['0.0.12.0/24']))
     e5 = e4.replicate()
 
     assert e1 == e2
@@ -52,6 +52,12 @@ def test_edge():
 
     assert e1 not in n1.getOutgoing()
     assert e1 in n3.getOutgoing()
+
+    e5 = fdd.Edge([1], n1, n2, DirSet(['0.0.10.0/24']))
+    e6 = fdd.Edge([1, 2], n1, n2, DirSet(['0.0.10.0/24']))
+
+    assert e5.getId() == [1]
+    assert e6.getId() == [1, 2]
 
 
 def test_node():

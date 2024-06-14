@@ -40,6 +40,9 @@ if __name__ == '__main__':
     fdd = FDD()
     fdd.genPre(fieldList, rules_parsed['filter']['INPUT'])
     fdd.printFDD("preFDD")
+
+    fdd.sanity()
+    fdd.printFDD("SanityFDD")
     
     print("REDUCING:")
     fdd.reduction()

@@ -786,7 +786,7 @@ class FDD:
         # Step 2: Compact Rules
         redundant = [False] * len(chain.getRules())
 
-        # Mark redundant rules
+        # Mark redundant rules #TODO Revisar
         for i in range(len(chain.getRules()) - 1, -1, -1):
             for k in range(i + 1, len(chain.getRules())):
                 if not redundant[k] and self._sameDecision(chain[i], chain[k]) and self._implies(chain[i], chain[k]):

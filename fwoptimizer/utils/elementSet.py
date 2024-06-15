@@ -268,6 +268,13 @@ class ProtSet(ElementSet):
         Args:
             values (List[str]): _description_
         """
+        # Chequeamos que los valores esten incluidos en el dominio
+        lowCaseValues = [x.lower() for x in values]
+
+        for value in lowCaseValues:
+            if value not in self._domain_:
+                raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
+            
         self._elements = set(values)
 
     def __eq__(self, other: "ProtSet") -> bool:

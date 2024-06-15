@@ -50,6 +50,18 @@ class ElementSet(metaclass = ElementSetRegistry):
 
     _domain_ = set()
 
+    @classmethod
+    def createElementSet(cls, elementType: str, values: List[str]):
+        """
+        sumary
+        """
+        registry = ElementSetRegistry.getRegistry()
+        if elementType in registry:
+            if values == [None]:
+                return registry[elementType](registry[elementType].getDomain())
+            return registry[elementType](values)
+        raise TypeError()
+
     @abstractmethod
     def __init__(self, values: List[str]) -> None:
         """_summary_
@@ -58,7 +70,8 @@ class ElementSet(metaclass = ElementSetRegistry):
     @abstractmethod
     def __eq__(self, value: object) -> bool:
         pass
-    
+
+    @classmethod
     @abstractmethod
     def getDomain(self):
         """_summary_
@@ -109,16 +122,6 @@ class ElementSet(metaclass = ElementSetRegistry):
         """_summary_
         """
 
-    @classmethod
-    def createElementSet(cls, elementType: str, values: List[str]):
-        """
-        sumary
-        """
-        registry = ElementSetRegistry.getRegistry()
-        if elementType in registry:
-            return registry[elementType](values)
-        raise TypeError()
-
 
 
 class DirSet(ElementSet):
@@ -152,14 +155,15 @@ class DirSet(ElementSet):
         """
         return self._elements == other.getElements()
     
+    @classmethod
     def getDomain(self):
         """
-        Get the ElementSet Domain
+        Get the ElementSet Domain as a list
 
         Returns:
             Domain: ElementSet Domain
         """
-        return self._domain_
+        return [str(net) for net in self._domain_.iter_cidrs()]
 
     def addSet(self, otherSet: "DirSet") -> None:
         """_summary_
@@ -245,6 +249,7 @@ class DirSet(ElementSet):
     
 
 
+
 class ProtSet(ElementSet):
     """_summary_
 
@@ -274,6 +279,7 @@ class ProtSet(ElementSet):
         """
         return self._elements == other.getElements()
     
+    @classmethod
     def getDomain(self):
         """
         Get the ElementSet Domain
@@ -281,7 +287,7 @@ class ProtSet(ElementSet):
         Returns:
             Domain: ElementSet Domain
         """
-        return self._domain_
+        return list(self._domain_)
 
     def addSet(self, otherSet: "ProtSet") -> None:
         """_summary_

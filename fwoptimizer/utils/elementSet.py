@@ -50,6 +50,18 @@ class ElementSet(metaclass = ElementSetRegistry):
 
     _domain_ = set()
 
+    @classmethod
+    def createElementSet(cls, elementType: str, values: List[str]):
+        """
+        sumary
+        """
+        registry = ElementSetRegistry.getRegistry()
+        if elementType in registry:
+            if values == [None]:
+                return registry[elementType](registry[elementType].getDomain())
+            return registry[elementType](values)
+        raise TypeError()
+
     @abstractmethod
     def __init__(self, values: List[str]) -> None:
         """_summary_
@@ -58,9 +70,10 @@ class ElementSet(metaclass = ElementSetRegistry):
     @abstractmethod
     def __eq__(self, value: object) -> bool:
         pass
-    
+
+    @classmethod
     @abstractmethod
-    def getDomain(self):
+    def getDomain(cls):
         """_summary_
         """
 
@@ -109,16 +122,6 @@ class ElementSet(metaclass = ElementSetRegistry):
         """_summary_
         """
 
-    @classmethod
-    def createElementSet(cls, elementType: str, values: List[str]):
-        """
-        sumary
-        """
-        registry = ElementSetRegistry.getRegistry()
-        if elementType in registry:
-            return registry[elementType](values)
-        raise TypeError()
-
 
 
 class DirSet(ElementSet):
@@ -152,14 +155,15 @@ class DirSet(ElementSet):
         """
         return self._elements == other.getElements()
     
-    def getDomain(self):
+    @classmethod
+    def getDomain(cls):
         """
-        Get the ElementSet Domain
+        Get the ElementSet Domain as a list
 
         Returns:
             Domain: ElementSet Domain
         """
-        return self._domain_
+        return [str(net) for net in cls._domain_.iter_cidrs()]
 
     def addSet(self, otherSet: "DirSet") -> None:
         """_summary_
@@ -245,6 +249,7 @@ class DirSet(ElementSet):
     
 
 
+
 class ProtSet(ElementSet):
     """_summary_
 
@@ -263,6 +268,13 @@ class ProtSet(ElementSet):
         Args:
             values (List[str]): _description_
         """
+        # Chequeamos que los valores esten incluidos en el dominio
+        lowCaseValues = [x.lower() for x in values]
+
+        for value in lowCaseValues:
+            if value not in self._domain_:
+                raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
+            
         self._elements = set(values)
 
     def __eq__(self, other: "ProtSet") -> bool:
@@ -274,14 +286,15 @@ class ProtSet(ElementSet):
         """
         return self._elements == other.getElements()
     
-    def getDomain(self):
+    @classmethod
+    def getDomain(cls):
         """
         Get the ElementSet Domain
 
         Returns:
             Domain: ElementSet Domain
         """
-        return self._domain_
+        return list(cls._domain_)
 
     def addSet(self, otherSet: "ProtSet") -> None:
         """_summary_

@@ -157,8 +157,7 @@ class Node:
         """
         if attr_name is None:
             return self._attributes_
-        else:
-            return self._attributes_.get(attr_name, None)
+        return self._attributes_.get(attr_name, None)
         
     def getLoad(self):
         """
@@ -347,8 +346,7 @@ class Edge:
         """
         if attr_name is None:
             return self._attributes_
-        else:
-            return self._attributes_.get(attr_name, None)
+        return self._attributes_.get(attr_name, None)
         
     def setAttributes(self, **new_attrs):
         """
@@ -382,16 +380,12 @@ class FDD:
     Fdd class
     """
 
-    def __init__(self, levels=None):
+    def __init__(self, fieldList: FieldList):
         """_summary_
         """
-        self._levels_ = levels if levels else []
+        self._levels_ = []
         # Un diccionario de decisiones, deberíamos ver bien como tratarlo en el futuro
         self._decisions_ = {}
-
-    def genPre(self, fieldList: FieldList, chain: Chain):
-        """sumary
-        """
 
         # Primero creamos la lista de niveles del arbol, usando las configuraciones extraidas de la FieldList
         # Lanzamos un Type error si alguno de los tipos especificados para el nivel no es valido (no existe su ElementSet correspondiente)
@@ -411,9 +405,19 @@ class FDD:
         # Creamos un unico nodo root en el primer nivel del arbol.
         root = Node(self._levels_[0].getField().getName(), self._levels_[0])
         root.autoConnect()
+
+    def genPre(self, chain: Chain):
+        """sumary
+        """
         
         # Recorremos la lista de Rules
         for rule in chain.getRules():
+
+            # Revisamos que todos los predicados de la regla esten contemplados en la lista de fields
+            fields = [level.getField().getName() for level in self._levels_]
+            for predicate in rule.getPredicates():
+                if predicate not in fields:
+                    raise TypeError(f"Predicate {predicate} isn't include in FieldList")
 
             # Creamos una lista de Nodos temporal, que usaremos para conectar los edges en un bucle
             # La lista se inicia con el nodo root
@@ -440,13 +444,9 @@ class FDD:
             for j in range(1, len(nodes)):
 
                 elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
-                if elements:
-                    elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
-                    newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
-                    newEdge.autoConnect()
-                else:
-
-                    print(f"Elemento no encontrado para {nodes[j-1].getLevel().getField().getName()}")
+                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
+                newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
+                newEdge.autoConnect()
 
     def printFDD(self, name: str):
         """sumary
@@ -896,8 +896,7 @@ class FDD:
         """
         if edge.getMarking():
             return 1
-        else:
-            return len(edge.getElementSet().getElementsList()) #TODO Revisar si esto esta bien o hay que calcularlo de otra forma
+        return len(edge.getElementSet().getElementsList()) #TODO Revisar si esto esta bien o hay que calcularlo de otra forma
         
     def firewallGen(self) -> Chain:
         """

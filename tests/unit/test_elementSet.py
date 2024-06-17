@@ -1,8 +1,11 @@
 """_summary_
 """
 
+import pytest
 from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet, DirSet, ProtSet
-
+from fwoptimizer.classes.rules import Chain, Rule
+from fwoptimizer.classes.firewall import FieldList
+from fwoptimizer.classes.fdd import FDD
 
 def test_registry():
     """_summary_
@@ -44,3 +47,24 @@ def test_createElementSet():
     assert direction2.getElementsList() == ['0.0.0.0/0']
     assert sorted(protocol2.getElementsList()) == sorted(['tcp', 'icmp', 'udp'])
 
+    with pytest.raises(ValueError):
+        direction3 = ElementSet.createElementSet('ProtSet', ['udo'])
+
+
+def test_presenseOFPredicateInFieldList():
+    """sumary
+    """
+
+    chain = Chain("INPUT")
+    rule = Rule(1)
+    rule.setPredicate('SrcIP', '10.0.0.0/24')
+    rule.setPredicate('NoEx', '10.0.0.0/24')
+    rule.setDecision('ACCEPT')
+    chain.addRule(rule)
+
+    fieldList = FieldList()
+    fieldList.loadConfig("tests/test_fdd_config.toml")
+
+    fdd = FDD(fieldList)
+    with pytest.raises(TypeError):
+        fdd.genPre(chain)

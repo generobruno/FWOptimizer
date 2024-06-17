@@ -73,7 +73,7 @@ class ElementSet(metaclass = ElementSetRegistry):
 
     @classmethod
     @abstractmethod
-    def getDomain(self):
+    def getDomain(cls):
         """_summary_
         """
 
@@ -156,14 +156,14 @@ class DirSet(ElementSet):
         return self._elements == other.getElements()
     
     @classmethod
-    def getDomain(self):
+    def getDomain(cls):
         """
         Get the ElementSet Domain as a list
 
         Returns:
             Domain: ElementSet Domain
         """
-        return [str(net) for net in self._domain_.iter_cidrs()]
+        return [str(net) for net in cls._domain_.iter_cidrs()]
 
     def addSet(self, otherSet: "DirSet") -> None:
         """_summary_
@@ -287,14 +287,14 @@ class ProtSet(ElementSet):
         return self._elements == other.getElements()
     
     @classmethod
-    def getDomain(self):
+    def getDomain(cls):
         """
         Get the ElementSet Domain
 
         Returns:
             Domain: ElementSet Domain
         """
-        return list(self._domain_)
+        return list(cls._domain_)
 
     def addSet(self, otherSet: "ProtSet") -> None:
         """_summary_

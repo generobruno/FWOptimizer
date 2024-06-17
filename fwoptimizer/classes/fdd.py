@@ -157,8 +157,7 @@ class Node:
         """
         if attr_name is None:
             return self._attributes_
-        else:
-            return self._attributes_.get(attr_name, None)
+        return self._attributes_.get(attr_name, None)
         
     def getLoad(self):
         """
@@ -347,8 +346,7 @@ class Edge:
         """
         if attr_name is None:
             return self._attributes_
-        else:
-            return self._attributes_.get(attr_name, None)
+        return self._attributes_.get(attr_name, None)
         
     def setAttributes(self, **new_attrs):
         """
@@ -898,8 +896,7 @@ class FDD:
         """
         if edge.getMarking():
             return 1
-        else:
-            return len(edge.getElementSet().getElementsList()) #TODO Revisar si esto esta bien o hay que calcularlo de otra forma
+        return len(edge.getElementSet().getElementsList()) #TODO Revisar si esto esta bien o hay que calcularlo de otra forma
         
     def firewallGen(self) -> Chain:
         """

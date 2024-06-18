@@ -37,13 +37,14 @@ if __name__ == '__main__':
     fieldList = FieldList()
     fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
 
-    fdd = FDD(fieldList)
-    fdd.genPre(rules_parsed['filter']['INPUT'])
-    fdd.printFDD("preFDD")
+    chain = rules_parsed['filter']['INPUT']
+    chain.setDefaultDecision("ACCEPT")
 
-    # print("\nFORMATINIG FDD:")
-    # fdd.sanity()
-    # fdd.printFDD("SanityFDD")
+    fdd = FDD(fieldList)
+    fdd.genFDD(chain)
+    fdd.printFDD("FDD")
+
+
     
     # print("\nREDUCING:")
     # fdd.reduction()

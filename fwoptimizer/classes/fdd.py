@@ -406,47 +406,17 @@ class FDD:
         root = Node(self._levels_[0].getField().getName(), self._levels_[0])
         root.autoConnect()
 
-    def genPre(self, chain: Chain):
-        """sumary
+
+    def _getDecisionNode(self, decision: str):
+        """Obtains the node corresponding to this decision if it exists, or adds a new one and returns it
         """
-        
-        # Recorremos la lista de Rules
-        for rule in chain.getRules():
+        # Revisamos la decision de la regla, si ya existe un nodo en el diccionario de decisiones para dicha decision, lo usamos
+        # Si no existe, creamos el nodo y lo agregamos tanto al arbol como al diccionario de decisiones
+        if decision  not in self._decisions_:
+            self._decisions_[decision] = Node(decision, self._levels_[-1], shape='box', fontsize='25')
+            self._decisions_[decision].autoConnect()
+        return self._decisions_[decision]
 
-            # Revisamos que todos los predicados de la regla esten contemplados en la lista de fields
-            fields = [level.getField().getName() for level in self._levels_]
-            for predicate in rule.getPredicates():
-                if predicate not in fields:
-                    raise TypeError(f"Predicate {predicate} isn't include in FieldList")
-
-            # Creamos una lista de Nodos temporal, que usaremos para conectar los edges en un bucle
-            # La lista se inicia con el nodo root
-            nodes = [self._levels_[0].getNodes()[0]]
-
-            #Agregamos un nodo por cada nivel, exptuando el primero y el ultimo
-            for level in self._levels_[1:-1]:
-
-                newNode = Node(f"{level.getField().getName()}_{rule.getId()}", level)
-                newNode.autoConnect()
-                nodes.append(newNode)
-
-            # Revisamos la decision de la regla, si ya existe un nodo en el diccionario de decisiones para dicha decision, lo usamos
-            # Si no existe, creamos el nodo y lo agregamos tanto al arbol como al diccionario de decisiones
-            decision = rule.getDecision()
-            if decision in self._decisions_:
-                nodes.append(self._decisions_[decision])
-            else:
-                self._decisions_[decision] = Node(decision, self._levels_[-1], shape='box', fontsize='25')
-                self._decisions_[decision].autoConnect()
-                nodes.append(self._decisions_[decision])
-
-            # Recorremos la lista temporal de nodos y vamos añadiendo los Edges que los conectan
-            for j in range(1, len(nodes)):
-
-                elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
-                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
-                newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
-                newEdge.autoConnect()
 
     def printFDD(self, name: str):
         """sumary
@@ -474,7 +444,10 @@ class FDD:
                 for edge in node.getOutgoing():
                     origin_name = edge.getOrigin().getName()
                     destination_name = edge.getDestination().getName()
-                    label = f"{edge.getId()},{edge.getElementSet().getElementsList()}" 
+                    if edge.getAttributes('label') != None:
+                        label = f"{edge.getId()},{edge.getAttributes('label')}"
+                    else:
+                        label = f"{edge.getId()},{edge.getElementSet().getElementsList()}" 
                     edge_attributes = edge.getAttributes()
                     dot.edge(origin_name, destination_name, label=label, _attributes=edge_attributes)
 
@@ -484,6 +457,44 @@ class FDD:
 
         # Render the graph to a file
         dot.render(name, format='png', view=False, cleanup=True)
+
+
+    def _genPre(self, chain: Chain):
+        """sumary
+        """
+        
+        # Recorremos la lista de Rules
+        for rule in chain.getRules():
+
+            # Revisamos que todos los predicados de la regla esten contemplados en la lista de fields
+            fields = [level.getField().getName() for level in self._levels_]
+            for predicate in rule.getPredicates():
+                if predicate not in fields:
+                    raise TypeError(f"Predicate {predicate} isn't include in FieldList")
+
+            # Creamos una lista de Nodos temporal, que usaremos para conectar los edges en un bucle
+            # La lista se inicia con el nodo root
+            nodes = [self._levels_[0].getNodes()[0]]
+
+            # Agregamos un nodo por cada nivel, exptuando el primero y el ultimo
+            for level in self._levels_[1:-1]:
+
+                newNode = Node(f"{level.getField().getName()}_{rule.getId()}", level)
+                newNode.autoConnect()
+                nodes.append(newNode)
+
+            # Añadimos el nodo de decision al final
+            decisionNode = self._getDecisionNode(rule.getDecision())
+            nodes.append(decisionNode)
+
+            # Recorremos la lista temporal de nodos y vamos añadiendo los Edges que los conectan
+            for j in range(1, len(nodes)):
+
+                elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
+                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
+                newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
+                newEdge.autoConnect()
+
 
     def _sanityStep1(self):
         """ Sanitizes all first-level nodes of the FDD, except the last one, as it requires a different treatment. 
@@ -667,13 +678,34 @@ class FDD:
 
             i = i + 1
 
-
-    def sanity(self):
-        """Sanitize the FDD.
+    
+    def _sanityStep3(self, chain: Chain):
+        """Check and achieve completeness in the nodes
         """
 
+        for level in self._levels_[:-1]:
+
+            for node in level.getNodes():
+
+                left = ElementSet.createElementSet(level.getField().getType(), [None])
+
+                for edge in node.getOutgoing():
+
+                    left.remove(edge.getElementSet())
+
+                if not left.isEmpty():
+                    
+                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left) #label='step3')
+                    newEdge.autoConnect()
+
+
+    def genFDD(self, chain):
+        """Generates the PreFDD and sanitizes it to convert it to FDD.
+        """
+        self._genPre(chain)
         self._sanityStep1()
         self._sanityStep2()
+        self._sanityStep3(chain)
 
 
     def reduction(self):

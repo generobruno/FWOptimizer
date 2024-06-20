@@ -142,9 +142,7 @@ class DirSet(ElementSet):
         Args:
             values (List[str]): _description_
         """
-        self._elements = nt.IPSet()
-        for value in values:
-            self._elements.add(value)
+        self._elements = nt.IPSet(values)
 
     def __eq__(self, other: "DirSet") -> bool:
         """
@@ -201,9 +199,9 @@ class DirSet(ElementSet):
         Returns:
             DirSet: _description_
         """
-        return DirSet([str(x) for x in self._elements.intersection(otherSet.getElements())])
+        return DirSet([str(x) for x in self._elements.intersection(otherSet.getElements()).iter_cidrs()]) #TODO Revisar, le agregue iter_cidrs()
     
-    def unionSet(self, otherSet: "DirSet"):
+    def unionSet(self, otherSet: "DirSet") -> "DirSet":
         """_summary_
 
         Args:
@@ -212,7 +210,7 @@ class DirSet(ElementSet):
         Returns:
             _type_: _description_
         """
-        return DirSet([str(x) for x in self._elements.union(otherSet.getElements())])
+        return DirSet([str(x) for x in self._elements.union(otherSet.getElements()).iter_cidrs()])
     
     def remove(self, otherSet: "DirSet") -> None:
         """_summary_

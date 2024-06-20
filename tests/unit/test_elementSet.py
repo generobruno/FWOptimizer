@@ -67,4 +67,4 @@ def test_presenseOFPredicateInFieldList():
 
     fdd = FDD(fieldList)
     with pytest.raises(TypeError):
-        fdd.genPre(chain)
+        fdd.genFDD(chain)

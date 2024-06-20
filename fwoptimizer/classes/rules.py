@@ -92,6 +92,7 @@ class Chain:
         """
         self._name = name
         self._rules = []
+        self._defaultDecision = None
 
     def __repr__(self) -> str:
         """
@@ -132,6 +133,24 @@ class Chain:
             rules (list): List of Rule objects to set as rules for this chain.
         """
         self._rules = rules
+
+    def setDefaultDecision(self, decision):
+        """
+        Set the default decision for this chain.
+
+        Args:
+            decision (str): 
+        """
+        self._defaultDecision = decision
+
+    def getDefaultDecision(self):
+        """
+        Get the default decision for this chain.
+
+        Returns:
+            str: Default decision for this chain 
+        """
+        return self._defaultDecision
 
     def getRules(self):
         """

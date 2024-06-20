@@ -23,8 +23,8 @@ class Level:
         """
         if not isinstance(field, Field):
             raise ValueError("Domain of Level should be of Field Class.")
-        self._field_ = field      # Domain of the Level
-        self._nodes_ = []         # List of Nodes in the Level
+        self._field = field      # Domain of the Level
+        self._nodes = []         # List of Nodes in the Level
 
     def addNodeToLvl(self, node: "Node"):
         """
@@ -33,7 +33,7 @@ class Level:
         Args:
             node (Node): Node to add
         """
-        self._nodes_.append(node)
+        self._nodes.append(node)
 
     def delNodeFromLvl(self, node: "Node"):
         """
@@ -42,7 +42,7 @@ class Level:
         Args:
             node (Node): Node to delete
         """
-        self._nodes_.remove(node)
+        self._nodes.remove(node)
 
     def getNodes(self):
         """
@@ -51,7 +51,7 @@ class Level:
         Returns:
             List: Nodes for this level
         """
-        return self._nodes_
+        return self._nodes
     
     def getField(self):
         """
@@ -60,7 +60,7 @@ class Level:
         Returns:
             Field: The field of this level
         """
-        return self._field_
+        return self._field
 
 
 class Node:
@@ -78,12 +78,12 @@ class Node:
             level (Level): Node Level
             attrs: Node optional attributes
         """
-        self._level_: Level = level
-        self._name_: str = name
-        self._load_ : int = 0
-        self._attributes_ = attrs if attrs else {}
-        self._incoming_: List[Edge] = []
-        self._outgoing_: List[Edge] = []
+        self._level: Level = level
+        self._name: str = name
+        self._load : int = 0
+        self._attributes = attrs if attrs else {}
+        self._incoming: List[Edge] = []
+        self._outgoing: List[Edge] = []
 
     def __repr__(self) -> str:
         """
@@ -92,19 +92,19 @@ class Node:
         Returns:
             str: Node string representation
         """
-        return f'{self._name_}'
+        return f'{self._name}'
 
     def autoConnect(self):
         """
         Add Node to its Level list
         """
-        self._level_.addNodeToLvl(self)
+        self._level.addNodeToLvl(self)
 
     def autoDisconnect(self):
         """
         Remove Node from its Level list
         """
-        self._level_.delNodeFromLvl(self)
+        self._level.delNodeFromLvl(self)
         
     def addIncoming(self, incoming: "Edge"):
         """
@@ -114,7 +114,7 @@ class Node:
         Args:
             incoming (Edge): Edge to add
         """
-        self._incoming_.append(incoming)
+        self._incoming.append(incoming)
         
     def addOutgoing(self, outgoing: "Edge"):
         """
@@ -124,25 +124,25 @@ class Node:
         Args:
             outgoinging (Edge): Edge to add
         """
-        self._outgoing_.append(outgoing)
+        self._outgoing.append(outgoing)
 
     def getIncoming(self):
         """
         Return the list of incoming edges
         """
-        return self._incoming_
+        return self._incoming
 
     def getOutgoing(self):
         """
         Return the list of outgoings edges
         """
-        return self._outgoing_
+        return self._outgoing
     
     def getLevel(self):
         """
         Return the level for this node
         """
-        return self._level_
+        return self._level
     
     def getAttributes(self, attr_name=None):
         """
@@ -156,8 +156,8 @@ class Node:
             dict or any: The Node attributes or the value of the specified attribute.
         """
         if attr_name is None:
-            return self._attributes_
-        return self._attributes_.get(attr_name, None)
+            return self._attributes
+        return self._attributes.get(attr_name, None)
         
     def getLoad(self):
         """
@@ -166,7 +166,7 @@ class Node:
         Returns:
             load (int): Node's Load
         """
-        return self._load_
+        return self._load
     
     def setLoad(self, load:int):
         """
@@ -175,13 +175,13 @@ class Node:
         Args:
             load (int): New Node's Load
         """
-        self._load_ = load
+        self._load = load
     
     def getName(self):
         """
         Return the name of this node
         """
-        return self._name_
+        return self._name
 
 
 class Edge:
@@ -198,13 +198,13 @@ class Edge:
             id (int): Id of the Edge
             attrs: Edge optional attributes
         """
-        self._id_: List[int] = [] + edgeId
-        self._origin_: Node = origin
-        self._destination_: Node = destination
-        self._elementSet_ = elementSet
-        self._markedAny_ = False
-        self._load_ = 0 #TODO Revisar, quizas no hace falta markedAny, ya que un arco marcado tiene load = 1
-        self._attributes_ = attrs if attrs else {}
+        self._id: List[int] = [] + edgeId
+        self._origin: Node = origin
+        self._destination: Node = destination
+        self._elementSet = elementSet
+        self._markedAny = False
+        self._load = 0 #TODO Revisar, quizas no hace falta markedAny, ya que un arco marcado tiene load = 1
+        self._attributes = attrs if attrs else {}
 
     def __repr__(self) -> str:
         """
@@ -213,7 +213,7 @@ class Edge:
         Returns:
             str: Edge string representation
         """
-        return f'{self._origin_} -> {self._destination_}'
+        return f'{self._origin} -> {self._destination}'
 
     def __eq__(self, other: "Edge"):
         """
@@ -222,35 +222,35 @@ class Edge:
         Args:
             other (Edge): Edge to compare
         """
-        return (self._id_ == other.getId() and
-                self._origin_ == other.getOrigin() and
-                self._destination_ == other.getDestination() and
-                self._elementSet_ == other.getElementSet()
+        return (self._id == other.getId() and
+                self._origin == other.getOrigin() and
+                self._destination == other.getDestination() and
+                self._elementSet == other.getElementSet()
                 )
 
     def __hash__(self):
         """
         Edge __hash__
         """
-        return hash((self._origin_, self._destination_, self._id_))
+        return hash((self._origin, self._destination, self._id))
 
     def autoConnect(self):
         """
         Connect Edge to its origin and destination Nodes
         """
-        if self not in self._origin_.getOutgoing():
-            self._origin_.getOutgoing().append(self)
-        if self not in self._destination_.getIncoming():
-            self._destination_.getIncoming().append(self)
+        if self not in self._origin.getOutgoing():
+            self._origin.getOutgoing().append(self)
+        if self not in self._destination.getIncoming():
+            self._destination.getIncoming().append(self)
 
     def autoDisconnect(self):
         """
         Disconnect Edge to its origin and destination Nodes
         """
-        if self in self._origin_.getOutgoing():
-            self._origin_.getOutgoing().remove(self)
-        if self in self._destination_.getIncoming():
-            self._destination_.getIncoming().remove(self)
+        if self in self._origin.getOutgoing():
+            self._origin.getOutgoing().remove(self)
+        if self in self._destination.getIncoming():
+            self._destination.getIncoming().remove(self)
 
     def replicate(self) -> "Edge":
         """
@@ -259,7 +259,7 @@ class Edge:
         Returns:
             Edge: Edge to copy
         """
-        return Edge(self._id_, self._origin_, self._destination_, self._elementSet_.replicate(),**self._attributes_)
+        return Edge(self._id, self._origin, self._destination, self._elementSet.replicate(),**self._attributes)
     
     def markEdge(self, mark:bool=True):
         """
@@ -268,7 +268,7 @@ class Edge:
         Args:
             mark (bool, optional): Value to set the Marked attribute. Defaults to True.
         """
-        self._markedAny_ = mark
+        self._markedAny = mark
         
     def getMarking(self):
         """
@@ -277,7 +277,7 @@ class Edge:
         Returns:
             markedAny (bool): Marking of the Edge
         """
-        return self._markedAny_
+        return self._markedAny
 
     def setOrigin(self, origin: "Node"):
         """
@@ -286,7 +286,7 @@ class Edge:
         Args:
             origin (Node): Origin Node
         """
-        self._origin_ = origin
+        self._origin = origin
 
     def extendId(self, ids: List[int]):
         """
@@ -295,7 +295,7 @@ class Edge:
         Args:
             ids (List[int]): List of new ids
         """
-        self._id_.extend(ids)
+        self._id.extend(ids)
 
     def getOrigin(self):
         """
@@ -304,7 +304,7 @@ class Edge:
         Returns:
             Node: Origin Node
         """
-        return self._origin_
+        return self._origin
     
     def setDestination(self, destination: "Node"):
         """
@@ -313,7 +313,7 @@ class Edge:
         Args:
             destination (Node): Destination Node
         """
-        self._destination_ = destination
+        self._destination = destination
     
     def getDestination(self):
         """
@@ -322,7 +322,7 @@ class Edge:
         Returns:
             Node: destination Node
         """
-        return self._destination_
+        return self._destination
 
     def getId(self):
         """
@@ -331,7 +331,7 @@ class Edge:
         Returns:
             List[int]: List of Edge ids
         """
-        return self._id_
+        return self._id
     
     def getAttributes(self, attr_name=None):
         """
@@ -345,8 +345,8 @@ class Edge:
             dict or any: The Edge attributes or the value of the specified attribute.
         """
         if attr_name is None:
-            return self._attributes_
-        return self._attributes_.get(attr_name, None)
+            return self._attributes
+        return self._attributes.get(attr_name, None)
         
     def setAttributes(self, **new_attrs):
         """
@@ -355,7 +355,7 @@ class Edge:
         Args:
             new_attrs: New attributes to update.
         """
-        self._attributes_.update(new_attrs)
+        self._attributes.update(new_attrs)
     
     def getElementSet(self):
         """
@@ -364,7 +364,7 @@ class Edge:
         Returns:
             ElementSet: Edge elementSet
         """
-        return self._elementSet_
+        return self._elementSet
     
     def setElementSet(self, elementSet: ElementSet):
         """
@@ -373,7 +373,7 @@ class Edge:
         Args:
             elementSet (ElementSet): New ElementSet
         """
-        self._elementSet_ = elementSet
+        self._elementSet = elementSet
 
 class FDD:
     """
@@ -383,9 +383,9 @@ class FDD:
     def __init__(self, fieldList: FieldList):
         """_summary_
         """
-        self._levels_ = []
+        self._levels = []
         # Un diccionario de decisiones, deberíamos ver bien como tratarlo en el futuro
-        self._decisions_ = {}
+        self._decisions = {}
 
         # Primero creamos la lista de niveles del arbol, usando las configuraciones extraidas de la FieldList
         # Lanzamos un Type error si alguno de los tipos especificados para el nivel no es valido (no existe su ElementSet correspondiente)
@@ -393,60 +393,30 @@ class FDD:
 
             if field.getType() in ElementSetRegistry.getRegistry():
 
-                self._levels_.append(Level(field))
+                self._levels.append(Level(field))
             
             else:
 
                 raise TypeError()
             
         # Creamos el ultimo nivel, que corresponde a los nodos hoja y equivalen a las decisiones del FDD
-        self._levels_.append(Level(Field('Decision', 'Decision')))
+        self._levels.append(Level(Field('Decision', 'Decision')))
 
         # Creamos un unico nodo root en el primer nivel del arbol.
-        root = Node(self._levels_[0].getField().getName(), self._levels_[0])
+        root = Node(self._levels[0].getField().getName(), self._levels[0])
         root.autoConnect()
 
-    def genPre(self, chain: Chain):
-        """sumary
+
+    def _getDecisionNode(self, decision: str):
+        """Obtains the node corresponding to this decision if it exists, or adds a new one and returns it
         """
-        
-        # Recorremos la lista de Rules
-        for rule in chain.getRules():
+        # Revisamos la decision de la regla, si ya existe un nodo en el diccionario de decisiones para dicha decision, lo usamos
+        # Si no existe, creamos el nodo y lo agregamos tanto al arbol como al diccionario de decisiones
+        if decision  not in self._decisions:
+            self._decisions[decision] = Node(decision, self._levels[-1], shape='box', fontsize='25')
+            self._decisions[decision].autoConnect()
+        return self._decisions[decision]
 
-            # Revisamos que todos los predicados de la regla esten contemplados en la lista de fields
-            fields = [level.getField().getName() for level in self._levels_]
-            for predicate in rule.getPredicates():
-                if predicate not in fields:
-                    raise TypeError(f"Predicate {predicate} isn't include in FieldList")
-
-            # Creamos una lista de Nodos temporal, que usaremos para conectar los edges en un bucle
-            # La lista se inicia con el nodo root
-            nodes = [self._levels_[0].getNodes()[0]]
-
-            #Agregamos un nodo por cada nivel, exptuando el primero y el ultimo
-            for level in self._levels_[1:-1]:
-
-                newNode = Node(f"{level.getField().getName()}_{rule.getId()}", level)
-                newNode.autoConnect()
-                nodes.append(newNode)
-
-            # Revisamos la decision de la regla, si ya existe un nodo en el diccionario de decisiones para dicha decision, lo usamos
-            # Si no existe, creamos el nodo y lo agregamos tanto al arbol como al diccionario de decisiones
-            decision = rule.getDecision()
-            if decision in self._decisions_:
-                nodes.append(self._decisions_[decision])
-            else:
-                self._decisions_[decision] = Node(decision, self._levels_[-1], shape='box', fontsize='25')
-                self._decisions_[decision].autoConnect()
-                nodes.append(self._decisions_[decision])
-
-            # Recorremos la lista temporal de nodos y vamos añadiendo los Edges que los conectan
-            for j in range(1, len(nodes)):
-
-                elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
-                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
-                newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
-                newEdge.autoConnect()
 
     def printFDD(self, name: str):
         """sumary
@@ -457,7 +427,7 @@ class FDD:
         field_subgraphs = {}
 
         # Iterate through the levels to create subgraphs
-        for level in self._levels_:
+        for level in self._levels:
             field_name = level.getField().getName()  # Get the field name for the level
 
             if field_name not in field_subgraphs:
@@ -474,7 +444,10 @@ class FDD:
                 for edge in node.getOutgoing():
                     origin_name = edge.getOrigin().getName()
                     destination_name = edge.getDestination().getName()
-                    label = f"{edge.getId()},{edge.getElementSet().getElementsList()}" 
+                    if edge.getAttributes('label') != None:
+                        label = f"{edge.getId()},{edge.getAttributes('label')}"
+                    else:
+                        label = f"{edge.getId()},{edge.getElementSet().getElementsList()}" 
                     edge_attributes = edge.getAttributes()
                     dot.edge(origin_name, destination_name, label=label, _attributes=edge_attributes)
 
@@ -485,6 +458,44 @@ class FDD:
         # Render the graph to a file
         dot.render(name, format='png', view=False, cleanup=True)
 
+
+    def _genPre(self, chain: Chain):
+        """sumary
+        """
+        
+        # Recorremos la lista de Rules
+        for rule in chain.getRules():
+
+            # Revisamos que todos los predicados de la regla esten contemplados en la lista de fields
+            fields = [level.getField().getName() for level in self._levels]
+            for predicate in rule.getPredicates():
+                if predicate not in fields:
+                    raise TypeError(f"Predicate {predicate} isn't include in FieldList")
+
+            # Creamos una lista de Nodos temporal, que usaremos para conectar los edges en un bucle
+            # La lista se inicia con el nodo root
+            nodes = [self._levels[0].getNodes()[0]]
+
+            # Agregamos un nodo por cada nivel, exptuando el primero y el ultimo
+            for level in self._levels[1:-1]:
+
+                newNode = Node(f"{level.getField().getName()}_{rule.getId()}", level)
+                newNode.autoConnect()
+                nodes.append(newNode)
+
+            # Añadimos el nodo de decision al final
+            decisionNode = self._getDecisionNode(rule.getDecision())
+            nodes.append(decisionNode)
+
+            # Recorremos la lista temporal de nodos y vamos añadiendo los Edges que los conectan
+            for j in range(1, len(nodes)):
+
+                elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
+                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
+                newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
+                newEdge.autoConnect()
+
+
     def _sanityStep1(self):
         """ Sanitizes all first-level nodes of the FDD, except the last one, as it requires a different treatment. 
         """
@@ -492,9 +503,9 @@ class FDD:
         newIndex = 0
 
         # Recorremos los niveles, a excepcion de los ultimos dos.
-        for h in range(len(self._levels_[:-2])):
+        for h in range(len(self._levels[:-2])):
 
-            level = self._levels_[h]
+            level = self._levels[h]
 
             # El bucle i recorre todos los nodos de cada nivel
             i = 0
@@ -521,7 +532,7 @@ class FDD:
                             intersectionSet = edge1.getElementSet().intersectionSet(edge2.getElementSet())
 
                             # Creamos un nuevo nodo en el nivel
-                            newNode = Node(self._levels_[h+1].getField().getName() + " new " + str(newIndex), self._levels_[h+1])
+                            newNode = Node(self._levels[h+1].getField().getName() + " new " + str(newIndex), self._levels[h+1])
                             newNode.autoConnect()
                             newIndex = newIndex + 1
 
@@ -597,7 +608,7 @@ class FDD:
         """Sanitizes the last-level nodes of the FDD.
         """
 
-        level = self._levels_[-2]
+        level = self._levels[-2]
         
         # El bucle i recorre todos los nodos del nivel
         i = 0
@@ -667,13 +678,34 @@ class FDD:
 
             i = i + 1
 
-
-    def sanity(self):
-        """Sanitize the FDD.
+    
+    def _sanityStep3(self, chain: Chain):
+        """Check and achieve completeness in the nodes
         """
 
+        for level in self._levels[:-1]:
+
+            for node in level.getNodes():
+
+                left = ElementSet.createElementSet(level.getField().getType(), [None])
+
+                for edge in node.getOutgoing():
+
+                    left.remove(edge.getElementSet())
+
+                if not left.isEmpty():
+                    
+                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left) #label='step3')
+                    newEdge.autoConnect()
+
+
+    def genFDD(self, chain):
+        """Generates the PreFDD and sanitizes it to convert it to FDD.
+        """
+        self._genPre(chain)
         self._sanityStep1()
         self._sanityStep2()
+        self._sanityStep3(chain)
 
 
     def reduction(self):
@@ -707,7 +739,7 @@ class FDD:
         to v'.
         """
         changed = False
-        for level in self._levels_:
+        for level in self._levels:
             nodes_to_remove = []
             for node_v in level.getNodes():
                 v_out = node_v.getOutgoing()
@@ -744,7 +776,7 @@ class FDD:
         its outgoing edges, and make all edges that pointed to v' now point to v.
         """
         changed = False
-        for level in self._levels_:
+        for level in self._levels:
             nodes_to_remove = []
             
             # Convert nodes list to a temporary list to avoid modification issues
@@ -789,7 +821,7 @@ class FDD:
         remove e' and change the label of e from I(e) to I(e) U I(e').
         """
         changed = False
-        for level in self._levels_:
+        for level in self._levels:
             for node in level.getNodes():
                 seen_edges = {}
                 for edge in node.getOutgoing():
@@ -867,7 +899,7 @@ class FDD:
         Since all the edge's labels do not change, the semantics of a marked and a non-marked FDD are the same.
         """
         # Step 1: Initialize the load of each terminal node to 1
-        last_level = self._levels_[-1]  # Last Level has terminal Nodes
+        last_level = self._levels[-1]  # Last Level has terminal Nodes
         for node in last_level.getNodes():
             if not node.getOutgoing():
                 node.setLoad(1)
@@ -876,7 +908,7 @@ class FDD:
         changed = True
         while changed:
             changed = False
-            for level in self._levels_:
+            for level in self._levels:
                 for node in level.getNodes():
                     if node.getLoad() == 0 and all(dest.getLoad() != 0 for dest in (e.getDestination() for e in node.getOutgoing())):
                         # (a) Select the edge with the largest (load(e_j) - 1) * load(v_j)
@@ -989,7 +1021,7 @@ class FDD:
                 dfs(edge.getDestination(), decision_path + [(node, edge)])
         
         # Step 1: Generate Rules from FDD
-        dfs(self._levels_[0].getNodes()[0], []) 
+        dfs(self._levels[0].getNodes()[0], []) 
         #return chain
 
         # Step 2: Compact Rules

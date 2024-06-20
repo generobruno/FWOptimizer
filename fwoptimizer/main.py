@@ -38,22 +38,20 @@ if __name__ == '__main__':
     fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
 
     chain = rules_parsed['filter']['INPUT']
-    chain.setDefaultDecision("ACCEPT")
+    chain.setDefaultDecision("DROP")
 
     fdd = FDD(fieldList)
     fdd.genFDD(chain)
     fdd.printFDD("FDD")
 
-
+    print("\nREDUCING:")
+    fdd.reduction()
+    #fdd.printFDD("reducedFDD")
     
-    # print("\nREDUCING:")
-    # fdd.reduction()
-    # fdd.printFDD("reducedFDD")
+    print("\nMARKING:")
+    fdd.marking()
+    fdd.printFDD("MarkedFDD")
     
-    # print("\nMARKING:")
-    # fdd.marking()
-    # fdd.printFDD("MarkedFDD")
-    
-    # print("\nCREATING RULES:")
-    # firewall_chain = fdd.firewallGen()
-    # print(firewall_chain)
+    print("\nCREATING RULES:")
+    firewall_chain = fdd.firewallGen()
+    print(firewall_chain)

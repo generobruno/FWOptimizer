@@ -739,7 +739,7 @@ class FDD:
         to v'.
         """
         changed = False
-        for level in self._levels:
+        for level in self._levels[:-1]:
             nodes_to_remove = []
             for node_v in level.getNodes():
                 v_out = node_v.getOutgoing()
@@ -776,7 +776,7 @@ class FDD:
         its outgoing edges, and make all edges that pointed to v' now point to v.
         """
         changed = False
-        for level in self._levels:
+        for level in self._levels[:-1]: #TODO REVISAR (SI SOLO HACEMOS UN NODO POR DECISION ESTO NO HACE FALTA)
             nodes_to_remove = []
             
             # Convert nodes list to a temporary list to avoid modification issues
@@ -832,7 +832,8 @@ class FDD:
                         # Merge element sets
                         print(f'MERGING edges {seen_edge} and {edge}: '
                               f'{seen_edge.getElementSet().getElements()} U {edge.getElementSet().getElements()}')
-                        seen_edge.setElementSet(seen_edge.getElementSet().unionSet(edge.getElementSet()))
+                        merged_set = seen_edge.getElementSet().unionSet(edge.getElementSet())
+                        seen_edge.setElementSet(merged_set)
                         edge.autoDisconnect()
                         changed = True
                     else:
@@ -1022,7 +1023,7 @@ class FDD:
         
         # Step 1: Generate Rules from FDD
         dfs(self._levels[0].getNodes()[0], []) 
-        #return chain
+        return chain
 
         # Step 2: Compact Rules
         redundant = [False] * len(chain.getRules())

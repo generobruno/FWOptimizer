@@ -41,7 +41,10 @@ class ElementSetRegistry(type):
             _type_: _description_
         """
         return mcs._REGISTRY_
-
+    
+    @classmethod
+    def getElementSetClass(mcs, field_type):
+        return mcs._REGISTRY_.get(field_type)
 
 
 class ElementSet(metaclass = ElementSetRegistry):

@@ -77,6 +77,15 @@ class Rule:
             id: Rule id
         """
         return self._id
+    
+    def setId(self, new_id):
+        """
+        Set the new Rule Id
+
+        Args:
+            new_id: New Id
+        """
+        self._id = new_id
 
 class Chain:
     """

@@ -4,6 +4,7 @@ Firewall Decision Diagram (FDD) module
 
 from typing import List
 import graphviz
+import netaddr as nt
 
 from fwoptimizer.classes.firewall import Field, FieldList
 from fwoptimizer.classes.rules import Chain, Rule
@@ -386,6 +387,7 @@ class FDD:
         self._levels = []
         # Un diccionario de decisiones, deberíamos ver bien como tratarlo en el futuro
         self._decisions = {}
+        self._fieldList = fieldList #TODO REVISAR
 
         # Primero creamos la lista de niveles del arbol, usando las configuraciones extraidas de la FieldList
         # Lanzamos un Type error si alguno de los tipos especificados para el nivel no es valido (no existe su ElementSet correspondiente)
@@ -695,7 +697,7 @@ class FDD:
 
                 if not left.isEmpty():
                     
-                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left) #label='step3')
+                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left, label='DEFAULT')
                     newEdge.autoConnect()
 
 
@@ -1023,34 +1025,46 @@ class FDD:
         
         # Step 1: Generate Rules from FDD
         dfs(self._levels[0].getNodes()[0], []) 
-        return chain
+        
+        #return chain
+        print(f'NOT COMPACTED CHAIN:\n {chain}\n\nCompacting Rules...')
 
         # Step 2: Compact Rules
         redundant = [False] * len(chain.getRules())
 
-        # Mark redundant rules #TODO Revisar
+        # Mark redundant rules
         n = len(chain.getRules())
         for i in range(n - 1, -1, -1):
             for k in range(i + 1, n):
+                print(f'\nCHECKING RULES {i} and {k}')
                 if (    not redundant[k] and
                         self._sameDecision(chain[i], chain[k]) and
                         self._implies(chain[i], chain[k])):
                     # Check if rule i is redundant based on rule k
                     is_redundant = True
                     for j in range(i + 1, k):
+                        print(f'\tIntermediate rule check: {j}')
                         if (    not redundant[j] and
                                 not self._sameDecision(chain[i], chain[j]) and
                                 not self._mutuallyExclusive(chain[i], chain[j])):
+                            print(f'\tRule {i} and rule {j} are not mutually exclusive and do not have the same decision.')
                             is_redundant = False
                             break
+                        else:
+                            print(f'\tRule {i} and rule {j} are either mutually exclusive or have the same decision.')
                     if is_redundant:
+                        print(f'\tMarking rule {i} as redundant based on rule {k}.')
                         redundant[i] = True
                         break
 
         # Remove redundant rules
         new_rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
         chain.setRules(new_rules)
+        
         #TODO ACOMODAR RULE_IDs DESPUES DE ELIMINAR REGLAS REDUNDANTES
+        #for idx, rule in enumerate(chain.getRules()):
+        #    rule.setId(idx)
+            
         print(f'Removed {n - len(chain.getRules())} REDUNDANT rules from the chain.\n')
 
         return chain     
@@ -1071,31 +1085,61 @@ class FDD:
         Let r_i.rp be F_1 ∈ T_1 ∧ ... ∧ F_d ∈ T_d and let r_k.mp be F_1 ∈ S_1 ∧ ... ∧ F_d ∈ S_d. 
         Then, r_i.rp implies r_k.mp if and only if for every j, where 1 <= j <= d, the condition T_j ⊆ S_j holds.
         """
-        fields = set(rule1.getPredicates().keys()).union(rule2.getPredicates().keys())
-        for field in fields:
-            option1 = rule1.getOption(field, set())
-            option2 = rule2.getOption(field, set())
-            print(f'Checking predicates {option1} - {option2}: {option1.issubset(option2)}')
-            if not option1.issubset(option2):
+        #fields = set(rule1.getPredicates().keys()).union(rule2.getPredicates().keys()) #TODO Ver si hacer asi u obtenerlos del atributo como estoy haciendo ahora
+        for field in self._fieldList.getFields():
+            option1 = rule1.getOption(field.getName(), set()) #TODO VER CASO DEFAULT
+            option2 = rule2.getOption(field.getName(), set())
+            
+            field_dom = ElementSetRegistry.getElementSetClass(field.getType()).getDomain()
+
+            if option1 == field_dom or option2 == field_dom:
+                return True
+            
+            if isinstance(option1, nt.IPSet):
+                option1_set = set(option1.iter_cidrs())
+            else:
+                option1_set = set(option1)
+
+            if isinstance(option2, nt.IPSet):
+                option2_set = set(option2.iter_cidrs())
+            else:
+                option2_set = set(option2)
+            print(f'Checking predicates ({field.getName()}) {option1_set} - {option2_set}: {option1_set.issubset(option2_set)}')
+            if not option1_set.issubset(option2_set):
                 return False
         return True
     
     def _mutuallyExclusive(self, rule1, rule2):
-        fields = set(rule1.getPredicates().keys()).union(rule2.getPredicates().keys())
-        for field in fields:
-            option1 = rule1.getOption(field, set())
-            option2 = rule2.getOption(field, set())
-            print(f'Checking Mutual Exclusion {option1} - {option2}: {option1.isdisjoint(option2)}')
-            if not option1.isdisjoint(option2):  # Check if they have no common elements
+        """
+        Check if rule1 and rule2 are mutually exclusive.
+
+        Two rules are mutually exclusive if there are no common values across all fields.
+
+        Args:
+            rule1 (Rule): First rule to compare.
+            rule2 (Rule): Second rule to compare.
+
+        Returns:
+            bool: True if rule1 and rule2 are mutually exclusive, False otherwise.
+        """
+        #fields = set(rule1.getPredicates().keys()).union(rule2.getPredicates().keys())  #TODO Ver si hacer asi u obtenerlos del atributo como estoy haciendo ahora
+        for field in self._fieldList.getFields():
+            option1 = rule1.getOption(field.getName(), set())
+            option2 = rule2.getOption(field.getName(), set())
+            
+            if isinstance(option1, nt.IPSet):
+                option1_set = set(option1.iter_cidrs())
+            else:
+                option1_set = set(option1)
+
+            if isinstance(option2, nt.IPSet):
+                option2_set = set(option2.iter_cidrs())
+            else:
+                option2_set = set(option2)
+            
+            print(f'Checking Mutual Exclusion {option1_set} - {option2_set}: ')
+            print(f'{option1_set.isdisjoint(option2_set)}')
+            if not option1_set.isdisjoint(option2_set):  # Check if they have no common elements
                 return False
         return True
 
-    def _satisfiesBoth(self, rule1: Rule, rule2: Rule) -> bool:
-        """
-        Check if no packet satisfies both rule1's resolving predicate and rule2's matching predicate.
-        """
-        for field in rule1.getPredicates():
-            print(f'Checking satisfies both {rule2.getPredicates()} AND {rule1.getOption(field).isdisjoint(rule2.getOption(field))} ')
-            if field in rule2.getPredicates() and rule1.getOption(field).isdisjoint(rule2.getOption(field)):
-                return False
-        return True

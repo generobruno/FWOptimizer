@@ -997,13 +997,14 @@ class FDD:
                 resolving_predicate = {}
     
                 for v, e in decision_path:
-                    field = v.getLevel().getField().getName()
-                    element_set = e.getElementSet() 
+                    element_class = ElementSetRegistry.getElementSetClass(v.getLevel().getField().getType()) # ElementSet Type
+                    field = v.getLevel().getField().getName() # Field of level
+                    element_set = e.getElementSet() # Edge elementSet
     
                     if not e.getMarking():  # Not marked with "all"
-                        matching_predicate[field] = element_set.getElements()
+                        matching_predicate[field] = element_set
                     else:
-                        matching_predicate[field] = element_set.getDomain() 
+                        matching_predicate[field] = element_class(element_set.getDomainList())
                         
                     resolving_predicate[field] = element_set.getElements() #TODO SACAR?
     
@@ -1064,7 +1065,7 @@ class FDD:
         new_rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
         chain.setRules(new_rules)
         
-        #TODO ACOMODAR RULE_IDs DESPUES DE ELIMINAR REGLAS REDUNDANTES ?
+        # Fix Rules Ids after removal
         for idx, rule in enumerate(chain.getRules()):
             rule.setId(idx)
             
@@ -1104,24 +1105,16 @@ class FDD:
         """
         for field in self._fieldList.getFields():
             field_dom = ElementSetRegistry.getElementSetClass(field.getType()).getDomain()
+            field_name = field.getName()
             
-            option1 = rule1.getOption(field.getName(), field_dom) #TODO VER CASO DEFAULT
-            option2 = rule2.getOption(field.getName(), field_dom)
+            option1 = rule1.getOption(field_name, field_dom)
+            option2 = rule2.getOption(field_name, field_dom)
 
-            if option1 == field_dom:
+            if option1 == field_dom: # TODO REVISAR
                 return True
-            
-            if isinstance(option1, nt.IPSet):
-                option1_set = set(option1.iter_cidrs())
-            else:
-                option1_set = set(option1)
 
-            if isinstance(option2, nt.IPSet):
-                option2_set = set(option2.iter_cidrs())
-            else:
-                option2_set = set(option2)
-            print(f'\tChecking predicates ({field.getName()}) {option1_set} - {option2_set}: {option1_set.issubset(option2_set)}')
-            if not option1_set.issubset(option2_set):
+            print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
+            if not option1.isSubset(option2):
                 return False
         return True
     
@@ -1139,21 +1132,14 @@ class FDD:
             bool: True if rule1 and rule2 are mutually exclusive, False otherwise.
         """
         for field in self._fieldList.getFields():
-            option1 = rule1.getOption(field.getName(), set())
-            option2 = rule2.getOption(field.getName(), set())
+            field_dom = ElementSetRegistry.getElementSetClass(field.getType()).getDomain()
+            field_name = field.getName()
             
-            if isinstance(option1, nt.IPSet):
-                option1_set = set(option1.iter_cidrs())
-            else:
-                option1_set = set(option1)
-
-            if isinstance(option2, nt.IPSet):
-                option2_set = set(option2.iter_cidrs())
-            else:
-                option2_set = set(option2)
+            option1 = rule1.getOption(field_name, field_dom) 
+            option2 = rule2.getOption(field_name, field_dom)
             
-            print(f'\tChecking Mutual Exclusion {option1_set} - {option2_set}: {option1_set.isdisjoint(option2_set)}')
-            if not option1_set.isdisjoint(option2_set):  # Check if they have any common elements
+            print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
+            if not option1.isDisjoint(option2):  # Check if they have any common elements
                 return False
         return True
 

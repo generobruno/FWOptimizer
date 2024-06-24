@@ -1011,6 +1011,11 @@ class FDD:
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():
                     rule.setPredicate(field, values)
+                    rule.setMatchingPredicate(field, values)
+                
+                for field, values in resolving_predicate.items():
+                    rule.setResolvingPredicate(field, values)
+                
                 rule.setDecision(node.getName())
                 chain.addRule(rule)
                 return
@@ -1047,19 +1052,21 @@ class FDD:
                     # Check if rule i is redundant based on rule k
                     is_redundant = True
                     for j in range(i + 1, k):
-                        print(f'Intermediate rule check: {j}')
+                        print(f'\tIntermediate rule check: {j}')
                         if (not redundant[j] and
                             not self._sameDecision(chain[i], chain[j]) and
                             not self._mutuallyExclusive(chain[i], chain[j])):
-                            print(f'Rule {i} and rule {j} are not mutually exclusive and do not have the same decision.')
+                            print(f'\t\tRule {i} and rule {j} are NOT REDUNDANT.')
                             is_redundant = False
                             break
                         else:
-                            print(f'Rule {i} and rule {j} are either redundant, mutually exclusive, or have the same decision.')
+                            print(f'\tRule {i} and rule {j} are either redundant, mutually exclusive, or have the same decision.')
                     if is_redundant:
                         print(f'\t\tMarking rule {i} as REDUNDANT based on rule {k}.')
                         redundant[i] = True
                         break
+                else:
+                    print(f'\tRule {i} and rule {k} did not get to the intermediate Rule check.')
 
         # Remove redundant rules
         new_rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
@@ -1069,7 +1076,7 @@ class FDD:
         for idx, rule in enumerate(chain.getRules()):
             rule.setId(idx)
             
-        print(f'Removed {n - len(chain.getRules())} REDUNDANT rules from the chain.\n')
+        print(f'\nRemoved {n - len(chain.getRules())} REDUNDANT rules from the chain.\n')
 
         return chain     
     
@@ -1107,8 +1114,8 @@ class FDD:
             field_dom = ElementSetRegistry.getElementSetClass(field.getType()).getDomain()
             field_name = field.getName()
             
-            option1 = rule1.getOption(field_name, field_dom)
-            option2 = rule2.getOption(field_name, field_dom)
+            option1 = rule1.getResolvingPredicate(field_name, field_dom)
+            option2 = rule2.getMatchingPredicate(field_name, field_dom)
 
             print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
             if not option1.isSubset(option2):
@@ -1132,8 +1139,8 @@ class FDD:
             field_dom = ElementSetRegistry.getElementSetClass(field.getType()).getDomain()
             field_name = field.getName()
             
-            option1 = rule1.getOption(field_name, field_dom) 
-            option2 = rule2.getOption(field_name, field_dom)
+            option1 = rule1.getMatchingPredicate(field_name, field_dom) 
+            option2 = rule2.getMatchingPredicate(field_name, field_dom)
             
             print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
             if not option1.isDisjoint(option2):  # Check if they have any common elements

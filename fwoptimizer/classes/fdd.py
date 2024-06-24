@@ -1006,7 +1006,7 @@ class FDD:
                     else:
                         matching_predicate[field] = element_class(element_set.getDomainList())
                         
-                    resolving_predicate[field] = element_set.getElements() #TODO SACAR?
+                    resolving_predicate[field] = element_set #TODO SACAR?
     
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():
@@ -1031,7 +1031,7 @@ class FDD:
         dfs(self._levels[0].getNodes()[0], []) 
         
         #return chain
-        print(f'NOT COMPACTED CHAIN:\n {chain}\n\nCompacting Rules...')
+        print(f'NOT COMPACTED CHAIN:\n{chain}\n\nCompacting Rules...')
 
         # Step 2: Compact Rules
         redundant = [False] * len(chain.getRules())
@@ -1110,9 +1110,6 @@ class FDD:
             option1 = rule1.getOption(field_name, field_dom)
             option2 = rule2.getOption(field_name, field_dom)
 
-            if option1 == field_dom: # TODO REVISAR
-                return True
-
             print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
             if not option1.isSubset(option2):
                 return False
@@ -1142,4 +1139,3 @@ class FDD:
             if not option1.isDisjoint(option2):  # Check if they have any common elements
                 return False
         return True
-

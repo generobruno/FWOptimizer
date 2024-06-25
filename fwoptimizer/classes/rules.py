@@ -2,8 +2,6 @@
 rules Module
 """
 
-from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
-
 class Rule:
     """
     The Rule Class represent a given rule in a policy, with its predicates and decision.
@@ -21,8 +19,8 @@ class Rule:
         self._id = rule_id
         self._predicates = {}
         self._decision = None
-        self.matching_predicate = {}
-        self.resolving_predicate = {}
+        self._matchingPredicate = {}
+        self._resolvingPredicate = {}
 
     def __repr__(self) -> str:
         """
@@ -53,16 +51,16 @@ class Rule:
         return self._predicates
     
     def setMatchingPredicate(self, field, values):#TODO VER SI SACAR ESTAS FUNCIONES Y USAR SOLO GetOption
-        self.matching_predicate[field] = values
+        self._matchingPredicate[field] = values
 
     def getMatchingPredicate(self, field, default=None):
-        return self.matching_predicate.get(field, default)
+        return self._matchingPredicate.get(field, default)
 
     def setResolvingPredicate(self, field, values):
-        self.resolving_predicate[field] = values
+        self._resolvingPredicate[field] = values
 
     def getResolvingPredicate(self, field, default=None):
-        return self.resolving_predicate.get(field, default)
+        return self._resolvingPredicate.get(field, default)
 
     def getOption(self, option, default=None):
         """

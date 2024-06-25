@@ -7,7 +7,6 @@ import os
 # Add Root Dir to sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
 from fwoptimizer.classes import parser
 
 from fwoptimizer.classes import *

@@ -4,7 +4,6 @@ Firewall Decision Diagram (FDD) module
 
 from typing import List
 import graphviz
-import netaddr as nt
 
 from fwoptimizer.classes.firewall import Field, FieldList
 from fwoptimizer.classes.rules import Chain, Rule
@@ -447,7 +446,7 @@ class FDD:
                 for edge in node.getOutgoing():
                     origin_name = edge.getOrigin().getName()
                     destination_name = edge.getDestination().getName()
-                    if edge.getAttributes('label') != None:
+                    if edge.getAttributes('label') is not None:
                         label = f"{edge.getId()},{edge.getAttributes('label')}"
                     else:
                         label = f"{edge.getId()},{edge.getElementSet().getElementsList()}" 
@@ -1059,8 +1058,6 @@ class FDD:
                             print(f'\t\tRule {i} and rule {j} are NOT REDUNDANT.')
                             is_redundant = False
                             break
-                        else:
-                            print(f'\tRule {i} and rule {j} are either redundant, mutually exclusive, or have the same decision.')
                     if is_redundant:
                         print(f'\t\tMarking rule {i} as REDUNDANT based on rule {k}.')
                         redundant[i] = True

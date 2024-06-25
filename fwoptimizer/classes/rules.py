@@ -2,6 +2,8 @@
 rules Module
 """
 
+from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
+
 class Rule:
     """
     The Rule Class represent a given rule in a policy, with its predicates and decision.
@@ -50,7 +52,7 @@ class Rule:
         """
         return self._predicates
     
-    def setMatchingPredicate(self, field, values):
+    def setMatchingPredicate(self, field, values):#TODO VER SI SACAR ESTAS FUNCIONES Y USAR SOLO GetOption
         self.matching_predicate[field] = values
 
     def getMatchingPredicate(self, field, default=None):
@@ -183,6 +185,44 @@ class Chain:
             List<Rule>: list of rules
         """
         return self._rules
+    
+    def simplifyRules(self):
+        """
+        Simplify the set of rules in the chain.
+        """
+        simplified_rules = []
+        for rule in self._rules:
+            predicates = rule.getPredicates()
+            decision = rule.getDecision()
+            new_rules = [rule]
+            
+            # Identify if any predicate set has multiple non-overlapping ranges
+            for field, value in predicates.items():
+                elements_list = value.getElementsList()
+                # Split mutliple values
+                temp_rules = []
+                for subrange in elements_list:
+                    for r in new_rules:
+                        new_rule = Rule(r.getId())
+                        new_rule.setDecision(decision)
+                        
+                        for k, v in r.getPredicates().items():
+                            if k == field:
+                                new_rule.setPredicate(k, subrange)
+                            else:
+                                new_rule.setPredicate(k, v)
+                        
+                        temp_rules.append(new_rule)
+                new_rules = temp_rules
+                    
+            simplified_rules.extend(new_rules)
+        
+        # Replace the original rules with the simplified rules
+        self.setRules(simplified_rules)
+        
+        # Fix Rules Ids after removal
+        for idx, rule in enumerate(self._rules):
+            rule.setId(idx)
 
 class Table:
     """

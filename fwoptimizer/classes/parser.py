@@ -164,8 +164,7 @@ class IpTablesParser(ParserStrategy):
                     chain_name = line.split()[0][1:]
                     current_chain = rules.Chain(chain_name)
                     current_table.addChain(current_chain)
-                elif line.startswith('['):  # TODO REVISAR Default Policies
-                    continue
+                    current_chain.setDefaultDecision(line.split()[1])
                 elif line == 'COMMIT':              # End of Table
                     current_table = None
                     current_chain = None

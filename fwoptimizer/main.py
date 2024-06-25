@@ -38,7 +38,6 @@ if __name__ == '__main__':
     fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
 
     chain = rules_parsed['filter']['INPUT']
-    chain.setDefaultDecision("DROP")
 
     fdd = FDD(fieldList)
     fdd.genFDD(chain)
@@ -55,3 +54,7 @@ if __name__ == '__main__':
     print("\nCREATING RULES:")
     firewall_chain = fdd.firewallGen()
     print(firewall_chain)
+    
+    #print('\nSIMPLIFYING RULES:')
+    #firewall_chain.simplifyRules()
+    #print(firewall_chain)

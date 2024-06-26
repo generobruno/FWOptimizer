@@ -29,7 +29,7 @@ if __name__ == '__main__':
     for rule in rules_parsed['filter']['INPUT']:
         print(rule)
 
-    print(f'\nTotal Number of Tables: {len(rules_parsed._tables)}')
+    print(f'\nTotal Number of Tables: {len(rules_parsed.getTables())}')
     print(f'Total Number of Chains: {rules_parsed.numberOfChains()}')
     print(f'Total Number of Rules: {len(rules_parsed)}\n')
 

@@ -217,6 +217,15 @@ class Chain:
             List<Rule>: list of rules
         """
         return self._rules
+
+    def getName(self):
+        """
+        Get the Chain name
+
+        Returns:
+            String: Chain Name
+        """
+        return self._name
     
     def simplifyRules(self):
         """
@@ -300,7 +309,7 @@ class Table:
         Args:
             chain (Chain): Chain to add
         """
-        self._chains[chain._name] = chain
+        self._chains[chain.getName()] = chain
     
     def getChains(self):
         """
@@ -392,7 +401,16 @@ class RuleSet:
         Args:
             table (Table): Table to add
         """
-        self._tables[table._name] = table
+        self._tables[table.getName()] = table
+        
+    def getTables(self):
+        """
+        Get the RuleSet Tables
+
+        Returns:
+            Dict: Dictionary of tables 
+        """
+        return self._tables
 
     def printAll(self):
         """

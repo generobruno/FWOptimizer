@@ -44,7 +44,7 @@ class Parser:
         Args:
             strategy (ParserStrategy): Parse Strategy
         """
-        self.strategy = strategy
+        self._strategy = strategy
 
     def setStrategy(self, strategy: ParserStrategy):
         """
@@ -53,7 +53,7 @@ class Parser:
         Args:
             strategy (ParserStrategy): Parse Strategy
         """
-        self.strategy = strategy
+        self._strategy = strategy
 
     def parse(self, path) -> rules.RuleSet:
         """
@@ -65,7 +65,7 @@ class Parser:
         Returns:
             RuleSet: Set of Rules in file
         """
-        return self.strategy.parse(path)
+        return self._strategy.parse(path)
 
 
 class IpTablesParser(ParserStrategy):
@@ -81,8 +81,8 @@ class IpTablesParser(ParserStrategy):
         """
         IpTables Parser Strategy
         """
-        self.syntax_table = self.preprocessSyntaxTable(syntaxes.iptables)
-        self.ruleset = rules.RuleSet()
+        self._syntaxTable = self.preprocessSyntaxTable(syntaxes.iptables)
+        self._ruleSet = rules.RuleSet()
 
     def preprocessSyntaxTable(self, syntax_table):
         """
@@ -159,7 +159,7 @@ class IpTablesParser(ParserStrategy):
 
                 if line.startswith('*'):            # Start of Table
                     current_table = rules.Table(line[1:])
-                    self.ruleset.addTable(current_table)
+                    self._ruleSet.addTable(current_table)
                 elif line.startswith(':'):          # Define Chain
                     chain_name = line.split()[0][1:]
                     current_chain = rules.Chain(chain_name)
@@ -172,7 +172,7 @@ class IpTablesParser(ParserStrategy):
                     if line.startswith('-A'):       # Append Rule to Chain
                         chain_name = line.split()[1]
                         current_chain = current_table[chain_name]
-                    current_rule = self.parseOptions(line, line_num, current_table._name)
+                    current_rule = self.parseOptions(line, line_num, current_table.getName())
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         [rule.setPredicate(k, v) for k, v in current_rule.items() if k != 'decision']
@@ -180,7 +180,7 @@ class IpTablesParser(ParserStrategy):
                         current_chain.addRule(rule)
                         rule_id += 1
 
-            return self.ruleset
+            return self._ruleSet
 
     def parseOptions(self, line, line_num, current_table):
         """Parse options from a line of the iptables configuration
@@ -249,24 +249,24 @@ class IpTablesParser(ParserStrategy):
             regex = None
             if match_modules:
                 for match_module in reversed(match_modules):
-                    regex = self.syntax_table[current_table]['MatchModules'].get(
+                    regex = self._syntaxTable[current_table]['MatchModules'].get(
                         match_module, {}
                     ).get(option)
                     if regex is not None:
                         break
 
             if regex is None and current_prot:
-                regex = self.syntax_table[current_table]['MatchModules'].get(
+                regex = self._syntaxTable[current_table]['MatchModules'].get(
                     current_prot, {}
                 ).get(option)
 
             if regex is None and current_extension:
-                regex = self.syntax_table[current_table]['Extensions'].get(
+                regex = self._syntaxTable[current_table]['Extensions'].get(
                     current_extension, {}
                 ).get(option)
 
             if regex is None:
-                regex = self.syntax_table[current_table]['BasicOperations'].get(option)
+                regex = self._syntaxTable[current_table]['BasicOperations'].get(option)
 
             # Assign Rule Options
             if regex is not None:
@@ -322,4 +322,4 @@ class IpTablesParser(ParserStrategy):
         Returns:
             RuleSet: Set of RuleSet
         """
-        return self.ruleset
+        return self._ruleSet

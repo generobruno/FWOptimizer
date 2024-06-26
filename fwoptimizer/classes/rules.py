@@ -51,15 +51,49 @@ class Rule:
         return self._predicates
     
     def setMatchingPredicate(self, field, values):#TODO VER SI SACAR ESTAS FUNCIONES Y USAR SOLO GetOption
+        """
+        Set the Matching Predicate of the rule
+
+        Args:
+            field (Predicate): Option of the rule
+            values (ElementSet): Value of the rule
+        """
         self._matchingPredicate[field] = values
 
     def getMatchingPredicate(self, field, default=None):
+        """
+        Get the Matching Predicate of the rule
+
+        Args:
+            field (Predicate): Option of the rule
+            default (Any, optional): Default value. Defaults to None.
+
+        Returns:
+            Option: Predicate Option
+        """
         return self._matchingPredicate.get(field, default)
 
     def setResolvingPredicate(self, field, values):
+        """
+        Set the Resolving Predicate of the rule
+
+        Args:
+            field (Predicate): Option of the rule
+            values (ElementSet): Value of the rule
+        """
         self._resolvingPredicate[field] = values
 
     def getResolvingPredicate(self, field, default=None):
+        """
+        Get the Resolving Predicate of the rule
+
+        Args:
+            field (Predicate): Option of the rule
+            default (Any, optional): Default value. Defaults to None.
+
+        Returns:
+            Option: Predicate Option
+        """
         return self._resolvingPredicate.get(field, default)
 
     def getOption(self, option, default=None):
@@ -276,6 +310,15 @@ class Table:
             Chain: Chains in Table
         """
         return self._chains
+    
+    def getName(self):
+        """
+        Get the table name
+
+        Returns:
+            String: Table Name
+        """
+        return self._name
 
 class RuleSet:
     """

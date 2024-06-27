@@ -41,7 +41,10 @@ class ElementSetRegistry(type):
             _type_: _description_
         """
         return mcs._REGISTRY_
-
+    
+    @classmethod
+    def getElementSetClass(mcs, field_type):
+        return mcs._REGISTRY_.get(field_type)
 
 
 class ElementSet(metaclass = ElementSetRegistry):
@@ -58,9 +61,13 @@ class ElementSet(metaclass = ElementSetRegistry):
         registry = ElementSetRegistry.getRegistry()
         if elementType in registry:
             if values == [None]:
-                return registry[elementType](registry[elementType].getDomain())
+                return registry[elementType](registry[elementType].getDomainList())
             return registry[elementType](values)
         raise TypeError()
+    
+    @abstractmethod
+    def __repr__(self):
+        return str(self.getElementsList())
 
     @abstractmethod
     def __init__(self, values: List[str]) -> None:
@@ -73,9 +80,15 @@ class ElementSet(metaclass = ElementSetRegistry):
 
     @classmethod
     @abstractmethod
-    def getDomain(cls):
+    def getDomainList(cls):
         """_summary_
         """
+
+    @classmethod
+    @abstractmethod
+    def getDomain(cls):
+        """_summary_
+        """ 
 
     @abstractmethod
     def addSet(self, otherSet: "ElementSet"):
@@ -89,6 +102,16 @@ class ElementSet(metaclass = ElementSetRegistry):
 
     @abstractmethod
     def isEmpty(self):
+        """_summary_
+        """
+    
+    @abstractmethod
+    def isSubset(self, otherSet: "ElementSet"):
+        """_summary_
+        """
+        
+    @abstractmethod
+    def isDisjoint(self, otherSet: "ElementSet"):
         """_summary_
         """
 
@@ -153,8 +176,11 @@ class DirSet(ElementSet):
         """
         return self._elements == other.getElements()
     
+    def __repr__(self):
+        return 'DirSet' + super().__repr__()
+    
     @classmethod
-    def getDomain(cls):
+    def getDomainList(cls):
         """
         Get the ElementSet Domain as a list
 
@@ -162,6 +188,16 @@ class DirSet(ElementSet):
             Domain: ElementSet Domain
         """
         return [str(net) for net in cls._domain_.iter_cidrs()]
+    
+    @classmethod
+    def getDomain(cls):
+        """
+        Returns the Domain of the ElementSet as an object
+
+        Returns:
+            DirSet: Domain of the set
+        """
+        return DirSet(cls.getDomainList())
 
     def addSet(self, otherSet: "DirSet") -> None:
         """_summary_
@@ -189,6 +225,25 @@ class DirSet(ElementSet):
             bool: _description_
         """
         return len(self._elements) == 0
+    
+    def isSubset(self, otherSet: "DirSet") -> bool:
+        """
+        Checks if a DirSet is a subset of the other set.
+        A set is a subset of itself.
+
+        Args:
+            otherSet (ElementSet): Other DirSet to compare
+        """
+        return self._elements.issubset(otherSet.getElements())
+    
+    def isDisjoint(self, otherSet: "DirSet") -> bool:
+        """
+        Checks if a DirSet is not a subset of the other set.
+
+        Args:
+            otherSet (DirSet): Other DirSet to compare
+        """
+        return self._elements.isdisjoint(otherSet.getElements())
     
     def intersectionSet(self, otherSet: "DirSet") -> "DirSet":
         """_summary_
@@ -284,8 +339,11 @@ class ProtSet(ElementSet):
         """
         return self._elements == other.getElements()
     
+    def __repr__(self):
+        return 'ProtSet' + super().__repr__()
+    
     @classmethod
-    def getDomain(cls):
+    def getDomainList(cls):
         """
         Get the ElementSet Domain
 
@@ -293,6 +351,16 @@ class ProtSet(ElementSet):
             Domain: ElementSet Domain
         """
         return list(cls._domain_)
+    
+    @classmethod
+    def getDomain(cls):
+        """
+        Returns the Domain of the ElementSet as an object
+
+        Returns:
+            ProtSet: Domain of the set
+        """
+        return ProtSet(cls.getDomainList())
 
     def addSet(self, otherSet: "ProtSet") -> None:
         """_summary_
@@ -320,6 +388,25 @@ class ProtSet(ElementSet):
             _type_: _description_
         """
         return len(self._elements) == 0
+    
+    def isSubset(self, otherSet: "ProtSet") -> bool:
+        """
+        Checks if a ProtSet is a subset of the other set.
+        A set is a subset of itself.
+
+        Args:
+            otherSet (ProtSet): Other ProtSet to compare
+        """
+        return self._elements.issubset(otherSet.getElements()) #TODO Revisar si influye en load
+    
+    def isDisjoint(self, otherSet: "ProtSet") -> bool:
+        """
+        Checks if a ProtSet is not a subset of the other set.
+
+        Args:
+            otherSet (ProtSet): Other ProtSet to compare
+        """
+        return self._elements.isdisjoint(otherSet.getElements())
     
     def intersectionSet(self, otherSet: "ProtSet") -> "ProtSet":
         """_summary_

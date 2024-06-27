@@ -386,6 +386,8 @@ class FDD:
         self._levels = []
         # Un diccionario de decisiones, deberíamos ver bien como tratarlo en el futuro
         self._decisions = {}
+        # FieldList del FDD
+        self._fieldList = fieldList #TODO REVISAR
 
         # Primero creamos la lista de niveles del arbol, usando las configuraciones extraidas de la FieldList
         # Lanzamos un Type error si alguno de los tipos especificados para el nivel no es valido (no existe su ElementSet correspondiente)
@@ -444,7 +446,7 @@ class FDD:
                 for edge in node.getOutgoing():
                     origin_name = edge.getOrigin().getName()
                     destination_name = edge.getDestination().getName()
-                    if edge.getAttributes('label') != None:
+                    if edge.getAttributes('label') is not None:
                         label = f"{edge.getId()},{edge.getAttributes('label')}"
                     else:
                         label = f"{edge.getId()},{edge.getElementSet().getElementsList()}" 
@@ -695,7 +697,7 @@ class FDD:
 
                 if not left.isEmpty():
                     
-                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left) #label='step3')
+                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left, label='DEFAULT')
                     newEdge.autoConnect()
 
 
@@ -739,7 +741,7 @@ class FDD:
         to v'.
         """
         changed = False
-        for level in self._levels[:-1]:
+        for level in self._levels[1:-1]: # TODO REVISAR DE CAMBIAR [1:-1] para no tomar el root
             nodes_to_remove = []
             for node_v in level.getNodes():
                 v_out = node_v.getOutgoing()
@@ -759,6 +761,7 @@ class FDD:
                     
                     # Mark Node v for removal
                     nodes_to_remove.append(node_v)
+                    e.autoDisconnect()
                     print(f'\tMarked {node_v} for removal from {level.getField().getName()} Level')
                     changed = True
             
@@ -794,12 +797,13 @@ class FDD:
                         # v_prime Edges now point to v
                         print(f'\t{node_v_prime} Edges now point to {node_v}:')
                         for incoming_edge in node_v_prime.getIncoming():
+                            incoming_edge.autoDisconnect()
                             incoming_edge.setDestination(node_v)
                             print(f'\tUpdated Edge {incoming_edge}')
                             incoming_edge.autoConnect()
                         
-                        # Remove v_prime's outgoing incidence #TODO REVISAR SI HACERLO ACA O FUERA DEL LOOP
-                        for edge in node_v_prime.getIncoming():
+                        # Remove v_prime's outgoing incidence 
+                        for edge in node_v_prime.getOutgoing():
                             edge.autoDisconnect()
                         
                         # Mark node_v_prime for removal
@@ -821,12 +825,12 @@ class FDD:
         remove e' and change the label of e from I(e) to I(e) U I(e').
         """
         changed = False
-        for level in self._levels:
+        for level in self._levels[:-1]:
             for node in level.getNodes():
                 seen_edges = {}
                 for edge in node.getOutgoing():
                     # Pair of nodes
-                    key = (edge.getOrigin(), edge.getDestination())
+                    key = edge.getDestination()
                     if key in seen_edges:
                         seen_edge = seen_edges[key]
                         # Merge element sets
@@ -992,19 +996,25 @@ class FDD:
                 resolving_predicate = {}
     
                 for v, e in decision_path:
-                    field = v.getLevel().getField().getName()
-                    element_set = e.getElementSet() 
+                    element_class = ElementSetRegistry.getElementSetClass(v.getLevel().getField().getType()) # ElementSet Type
+                    field = v.getLevel().getField().getName() # Field of level
+                    element_set = e.getElementSet() # Edge elementSet
     
                     if not e.getMarking():  # Not marked with "all"
-                        matching_predicate[field] = element_set.getElements()
+                        matching_predicate[field] = element_set
                     else:
-                        matching_predicate[field] = element_set.getDomain() 
+                        matching_predicate[field] = element_class(element_set.getDomainList())
                         
-                    resolving_predicate[field] = element_set.getElements() #TODO SACAR?
+                    resolving_predicate[field] = element_set #TODO SACAR?
     
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():
                     rule.setPredicate(field, values)
+                    rule.setMatchingPredicate(field, values)
+                
+                for field, values in resolving_predicate.items():
+                    rule.setResolvingPredicate(field, values)
+                
                 rule.setDecision(node.getName())
                 chain.addRule(rule)
                 return
@@ -1023,43 +1033,62 @@ class FDD:
         
         # Step 1: Generate Rules from FDD
         dfs(self._levels[0].getNodes()[0], []) 
-        return chain
+        
+        #return chain
+        print(f'NOT COMPACTED CHAIN:\n{chain}\n\nCompacting Rules...')
 
         # Step 2: Compact Rules
         redundant = [False] * len(chain.getRules())
 
-        # Mark redundant rules #TODO Revisar
+        # Mark redundant rules
         n = len(chain.getRules())
         for i in range(n - 1, -1, -1):
             for k in range(i + 1, n):
-                if (    not redundant[k] and
-                        self._sameDecision(chain[i], chain[k]) and
-                        self._implies(chain[i], chain[k])):
+                print(f'CHECKING RULES {i} and {k}')
+                if (not redundant[k] and
+                    self._sameDecision(chain[i], chain[k]) and
+                    self._implies(chain[i], chain[k])):
                     # Check if rule i is redundant based on rule k
                     is_redundant = True
                     for j in range(i + 1, k):
-                        if (    not redundant[j] and
-                                not self._sameDecision(chain[i], chain[j]) and
-                                not self._mutuallyExclusive(chain[i], chain[j])):
+                        print(f'\tIntermediate rule check: {j}')
+                        if (not redundant[j] and
+                            not self._sameDecision(chain[i], chain[j]) and
+                            not self._mutuallyExclusive(chain[i], chain[j])):
+                            print(f'\t\tRule {i} and rule {j} are NOT REDUNDANT.')
                             is_redundant = False
                             break
                     if is_redundant:
+                        print(f'\t\tMarking rule {i} as REDUNDANT based on rule {k}.')
                         redundant[i] = True
                         break
+                else:
+                    print(f'\tRule {i} and rule {k} did not get to the intermediate Rule check.')
 
         # Remove redundant rules
         new_rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
         chain.setRules(new_rules)
-        #TODO ACOMODAR RULE_IDs DESPUES DE ELIMINAR REGLAS REDUNDANTES
-        print(f'Removed {n - len(chain.getRules())} REDUNDANT rules from the chain.\n')
+        
+        # Fix Rules Ids after removal
+        for idx, rule in enumerate(chain.getRules()):
+            rule.setId(idx)
+            
+        print(f'\nRemoved {n - len(chain.getRules())} REDUNDANT rules from the chain.\n')
 
         return chain     
     
     def _sameDecision(self, rule1: Rule, rule2: Rule) -> bool:
         """
         Check if two rules have the same decision.
+        
+        Args:
+            rule1 (Rule): First rule to compare.
+            rule2 (Rule): Second rule to compare.
+        
+        Returns:
+            bool: True if rule1 and rule2 have the same decision, False otherwise.
         """
-        print(f'Check sameDecision: Rule_{rule1.getId()} & Rule_{rule2.getId()} = {rule1.getDecision() == rule2.getDecision()}')
+        print(f'\tCheck sameDecision: Rule_{rule1.getId()} & Rule_{rule2.getId()} = {rule1.getDecision() == rule2.getDecision()}')
         return rule1.getDecision() == rule2.getDecision()
 
     def _implies(self, rule1: Rule, rule2: Rule) -> bool:
@@ -1070,32 +1099,47 @@ class FDD:
         r_i.rp, then p satisﬁes r_k.mp. Checking whether r_i.rp implies r_k.mp is simple. 
         Let r_i.rp be F_1 ∈ T_1 ∧ ... ∧ F_d ∈ T_d and let r_k.mp be F_1 ∈ S_1 ∧ ... ∧ F_d ∈ S_d. 
         Then, r_i.rp implies r_k.mp if and only if for every j, where 1 <= j <= d, the condition T_j ⊆ S_j holds.
+        
+        Args:
+            rule1 (Rule): First rule to compare.
+            rule2 (Rule): Second rule to compare.
+            
+        Returns:
+            bool: True if rule1 predicate implies rule2 predicate, False otherwise.
         """
-        fields = set(rule1.getPredicates().keys()).union(rule2.getPredicates().keys())
-        for field in fields:
-            option1 = rule1.getOption(field, set())
-            option2 = rule2.getOption(field, set())
-            print(f'Checking predicates {option1} - {option2}: {option1.issubset(option2)}')
-            if not option1.issubset(option2):
+        for field in self._fieldList.getFields():
+            field_dom = ElementSetRegistry.getElementSetClass(field.getType()).getDomain()
+            field_name = field.getName()
+            
+            option1 = rule1.getResolvingPredicate(field_name, field_dom)
+            option2 = rule2.getMatchingPredicate(field_name, field_dom)
+
+            print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
+            if not option1.isSubset(option2):
                 return False
         return True
     
-    def _mutuallyExclusive(self, rule1, rule2):
-        fields = set(rule1.getPredicates().keys()).union(rule2.getPredicates().keys())
-        for field in fields:
-            option1 = rule1.getOption(field, set())
-            option2 = rule2.getOption(field, set())
-            print(f'Checking Mutual Exclusion {option1} - {option2}: {option1.isdisjoint(option2)}')
-            if not option1.isdisjoint(option2):  # Check if they have no common elements
-                return False
-        return True
+    def _mutuallyExclusive(self, rule1: Rule, rule2: Rule) -> bool:
+        """
+        Check if rule1 and rule2 are mutually exclusive.
 
-    def _satisfiesBoth(self, rule1: Rule, rule2: Rule) -> bool:
+        Two rules are mutually exclusive if there are no common values across all fields.
+
+        Args:
+            rule1 (Rule): First rule to compare.
+            rule2 (Rule): Second rule to compare.
+
+        Returns:
+            bool: True if rule1 and rule2 are mutually exclusive, False otherwise.
         """
-        Check if no packet satisfies both rule1's resolving predicate and rule2's matching predicate.
-        """
-        for field in rule1.getPredicates():
-            print(f'Checking satisfies both {rule2.getPredicates()} AND {rule1.getOption(field).isdisjoint(rule2.getOption(field))} ')
-            if field in rule2.getPredicates() and rule1.getOption(field).isdisjoint(rule2.getOption(field)):
+        for field in self._fieldList.getFields():
+            field_dom = ElementSetRegistry.getElementSetClass(field.getType()).getDomain()
+            field_name = field.getName()
+            
+            option1 = rule1.getMatchingPredicate(field_name, field_dom) 
+            option2 = rule2.getMatchingPredicate(field_name, field_dom)
+            
+            print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
+            if not option1.isDisjoint(option2):  # Check if they have any common elements
                 return False
         return True

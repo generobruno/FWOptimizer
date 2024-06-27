@@ -44,7 +44,7 @@ class Parser:
         Args:
             strategy (ParserStrategy): Parse Strategy
         """
-        self.strategy = strategy
+        self._strategy = strategy
 
     def setStrategy(self, strategy: ParserStrategy):
         """
@@ -53,7 +53,7 @@ class Parser:
         Args:
             strategy (ParserStrategy): Parse Strategy
         """
-        self.strategy = strategy
+        self._strategy = strategy
 
     def parse(self, path) -> rules.RuleSet:
         """
@@ -65,7 +65,7 @@ class Parser:
         Returns:
             RuleSet: Set of Rules in file
         """
-        return self.strategy.parse(path)
+        return self._strategy.parse(path)
 
 
 class IpTablesParser(ParserStrategy):
@@ -81,8 +81,8 @@ class IpTablesParser(ParserStrategy):
         """
         IpTables Parser Strategy
         """
-        self.syntax_table = self.preprocessSyntaxTable(syntaxes.iptables)
-        self.ruleset = rules.RuleSet()
+        self._syntaxTable = self.preprocessSyntaxTable(syntaxes.iptables)
+        self._ruleSet = rules.RuleSet()
 
     def preprocessSyntaxTable(self, syntax_table):
         """
@@ -159,13 +159,12 @@ class IpTablesParser(ParserStrategy):
 
                 if line.startswith('*'):            # Start of Table
                     current_table = rules.Table(line[1:])
-                    self.ruleset.addTable(current_table)
+                    self._ruleSet.addTable(current_table)
                 elif line.startswith(':'):          # Define Chain
                     chain_name = line.split()[0][1:]
                     current_chain = rules.Chain(chain_name)
                     current_table.addChain(current_chain)
-                elif line.startswith('['):  # TODO REVISAR Default Policies
-                    continue
+                    current_chain.setDefaultDecision(line.split()[1])
                 elif line == 'COMMIT':              # End of Table
                     current_table = None
                     current_chain = None
@@ -173,7 +172,7 @@ class IpTablesParser(ParserStrategy):
                     if line.startswith('-A'):       # Append Rule to Chain
                         chain_name = line.split()[1]
                         current_chain = current_table[chain_name]
-                    current_rule = self.parseOptions(line, line_num, current_table._name)
+                    current_rule = self.parseOptions(line, line_num, current_table.getName())
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         [rule.setPredicate(k, v) for k, v in current_rule.items() if k != 'decision']
@@ -181,7 +180,7 @@ class IpTablesParser(ParserStrategy):
                         current_chain.addRule(rule)
                         rule_id += 1
 
-            return self.ruleset
+            return self._ruleSet
 
     def parseOptions(self, line, line_num, current_table):
         """Parse options from a line of the iptables configuration
@@ -207,6 +206,15 @@ class IpTablesParser(ParserStrategy):
         i = 0
         current_prot = None
         current_extension = None
+        
+        option_handlers = {
+            '-p': lambda v: self._handleProtocol(v, current_rule),
+            '--protocol': lambda v: self._handleProtocol(v, current_rule),
+            '-m': lambda v: self._handleMatchModule(v, match_modules, current_rule),
+            '--match': lambda v: self._handleMatchModule(v, match_modules, current_rule),
+            '-j': lambda v: self._handleJump(v, current_rule),
+            '--jump': lambda v: self._handleJump(v, current_rule),
+        }
 
         while i < len(tokens):
             option = tokens[i]
@@ -227,47 +235,15 @@ class IpTablesParser(ParserStrategy):
 
             found_match = False
 
-            # Protocol Handling
-            if option in ['-p', '--protocol']:
-                current_prot = value
-                current_rule[option] = value
-                continue
-
-            # Match Module Handling
-            if option in ['-m', '--match']:
-                current_match_module = value
-                match_modules.append(current_match_module)
-                current_rule[f'-m {current_match_module}'] = None  # Add match module to the rule
-                continue
-
-            # Jump to target handling
-            if option in ['-j', '--jump']:
-                current_extension = value
-                current_rule['decision'] = value
+            # Handle Specific Options
+            if option in option_handlers:
+                option_handlers[option](value)
+                current_prot = current_rule.get('-p') or current_rule.get('--protocol')
+                current_extension = current_rule.get('decision')
                 continue
 
             # Select Appropriate Regex
-            regex = None
-            if match_modules:
-                for match_module in reversed(match_modules):
-                    regex = self.syntax_table[current_table]['MatchModules'].get(
-                        match_module, {}
-                    ).get(option)
-                    if regex is not None:
-                        break
-
-            if regex is None and current_prot:
-                regex = self.syntax_table[current_table]['MatchModules'].get(
-                    current_prot, {}
-                ).get(option)
-
-            if regex is None and current_extension:
-                regex = self.syntax_table[current_table]['Extensions'].get(
-                    current_extension, {}
-                ).get(option)
-
-            if regex is None:
-                regex = self.syntax_table[current_table]['BasicOperations'].get(option)
+            regex = self._getRegex(current_table, match_modules, current_prot, current_extension, option)
 
             # Assign Rule Options
             if regex is not None:
@@ -315,6 +291,76 @@ class IpTablesParser(ParserStrategy):
 
         return current_rule
 
+    def _getRegex(self, current_table, match_modules, current_prot, current_extension, option):
+        """
+        Get the appropiate regex for an option given the rule's semantic
+
+        Args:
+            current_table (_type_): _description_
+            match_modules (_type_): _description_
+            current_prot (_type_): _description_
+            current_extension (_type_): _description_
+            option (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        regex = None
+        
+        if match_modules:
+            for match_module in reversed(match_modules):
+                regex = self._syntaxTable[current_table]['MatchModules'].get(
+                    match_module, {}
+                ).get(option)
+                if regex is not None:
+                    break
+
+        if regex is None and current_prot:
+            regex = self._syntaxTable[current_table]['MatchModules'].get(
+                current_prot, {}
+            ).get(option)
+
+        if regex is None and current_extension:
+            regex = self._syntaxTable[current_table]['Extensions'].get(
+                current_extension, {}
+            ).get(option)
+
+        if regex is None:
+            regex = self._syntaxTable[current_table]['BasicOperations'].get(option)
+            
+        return regex
+
+    def _handleProtocol(self, value, current_rule):
+        """
+        Handle the protocol Option
+
+        Args:
+            value (_type_): _description_
+            current_rule (_type_): _description_
+        """
+        current_rule['-p'] = value
+
+    def _handleMatchModule(self, value, match_modules, current_rule):
+        """
+        Handle the Match Module Option
+
+        Args:
+            value (_type_): _description_
+            match_modules (_type_): _description_
+            current_rule (_type_): _description_
+        """
+        match_modules.append(value)
+        current_rule[f'-m {value}'] = None
+
+    def _handleJump(self, value, current_rule):
+        """
+        Handle the Jump Option
+
+        Args:
+            value (_type_): _description_
+            current_rule (_type_): _description_
+        """
+        current_rule['decision'] = value
 
     def getRules(self):
         """
@@ -323,4 +369,4 @@ class IpTablesParser(ParserStrategy):
         Returns:
             RuleSet: Set of RuleSet
         """
-        return self.ruleset
+        return self._ruleSet

@@ -7,7 +7,6 @@ import os
 # Add Root Dir to sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
 from fwoptimizer.classes import parser
 
 from fwoptimizer.classes import *
@@ -30,7 +29,7 @@ if __name__ == '__main__':
     for rule in rules_parsed['filter']['INPUT']:
         print(rule)
 
-    print(f'\nTotal Number of Tables: {len(rules_parsed._tables)}')
+    print(f'\nTotal Number of Tables: {len(rules_parsed.getTables())}')
     print(f'Total Number of Chains: {rules_parsed.numberOfChains()}')
     print(f'Total Number of Rules: {len(rules_parsed)}\n')
 
@@ -38,7 +37,6 @@ if __name__ == '__main__':
     fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
 
     chain = rules_parsed['filter']['INPUT']
-    chain.setDefaultDecision("DROP")
 
     fdd = FDD(fieldList)
     fdd.genFDD(chain)
@@ -55,3 +53,7 @@ if __name__ == '__main__':
     print("\nCREATING RULES:")
     firewall_chain = fdd.firewallGen()
     print(firewall_chain)
+    
+    #print('\nSIMPLIFYING RULES:')
+    #firewall_chain.simplifyRules()
+    #print(firewall_chain)

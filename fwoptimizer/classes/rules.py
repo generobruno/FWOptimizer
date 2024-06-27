@@ -19,6 +19,8 @@ class Rule:
         self._id = rule_id
         self._predicates = {}
         self._decision = None
+        self._matchingPredicate = {}
+        self._resolvingPredicate = {}
 
     def __repr__(self) -> str:
         """
@@ -47,6 +49,52 @@ class Rule:
             predicates: Rule predicates
         """
         return self._predicates
+    
+    def setMatchingPredicate(self, field, values):#TODO VER SI SACAR ESTAS FUNCIONES Y USAR SOLO GetOption
+        """
+        Set the Matching Predicate of the rule
+
+        Args:
+            field (Predicate): Option of the rule
+            values (ElementSet): Value of the rule
+        """
+        self._matchingPredicate[field] = values
+
+    def getMatchingPredicate(self, field, default=None):
+        """
+        Get the Matching Predicate of the rule
+
+        Args:
+            field (Predicate): Option of the rule
+            default (Any, optional): Default value. Defaults to None.
+
+        Returns:
+            Option: Predicate Option
+        """
+        return self._matchingPredicate.get(field, default)
+
+    def setResolvingPredicate(self, field, values):
+        """
+        Set the Resolving Predicate of the rule
+
+        Args:
+            field (Predicate): Option of the rule
+            values (ElementSet): Value of the rule
+        """
+        self._resolvingPredicate[field] = values
+
+    def getResolvingPredicate(self, field, default=None):
+        """
+        Get the Resolving Predicate of the rule
+
+        Args:
+            field (Predicate): Option of the rule
+            default (Any, optional): Default value. Defaults to None.
+
+        Returns:
+            Option: Predicate Option
+        """
+        return self._resolvingPredicate.get(field, default)
 
     def getOption(self, option, default=None):
         """
@@ -77,6 +125,15 @@ class Rule:
             id: Rule id
         """
         return self._id
+    
+    def setId(self, new_id):
+        """
+        Set the new Rule Id
+
+        Args:
+            new_id: New Id
+        """
+        self._id = new_id
 
 class Chain:
     """
@@ -161,6 +218,53 @@ class Chain:
         """
         return self._rules
 
+    def getName(self):
+        """
+        Get the Chain name
+
+        Returns:
+            String: Chain Name
+        """
+        return self._name
+    
+    def simplifyRules(self):
+        """
+        Simplify the set of rules in the chain.
+        """
+        simplified_rules = []
+        for rule in self._rules:
+            predicates = rule.getPredicates()
+            decision = rule.getDecision()
+            new_rules = [rule]
+            
+            # Identify if any predicate set has multiple non-overlapping ranges
+            for field, value in predicates.items():
+                elements_list = value.getElementsList()
+                # Split mutliple values
+                temp_rules = []
+                for subrange in elements_list:
+                    for r in new_rules:
+                        new_rule = Rule(r.getId())
+                        new_rule.setDecision(decision)
+                        
+                        for k, v in r.getPredicates().items():
+                            if k == field:
+                                new_rule.setPredicate(k, subrange)
+                            else:
+                                new_rule.setPredicate(k, v)
+                        
+                        temp_rules.append(new_rule)
+                new_rules = temp_rules
+                    
+            simplified_rules.extend(new_rules)
+        
+        # Replace the original rules with the simplified rules
+        self.setRules(simplified_rules)
+        
+        # Fix Rules Ids after removal
+        for idx, rule in enumerate(self._rules):
+            rule.setId(idx)
+
 class Table:
     """
     A Table is a collection of Chains.
@@ -205,7 +309,7 @@ class Table:
         Args:
             chain (Chain): Chain to add
         """
-        self._chains[chain._name] = chain
+        self._chains[chain.getName()] = chain
     
     def getChains(self):
         """
@@ -215,6 +319,15 @@ class Table:
             Chain: Chains in Table
         """
         return self._chains
+    
+    def getName(self):
+        """
+        Get the table name
+
+        Returns:
+            String: Table Name
+        """
+        return self._name
 
 class RuleSet:
     """
@@ -288,7 +401,16 @@ class RuleSet:
         Args:
             table (Table): Table to add
         """
-        self._tables[table._name] = table
+        self._tables[table.getName()] = table
+        
+    def getTables(self):
+        """
+        Get the RuleSet Tables
+
+        Returns:
+            Dict: Dictionary of tables 
+        """
+        return self._tables
 
     def printAll(self):
         """

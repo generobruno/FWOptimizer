@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 
 from fwoptimizer.utils.aliasDict import AliasDefaultDict
 from fwoptimizer.classes import rules
+from fwoptimizer.utils import elementSet
 
 from fwoptimizer.configs import syntaxes
 
@@ -171,8 +172,6 @@ class IpTablesParser(ParserStrategy):
             iptables_save_lines.append(f"*{table.getName()}")
 
             for chain in table.getChains().values():
-                # Simplify Chain #TODO REVISAR
-                chain.simplifyRules()
                 # Add chain with default policy if any
                 default_decision = chain.getDefaultDecision()
                 if default_decision:
@@ -182,30 +181,40 @@ class IpTablesParser(ParserStrategy):
 
                 # Add rules in the chain
                 for rule in chain.getRules():
-                    rule_parts = [f"-A {chain.getName()}"]
                     predicates = rule.getPredicates()
+                    protocols = predicates.get("Protocol", None)
+                    
+                    # Get protocols as a list
+                    if protocols:
+                        protocol_list = protocols.getElementsList()
+                    else:
+                        protocol_list = [None]
 
-                    # Form Rule options
-                    for option, value in predicates.items():
-                        # Get Option iptables format
-                        iptables_option = self._composeOptions(option)
-                        # Get Elements from ElementSet #TODO Descomentar si no se usa simplifyRules()
-                        #value = value.getElementsList()
-                        
-                        if isinstance(value, list):
-                            rule_parts.append(f"{iptables_option} {', '.join(map(str, value))}")
-                        else:
-                            rule_parts.append(f"{iptables_option} {value}")
+                    for protocol in protocol_list:
+                        rule_parts = [f"-A {chain.getName()}"]
+                        for option, value in predicates.items():
+                            if option == "Protocol":
+                                if protocol:
+                                    rule_parts.append(f"-p {protocol}")
+                            else:
+                                # Get Option iptables format
+                                iptables_option = self._composeOptions(option)
+                                # Get Elements from ElementSet
+                                if hasattr(value, 'getElementsList'):
+                                    elements_list = value.getElementsList()
+                                    rule_parts.append(f"{iptables_option} {', '.join(map(str, elements_list))}")
+                                else:
+                                    rule_parts.append(f"{iptables_option} {value}")
 
-                    # Form Rule Decision
-                    decision = rule.getDecision()
-                    if decision:
-                        rule_parts.append(f"-j {decision}")
+                        # Form Rule Decision
+                        decision = rule.getDecision()
+                        if decision:
+                            rule_parts.append(f"-j {decision}")
 
-                    iptables_save_lines.append(" ".join(rule_parts))
+                        iptables_save_lines.append(" ".join(rule_parts))
 
-            # Finish iptables-save
-            iptables_save_lines.append("COMMIT")
+                # Finish iptables-save
+                iptables_save_lines.append("COMMIT")
 
         return "\n".join(iptables_save_lines)
 

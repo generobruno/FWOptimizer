@@ -985,6 +985,7 @@ class FDD:
             Chain: Set of Rules equivalent to the FDD
         """
         #TODO Ver si pasarle el nombre de la chain o setearlo despues? -> Tambien ver si guardar el nombre de la chain original en el fdd para usar este
+        #TODO Setear chain default decision tambn
         chain = Chain("FirewallGenChain")
     
         # We don't mark visited nodes since we need to traverse all paths (rules)

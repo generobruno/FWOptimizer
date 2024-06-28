@@ -51,9 +51,19 @@ if __name__ == '__main__':
     fdd.printFDD("MarkedFDD")
     
     print("\nCREATING RULES:")
-    firewall_chain = fdd.firewallGen()
+    firewall_chain = fdd.firewallGen() #TODO Crear nuevo RuleSet con las chains y tablas modificadas
     print(firewall_chain)
     
     #print('\nSIMPLIFYING RULES:')
     #firewall_chain.simplifyRules()
     #print(firewall_chain)
+    
+    print("\nCREATING RULES FILE...")
+    # Create RuleSet and Table to add the test chain
+    testTable = rules.Table("testTable")
+    firewall_chain.setDefaultDecision("DROP")
+    testTable.addChain(firewall_chain)
+    testRuleSet = rules.RuleSet()
+    testRuleSet.addTable(testTable)
+    # Create rules file according to parser strategy
+    print(parser.compose(testRuleSet))

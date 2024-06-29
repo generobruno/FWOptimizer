@@ -64,10 +64,6 @@ class ElementSet(metaclass = ElementSetRegistry):
                 return registry[elementType](registry[elementType].getDomainList())
             return registry[elementType](values)
         raise TypeError()
-    
-    @abstractmethod
-    def __repr__(self):
-        return str(self.getElementsList())
 
     @abstractmethod
     def __init__(self, values: List[str]) -> None:
@@ -78,6 +74,10 @@ class ElementSet(metaclass = ElementSetRegistry):
     def __eq__(self, value: object) -> bool:
         pass
 
+    @abstractmethod
+    def __repr__(self):
+        return str(self.getElementsList())
+    
     @classmethod
     @abstractmethod
     def getDomainList(cls):
@@ -332,7 +332,7 @@ class ProtSet(ElementSet):
 
     def __eq__(self, other: "ProtSet") -> bool:
         """
-        PrtoSet __eq__
+        ProtSet __eq__
 
         Args:
             other (ProtSet): ProtSet to compare
@@ -462,3 +462,158 @@ class ProtSet(ElementSet):
            ProtSet: Copied ProtSet
         """
         return ProtSet(self.getElementsList())
+    
+class PortSet(ElementSet):
+    """_summary_
+    """
+    _domain_ = set(range(0,65536))
+    _groupable_ = False
+
+    def __init__(self, values: List[str]) -> None:
+        """_summary_
+        """
+
+        self._elements = set()
+
+        for value in values:
+
+            try:
+
+                intValue = int(value)
+
+                if intValue not in self._domain_:
+
+                    raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
+                
+                else:
+
+                    self._elements.add(intValue)
+                
+            except:
+
+                ends = value.split(":")
+                if len(ends) == 2:
+
+                    newValues = set(range(int(ends[0]),int(ends[1])+1))
+
+                    if not newValues.issubset(self._domain_):
+                        raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
+                    else: 
+                        self._elements.update(newValues)
+
+                else:
+
+                    raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
+
+
+
+    def __eq__(self, other: "PortSet") -> bool:
+        
+        return self._elements == other.getElements()
+
+    def __repr__(self):
+        return "PortSet" + super().__repr__()
+
+    @classmethod
+    def getDomainList(cls):
+        """_summary_
+        """
+        return list(cls._domain_)
+
+    @classmethod
+    def getDomain(cls):
+        """_summary_
+        """
+        return PortSet(cls.getDomainList())
+    
+    @classmethod
+    def setGroupable(self, value: bool):
+        """summary"""
+        self._groupable_ = value
+
+    def addSet(self, otherSet: "PortSet"):
+        """_summary_
+        """
+        self._elements.update(otherSet.getElements())
+
+    def isOverlapping(self, otherSet: "PortSet"):
+        """_summary_
+        """
+        return not self._elements.isdisjoint(otherSet.getElements())
+
+    def isEmpty(self):
+        """_summary_
+        """
+        return len(self._elements) == 0
+    
+    def isSubset(self, otherSet: "PortSet"):
+        """_summary_
+        """
+        return self._elements.issubset(otherSet.getElements()) #TODO Revisar si influye en load
+        
+    def isDisjoint(self, otherSet: "PortSet"):
+        """_summary_
+        """
+        return self._elements.isdisjoint(otherSet.getElements())
+
+    def intersectionSet(self, otherSet: "ElementSet"):
+        """_summary_
+        """
+        return PortSet([str(x) for x in self._elements & otherSet.getElements()])
+        
+    def unionSet(self, otherSet: "ElementSet"):
+        """_summary_
+        """
+        return PortSet([str(x) for x in self._elements | otherSet.getElements()])
+        
+    def remove(self, otherSet: "ElementSet"):
+        """_summary_
+        """
+        self._elements = self._elements.difference(otherSet.getElements())
+
+    def getElements(self):
+        """_summary_
+        """
+        return self._elements
+
+    def getElementsList(self):
+        """_summary_
+        """
+        if not self._groupable_:
+
+            return list(str(x) for x in self._elements)
+        
+        else:
+
+            toGroup = sorted(list(self._elements))
+            grouped = []
+
+            minor = None
+
+            for i in range(len(toGroup)-1):
+
+                if toGroup[i]+1 == toGroup[i+1]:
+                    if minor == None:
+                        minor = i
+
+                else:
+                    if minor == None:
+                        grouped.append(str(toGroup[i]))
+                        minor = None
+                    else:
+                        grouped.append(f"{toGroup[minor]}:{toGroup[i]}")
+                        minor = None
+            
+            if minor != None:
+                grouped.append(f"{toGroup[minor]}:{toGroup[len(toGroup)-1]}")
+            else:
+                grouped.append(f"{toGroup[len(toGroup)-1]}")   
+
+            return grouped
+
+    def replicate(self):
+        """_summary_
+        """
+        return ProtSet(self.getElementsList())
+    
+    

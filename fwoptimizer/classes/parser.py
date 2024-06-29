@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 
 from fwoptimizer.utils.aliasDict import AliasDefaultDict
 from fwoptimizer.classes import rules
-from fwoptimizer.utils import elementSet
 
 from fwoptimizer.configs import syntaxes
 
@@ -183,6 +182,17 @@ class IpTablesParser(ParserStrategy):
                 for rule in chain.getRules():
                     predicates = rule.getPredicates()
                     protocols = predicates.get("Protocol", None)
+                    
+                    """TODO REVISAR
+                        1. SrcIP and DstIP: Parece que se puede especificar distintas direcciones simplemente
+                        por ",". Si no es asi, se puede usar iprange quizas. (para IPs no contiguas, si no usar networks).
+                        Tambien se puede crear un ipset, pero mejor no definir uno dentro de la herramienta, a menos que 
+                        ya este definido, en cuyo caso deberia utilizarse.
+                        2. SrcPort and DstPort: Para multiples puertos se debe usar la opción "-m <protocol>" y despues los
+                        puertos. Si no son contiguos "--dports a,c,e", si son contiguos "--dports a:e". Creo que "-m multiport"
+                        es para puertos no contiguos y debe seguir a "-m <protocol>". (y creo que es indistinto dport o dports).
+                        3. Protocol: Se debe crear una regla distinta para cada protocolo.
+                    """
                     
                     # Get protocols as a list
                     if protocols:

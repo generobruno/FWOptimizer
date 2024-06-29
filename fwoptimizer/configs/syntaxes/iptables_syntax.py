@@ -28,7 +28,7 @@ syntaxTable = {
             "-d | --destination | --dst": 
                 r"(?:!\s*)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:/\d{1,2})?",
             "-p | --protocol": 
-                r"(?:!\s*)?\w+",
+                r"(?:!\s*)?\w+", #TODO Creo que puede ser un numero tambn
             "-j | --jump": 
                 r"\w+",
             "[!]-f | -f | --fragment": 

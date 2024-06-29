@@ -1006,7 +1006,9 @@ class FDD:
                     else:
                         matching_predicate[field] = element_class(element_set.getDomainList())
                         
-                    resolving_predicate[field] = element_set #TODO SACAR?
+                    resolving_predicate[field] = element_set 
+
+                #TODO Tambien se deben setear los predicados que no afectan al fdd, como "-m conntrack"
     
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():

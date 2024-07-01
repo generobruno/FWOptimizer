@@ -155,6 +155,18 @@ class IpTablesParser(ParserStrategy):
 
             return self._ruleSet
 
+
+    """TODO REVISAR
+        1. SrcIP and DstIP: Parece que se puede especificar distintas direcciones simplemente
+        por ",". Si no es asi, se puede usar iprange quizas. (para IPs no contiguas, si no usar networks).
+        Tambien se puede crear un ipset, pero mejor no definir uno dentro de la herramienta, a menos que 
+        ya este definido, en cuyo caso deberia utilizarse.
+        2. SrcPort and DstPort: Para multiples puertos se debe usar la opción "-m <protocol>" y despues los
+        puertos. Si no son contiguos "--dports a,c,e", si son contiguos "--dports a:e". Creo que "-m multiport"
+        es para puertos no contiguos y debe seguir a "-m <protocol>". (y creo que es indistinto dport o dports).
+        3. Protocol: Se debe crear una regla distinta para cada protocolo.
+    """
+
     def compose(self, ruleSet: rules.RuleSet):
         """
         Parse the RuleSet and obtain an iptables-save file
@@ -183,17 +195,6 @@ class IpTablesParser(ParserStrategy):
                     predicates = rule.getPredicates()
                     protocols = predicates.get("Protocol", None)
                     
-                    """TODO REVISAR
-                        1. SrcIP and DstIP: Parece que se puede especificar distintas direcciones simplemente
-                        por ",". Si no es asi, se puede usar iprange quizas. (para IPs no contiguas, si no usar networks).
-                        Tambien se puede crear un ipset, pero mejor no definir uno dentro de la herramienta, a menos que 
-                        ya este definido, en cuyo caso deberia utilizarse.
-                        2. SrcPort and DstPort: Para multiples puertos se debe usar la opción "-m <protocol>" y despues los
-                        puertos. Si no son contiguos "--dports a,c,e", si son contiguos "--dports a:e". Creo que "-m multiport"
-                        es para puertos no contiguos y debe seguir a "-m <protocol>". (y creo que es indistinto dport o dports).
-                        3. Protocol: Se debe crear una regla distinta para cada protocolo.
-                    """
-                    
                     # Get protocols as a list
                     if protocols:
                         protocol_list = protocols.getElementsList()
@@ -202,13 +203,16 @@ class IpTablesParser(ParserStrategy):
 
                     for protocol in protocol_list:
                         rule_parts = [f"-A {chain.getName()}"]
-                        for option, value in predicates.items():
+                        for option, value in predicates.items():                             
+                            # Get Option iptables format
+                            iptables_option = self._composeOptions(option)
+                            
                             if option == "Protocol":
                                 if protocol:
-                                    rule_parts.append(f"-p {protocol}")
+                                    rule_parts.append(f"{iptables_option} {protocol}")
+                            elif option == "DstPort" or option == "SrcPort":
+                                pass #TODO Port management
                             else:
-                                # Get Option iptables format
-                                iptables_option = self._composeOptions(option)
                                 # Get Elements from ElementSet
                                 if hasattr(value, 'getElementsList'):
                                     elements_list = value.getElementsList()

@@ -985,6 +985,7 @@ class FDD:
             Chain: Set of Rules equivalent to the FDD
         """
         #TODO Ver si pasarle el nombre de la chain o setearlo despues? -> Tambien ver si guardar el nombre de la chain original en el fdd para usar este
+        #TODO Setear chain default decision tambn
         chain = Chain("FirewallGenChain")
     
         # We don't mark visited nodes since we need to traverse all paths (rules)
@@ -1005,7 +1006,9 @@ class FDD:
                     else:
                         matching_predicate[field] = element_class(element_set.getDomainList())
                         
-                    resolving_predicate[field] = element_set #TODO SACAR?
+                    resolving_predicate[field] = element_set 
+
+                #TODO Tambien se deben setear los predicados que no afectan al fdd, como "-m conntrack"
     
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():

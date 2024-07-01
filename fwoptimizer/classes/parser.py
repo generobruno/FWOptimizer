@@ -30,6 +30,18 @@ class ParserStrategy(ABC):
         Returns:
             rules.RuleSet: Set of Rules in the file
         """
+        
+    @abstractmethod
+    def compose(self, ruleSet: rules.RuleSet):
+        """
+        Parse the RuleSet and obtain a file with rules
+
+        Args:
+            ruleSet (rules.RuleSet): Set of Rules
+
+        Returns:
+            file: File with rules
+        """
 
 class Parser:
     """
@@ -66,6 +78,18 @@ class Parser:
             RuleSet: Set of Rules in file
         """
         return self._strategy.parse(path)
+    
+    def compose(self, ruleSet: rules.RuleSet):
+        """
+        Parse the RuleSet and obtain a file with rules
+
+        Args:
+            ruleSet (rules.RuleSet): Set of Rules
+
+        Returns:
+            file: File with rules
+        """
+        return self._strategy.compose(ruleSet)
 
 
 class IpTablesParser(ParserStrategy):
@@ -81,59 +105,8 @@ class IpTablesParser(ParserStrategy):
         """
         IpTables Parser Strategy
         """
-        self._syntaxTable = self.preprocessSyntaxTable(syntaxes.iptables)
+        self._syntaxTable = self._preprocessSyntaxTable(syntaxes.iptables)
         self._ruleSet = rules.RuleSet()
-
-    def preprocessSyntaxTable(self, syntax_table):
-        """
-        Process the syntax table to obtain all the posible alias of the
-        different options
-
-        Args:
-            syntaxTable (dict): Syntax table for iptables
-
-        Returns:
-            dict: Processed syntax table
-        """
-        preprocessed_table = {}
-        for table, table_ops in syntax_table.items():  # Create Dict for each Table
-            preprocessed_table[table] = AliasDefaultDict(dict)
-            for rule_type, rule_options in table_ops.items():  # Create Dict for each type of op
-                preprocessed_table[table][rule_type] = AliasDefaultDict(dict)
-                if rule_type in ['Extensions', 'MatchModules']:
-                    for module_name, options in rule_options.items():
-                        preprocessed_table[table][rule_type][module_name] = AliasDefaultDict(dict)
-                        for option_set, regex in options.items():
-                            aliases = [alias.strip() for alias in option_set.split('|')]
-                            for alias in aliases:  # Assign Value to all aliases
-                                preprocessed_table[table][rule_type][module_name][alias] = regex
-                else:   # Basic Operations
-                    for option_set in rule_options:  # Create alias and assign values
-                        regex = rule_options[option_set]
-                        aliases = [alias.strip() for alias in option_set.split('|')]
-                        for alias in aliases:  # Assign Value to all aliases
-                            preprocessed_table[table][rule_type][alias] = regex
-        return preprocessed_table
-
-    def renameOptions(self, rule):
-        """
-        Rename rule options based on FieldsFormat mapping.
-        
-        Args:
-            rule (str): Rule to be formated
-        
-        Returns:
-            new_rule (str): Formated Rule
-        """
-        new_rule = {}
-        for key, value in rule.items():
-            renamed_key = key
-            for pattern, new_key in syntaxes.fields.items():
-                if any(option == key for option in pattern.split(' | ')):
-                    renamed_key = new_key
-                    break
-            new_rule[renamed_key] = value
-        return new_rule
 
     def parse(self, path):
         """Parse the iptables configuration file
@@ -172,7 +145,7 @@ class IpTablesParser(ParserStrategy):
                     if line.startswith('-A'):       # Append Rule to Chain
                         chain_name = line.split()[1]
                         current_chain = current_table[chain_name]
-                    current_rule = self.parseOptions(line, line_num, current_table.getName())
+                    current_rule = self._parseOptions(line, line_num, current_table.getName())
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         [rule.setPredicate(k, v) for k, v in current_rule.items() if k != 'decision']
@@ -182,7 +155,150 @@ class IpTablesParser(ParserStrategy):
 
             return self._ruleSet
 
-    def parseOptions(self, line, line_num, current_table):
+
+    """TODO REVISAR
+        1. SrcIP and DstIP: Parece que se puede especificar distintas direcciones simplemente
+        por ",". Si no es asi, se puede usar iprange quizas. (para IPs no contiguas, si no usar networks).
+        Tambien se puede crear un ipset, pero mejor no definir uno dentro de la herramienta, a menos que 
+        ya este definido, en cuyo caso deberia utilizarse.
+        2. SrcPort and DstPort: Para multiples puertos se debe usar la opción "-m <protocol>" y despues los
+        puertos. Si no son contiguos "--dports a,c,e", si son contiguos "--dports a:e". Creo que "-m multiport"
+        es para puertos no contiguos y debe seguir a "-m <protocol>". (y creo que es indistinto dport o dports).
+        3. Protocol: Se debe crear una regla distinta para cada protocolo.
+    """
+
+    def compose(self, ruleSet: rules.RuleSet):
+        """
+        Parse the RuleSet and obtain an iptables-save file
+
+        Args:
+            ruleSet (rules.RuleSet): Set of Rules
+
+        Returns:
+            file: iptables-save file with rules
+        """
+        iptables_save_lines = []
+
+        for table in ruleSet.getTables().values():
+            iptables_save_lines.append(f"*{table.getName()}")
+
+            for chain in table.getChains().values():
+                # Add chain with default policy if any
+                default_decision = chain.getDefaultDecision()
+                if default_decision:
+                    iptables_save_lines.append(f":{chain.getName()} {default_decision} [0:0]")
+                else:
+                    iptables_save_lines.append(f":{chain.getName()} - [0:0]")
+
+                # Add rules in the chain
+                for rule in chain.getRules():
+                    predicates = rule.getPredicates()
+                    protocols = predicates.get("Protocol", None)
+                    
+                    # Get protocols as a list
+                    if protocols:
+                        protocol_list = protocols.getElementsList()
+                    else:
+                        protocol_list = [None]
+
+                    for protocol in protocol_list:
+                        rule_parts = [f"-A {chain.getName()}"]
+                        for option, value in predicates.items():                             
+                            # Get Option iptables format
+                            iptables_option = self._composeOptions(option)
+                            
+                            if option == "Protocol":
+                                if protocol:
+                                    rule_parts.append(f"{iptables_option} {protocol}")
+                            elif option == "DstPort" or option == "SrcPort":
+                                pass #TODO Port management
+                            else:
+                                # Get Elements from ElementSet
+                                if hasattr(value, 'getElementsList'):
+                                    elements_list = value.getElementsList()
+                                    rule_parts.append(f"{iptables_option} {', '.join(map(str, elements_list))}")
+                                else:
+                                    rule_parts.append(f"{iptables_option} {value}")
+
+                        # Form Rule Decision
+                        decision = rule.getDecision()
+                        if decision:
+                            rule_parts.append(f"-j {decision}")
+
+                        iptables_save_lines.append(" ".join(rule_parts))
+
+                # Finish iptables-save
+                iptables_save_lines.append("COMMIT")
+
+        return "\n".join(iptables_save_lines)
+
+    def _preprocessSyntaxTable(self, syntax_table):
+        """
+        Process the syntax table to obtain all the posible alias of the
+        different options
+
+        Args:
+            syntaxTable (dict): Syntax table for iptables
+
+        Returns:
+            dict: Processed syntax table
+        """
+        preprocessed_table = {}
+        for table, table_ops in syntax_table.items():  # Create Dict for each Table
+            preprocessed_table[table] = AliasDefaultDict(dict)
+            for rule_type, rule_options in table_ops.items():  # Create Dict for each type of op
+                preprocessed_table[table][rule_type] = AliasDefaultDict(dict)
+                if rule_type in ['Extensions', 'MatchModules']:
+                    for module_name, options in rule_options.items():
+                        preprocessed_table[table][rule_type][module_name] = AliasDefaultDict(dict)
+                        for option_set, regex in options.items():
+                            aliases = [alias.strip() for alias in option_set.split('|')]
+                            for alias in aliases:  # Assign Value to all aliases
+                                preprocessed_table[table][rule_type][module_name][alias] = regex
+                else:   # Basic Operations
+                    for option_set in rule_options:  # Create alias and assign values
+                        regex = rule_options[option_set]
+                        aliases = [alias.strip() for alias in option_set.split('|')]
+                        for alias in aliases:  # Assign Value to all aliases
+                            preprocessed_table[table][rule_type][alias] = regex
+        return preprocessed_table
+
+    def _composeOptions(self, option):
+        """
+        Get the iptables-save option format, depending on the rule predicate
+
+        Args:
+            option (Rule): Rule to compose
+
+        Returns:
+            Option: Option with iptables format
+        """
+        for pattern, field in syntaxes.fields.items():
+            if field == option:
+                return pattern.split(' | ')[0]  # Return the first iptables option found
+        return option  # If no match, return the original option
+
+    def _renameOptions(self, rule):
+        """
+        Rename rule options based on FieldsFormat mapping.
+        
+        Args:
+            rule (str): Rule to be formated
+        
+        Returns:
+            new_rule (str): Formated Rule
+        """
+        new_rule = {}
+        for key, value in rule.items():
+            renamed_key = key
+            for pattern, new_key in syntaxes.fields.items():
+                if any(option == key for option in pattern.split(' | ')):
+                    renamed_key = new_key
+                    break
+            new_rule[renamed_key] = value
+        return new_rule
+
+    def _parseOptions(self, line, line_num, current_table):
         """Parse options from a line of the iptables configuration
 
         Args:
@@ -287,7 +403,7 @@ class IpTablesParser(ParserStrategy):
             current_rule['jump_extensions'] = extension_options
 
         # Rename rule options based on FieldsFormat
-        current_rule = self.renameOptions(current_rule)
+        current_rule = self._renameOptions(current_rule)
 
         return current_rule
 

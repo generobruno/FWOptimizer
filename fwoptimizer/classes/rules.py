@@ -50,7 +50,7 @@ class Rule:
         """
         return self._predicates
     
-    def setMatchingPredicate(self, field, values):#TODO VER SI SACAR ESTAS FUNCIONES Y USAR SOLO GetOption
+    def setMatchingPredicate(self, field, values):
         """
         Set the Matching Predicate of the rule
 

@@ -2,7 +2,7 @@
 """
 
 import pytest
-from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet, DirSet, ProtSet
+from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet, DirSet, ProtSet, PortSet
 from fwoptimizer.classes.rules import Chain, Rule
 from fwoptimizer.classes.firewall import FieldList
 from fwoptimizer.classes.fdd import FDD
@@ -68,3 +68,29 @@ def test_presenseOFPredicateInFieldList():
     fdd = FDD(fieldList)
     with pytest.raises(TypeError):
         fdd.genFDD(chain)
+
+
+def test_PortSet():
+    """summary
+    """
+
+    ports = PortSet(['88', '99'])
+    assert ports.getElementsList() == ['88', '99']
+
+    ports2 = PortSet(['88', '89', '90', '99'])
+    assert ports2.getElementsList() == ['88', '89', '90', '99']
+
+    ports3 = PortSet(['88:90', '99'])
+    assert ports3.getElementsList() == ['88', '89', '90', '99']
+
+    PortSet.setGroupable(True)
+
+    ports = PortSet(['88', '99'])
+    assert ports.getElementsList() == ['88', '99']
+
+    ports2 = PortSet(['88', '89', '90', '99'])
+    assert ports2.getElementsList() == ['88:90', '99']
+
+    ports3 = PortSet(['88:90', '99'])
+    assert ports3.getElementsList() == ['88:90', '99']
+    

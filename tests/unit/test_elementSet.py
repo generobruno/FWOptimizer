@@ -73,6 +73,7 @@ def test_presenseOFPredicateInFieldList():
 def test_PortSet():
     """summary
     """
+    PortSet.setGroupable(False)
 
     ports = PortSet(['88', '99'])
     assert ports.getElementsList() == ['88', '99']

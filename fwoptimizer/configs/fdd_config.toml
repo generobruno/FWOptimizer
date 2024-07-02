@@ -3,5 +3,7 @@
 fields = [
     {name = 'SrcIP', type = 'DirSet'},
     {name = 'DstIP', type = 'DirSet'},
-    {name = 'Protocol', type = 'ProtSet'}
+    {name = 'Protocol', type = 'ProtSet'},
+    {name = 'SrcPort', type = 'PortSet'},
+    {name = 'DstPort', type = 'PortSet'}
 ]

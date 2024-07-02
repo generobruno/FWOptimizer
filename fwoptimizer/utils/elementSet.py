@@ -467,7 +467,7 @@ class PortSet(ElementSet):
     """_summary_
     """
     _domain_ = set(range(0,65536))
-    _groupable_ = False
+    _groupable_ = True
 
     def __init__(self, values: List[str]) -> None:
         """_summary_
@@ -614,6 +614,6 @@ class PortSet(ElementSet):
     def replicate(self):
         """_summary_
         """
-        return ProtSet(self.getElementsList())
+        return PortSet(self.getElementsList())
     
     

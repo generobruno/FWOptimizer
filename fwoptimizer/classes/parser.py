@@ -133,7 +133,7 @@ class IpTablesParser(ParserStrategy):
                 if line.startswith('*'):            # Start of Table
                     current_table = rules.Table(line[1:])
                     self._ruleSet.addTable(current_table)
-                elif line.startswith(':'):          # Define Chain
+                elif line.startswith(':'):          # Define Chain #TODO DEFINE CHAIN packet AND byte COUNTERS
                     chain_name = line.split()[0][1:]
                     current_chain = rules.Chain(chain_name)
                     current_table.addChain(current_chain)
@@ -148,7 +148,8 @@ class IpTablesParser(ParserStrategy):
                     current_rule = self._parseOptions(line, line_num, current_table.getName())
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
-                        [rule.setPredicate(k, v) for k, v in current_rule.items() if k != 'decision']
+                        # Set rule predicates and filter -m options
+                        [rule.setPredicate(k, v) for k, v in current_rule.items() if k != 'decision' and not k.startswith('-m')] 
                         rule.setDecision(current_rule.get('decision'))
                         current_chain.addRule(rule)
                         rule_id += 1
@@ -185,10 +186,10 @@ class IpTablesParser(ParserStrategy):
             for chain in table.getChains().values():
                 # Add chain with default policy if any
                 default_decision = chain.getDefaultDecision()
-                if default_decision:
+                if default_decision: #TODO DEFINE CHAIN packet AND byte COUNTERS
                     iptables_save_lines.append(f":{chain.getName()} {default_decision} [0:0]")
                 else:
-                    iptables_save_lines.append(f":{chain.getName()} - [0:0]")
+                    iptables_save_lines.append(f":{chain.getName()} - [0:0]")  
 
                 # Add rules in the chain
                 for rule in chain.getRules():

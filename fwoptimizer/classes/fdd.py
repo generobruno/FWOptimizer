@@ -420,13 +420,22 @@ class FDD:
         return self._decisions[decision]
 
 
-    def printFDD(self, name: str):
-        """sumary
+    def printFDD(self, name: str, img_format='png'):
+        """
+        Generate a graph image from the data structure
+
+        Args:
+            name (str): Name of the graph
+            img_format (str, optional): Output Format. Defaults to 'png'.
         """
         dot = graphviz.Digraph()
+        
+        # Set graph attribute to change layout direction (rotate 90 degrees)
+        #dot.attr(rankdir='LR')
 
         # Create a dictionary to hold subgraphs for each field level
         field_subgraphs = {}
+        edge_node_counter = 0 # For intermediate nodes
 
         # Iterate through the levels to create subgraphs
         for level in self._levels:
@@ -446,19 +455,34 @@ class FDD:
                 for edge in node.getOutgoing():
                     origin_name = edge.getOrigin().getName()
                     destination_name = edge.getDestination().getName()
+                    edge_node_name = f"edge_node_{edge_node_counter}"
+                    edge_node_counter += 1
+
                     if edge.getAttributes('label') is not None:
                         label = f"{edge.getId()},{edge.getAttributes('label')}"
                     else:
-                        label = f"{edge.getId()},{edge.getElementSet().getElementsList()}" 
+                        elements = edge.getElementSet().getElementsList()
+                        elements_str = '\n'.join(str(elem) for elem in elements)
+                        label = f"{edge.getId()},\n{elements_str}"
+
                     edge_attributes = edge.getAttributes()
-                    dot.edge(origin_name, destination_name, label=label, _attributes=edge_attributes)
+                    
+                    # Create Edge between nodes
+                    dot.edge(origin_name, destination_name, label=label, tailport='s', headport='n', _attributes=edge_attributes)
+
+                    # Add the intermediate node with the label
+                    #dot.node(edge_node_name, label, shape='plaintext')
+
+                    # Connect the origin to the intermediate node and intermediate node to the destination
+                    #dot.edge(origin_name, edge_node_name, tailport='s', headport='n', _attributes=edge_attributes)
+                    #dot.edge(edge_node_name, destination_name, tailport='s', headport='n', _attributes=edge_attributes)
 
         # Add each subgraph to the main graph
         for subgraph in field_subgraphs.values():
             dot.subgraph(subgraph)
 
         # Render the graph to a file
-        dot.render(name, format='png', view=False, cleanup=True)
+        dot.render(name, format=img_format, view=False, cleanup=True)
 
 
     def _genPre(self, chain: Chain):

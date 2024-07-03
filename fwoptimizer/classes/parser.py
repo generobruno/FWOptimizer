@@ -307,7 +307,7 @@ class IpTablesParser(ParserStrategy):
             if len(elements_list) > 1:
                 rule_parts.append(f"-m {protocol} -m multiport {iptables_option[2]} {', '.join(map(str, elements_list))}")
             else:
-                rule_parts.append(f"-m {protocol} {iptables_option[1]} {', '.join(map(str, elements_list))}")
+                rule_parts.append(f"-m {protocol} {iptables_option[1]} {', '.join(map(str, elements_list))}") #TODO CAMBIAR A SOLO elements_list
         elif option.endswith("IP"):
             elements_list = value.getElementsList()
             rule_parts.append(f"{iptables_option[0]} {', '.join(map(str, elements_list))}")

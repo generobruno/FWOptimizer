@@ -430,12 +430,25 @@ class FDD:
         """
         dot = graphviz.Digraph()
         
-        # Set graph attribute to change layout direction (rotate 90 degrees)
+        # Set graph attribute #TODO VER ranksep
+        dot.attr(ranksep='2.0',nodesep='0.5')
+        
+        # Change layout direction (rotate 90 degrees)
         #dot.attr(rankdir='LR')
 
         # Create a dictionary to hold subgraphs for each field level
         field_subgraphs = {}
         edge_node_counter = 0 # For intermediate nodes
+        
+        # Calculate total number of nodes and edges
+        total_nodes = sum(len(level.getNodes()) for level in self._levels)
+        total_edges = sum(len(node.getOutgoing()) for level in self._levels for node in level.getNodes())
+
+        # Determine node size based on total number of nodes and edges
+        base_width = 2.0
+        base_height = 0.5
+        width_factor = 10.0 / (total_nodes + total_edges)
+        height_factor = 5.5 / (total_nodes + total_edges)
 
         # Iterate through the levels to create subgraphs
         for level in self._levels:
@@ -449,7 +462,7 @@ class FDD:
             # Add nodes to the corresponding subgraph
             for node in level.getNodes():
                 node_name = node.getName()
-                field_subgraphs[field_name].node(node_name, _attributes=node.getAttributes())
+                field_subgraphs[field_name].node(node_name, _attributes=node.getAttributes(), width = str(base_width + width_factor), height= str(base_height + height_factor))
 
                 # Add edges to the main graph
                 for edge in node.getOutgoing():
@@ -462,20 +475,23 @@ class FDD:
                         label = f"{edge.getId()},{edge.getAttributes('label')}"
                     else:
                         elements = edge.getElementSet().getElementsList()
-                        elements_str = '\n'.join(str(elem) for elem in elements)
+                        if len(elements) > 5:
+                            elements_str = '\n'.join(str(elem) for elem in elements[:5]) + '\n...'
+                        else:
+                            elements_str = '\n'.join(str(elem) for elem in elements)
                         label = f"{edge.getId()},\n{elements_str}"
 
                     edge_attributes = edge.getAttributes()
                     
                     # Create Edge between nodes
-                    dot.edge(origin_name, destination_name, label=label, tailport='s', headport='n', _attributes=edge_attributes)
+                    #dot.edge(origin_name, destination_name, label=label, tailport='s', headport='n', _attributes=edge_attributes)
 
                     # Add the intermediate node with the label
-                    #dot.node(edge_node_name, label, shape='plaintext')
+                    dot.node(edge_node_name, label, shape='plaintext', width=str(base_width + width_factor), height=str(base_height + height_factor))
 
                     # Connect the origin to the intermediate node and intermediate node to the destination
-                    #dot.edge(origin_name, edge_node_name, tailport='s', headport='n', _attributes=edge_attributes)
-                    #dot.edge(edge_node_name, destination_name, tailport='s', headport='n', _attributes=edge_attributes)
+                    dot.edge(origin_name, edge_node_name, tailport='s', headport='n', _attributes=edge_attributes)
+                    dot.edge(edge_node_name, destination_name, tailport='s', headport='n', _attributes=edge_attributes)
 
         # Add each subgraph to the main graph
         for subgraph in field_subgraphs.values():
@@ -483,6 +499,52 @@ class FDD:
 
         # Render the graph to a file
         dot.render(name, format=img_format, view=False, cleanup=True)
+
+    def highlightPath(self, rule_id, color='blue'):
+        """
+        Highlight the edges of a decision path for a given rule ID in the graph.
+
+        Args:
+            rule_id (int): The rule ID to highlight.
+            color (str, optional): The color to use for highlighting. Defaults to 'red'.
+        """
+        # Dictionary to store highlighted edges
+        highlighted_edges = set()
+
+        # Traverse the graph to find all edges containing the specified rule ID
+        for level in self._levels:
+            for node in level.getNodes():
+                for edge in node.getOutgoing():
+                    if rule_id in edge.getId():
+                        edge.setAttributes(color=color)
+                    else:
+                        edge.setAttributes(color='black')
+        # Store the highlighted edges in the instance for use in printFDD
+        self._highlighted_edges = highlighted_edges
+
+        # Call the printFDD function to print the graph with the modified attributes
+        self.printFDD(name=f"FilterRule_{rule_id}")
+
+    def highlightDecisions(self):
+        """
+        Highlight all decision paths that end in 'ACCEPT' in green and those that end in 'DROP' in red.
+        
+        """
+        def dfs(node, decision_path):
+            if not node.getOutgoing():  # Terminal node
+                color = "red" if node.getName() == "DROP" else "green"
+                for _, e in decision_path:
+                    e.setAttributes(color=color)
+                return
+
+            for edge in node.getOutgoing():
+                dfs(edge.getDestination(), decision_path + [(node, edge)])
+
+        # Start DFS from the root node
+        dfs(self._levels[0].getNodes()[0], [])
+
+        # Print the FDD with highlighted edges
+        self.printFDD("highlighted_FDD")
 
 
     def _genPre(self, chain: Chain):
@@ -721,7 +783,7 @@ class FDD:
 
                 if not left.isEmpty():
                     
-                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left, label='DEFAULT')
+                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left)#, label='DEFAULT')
                     newEdge.autoConnect()
 
 

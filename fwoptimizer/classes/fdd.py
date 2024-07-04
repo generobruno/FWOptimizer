@@ -415,7 +415,7 @@ class FDD:
         # Revisamos la decision de la regla, si ya existe un nodo en el diccionario de decisiones para dicha decision, lo usamos
         # Si no existe, creamos el nodo y lo agregamos tanto al arbol como al diccionario de decisiones
         if decision  not in self._decisions:
-            self._decisions[decision] = Node(decision, self._levels[-1], shape='box', fontsize='25')
+            self._decisions[decision] = Node(decision, self._levels[-1], shape='box', fontsize='35')
             self._decisions[decision].autoConnect()
         return self._decisions[decision]
 
@@ -447,8 +447,11 @@ class FDD:
         # Determine node size based on total number of nodes and edges
         base_width = 2.0
         base_height = 0.5
-        width_factor = 10.0 / (total_nodes + total_edges)
-        height_factor = 5.5 / (total_nodes + total_edges)
+        base_font = 20.0
+        total_elements = (total_nodes + total_edges)
+        width_factor = 10.0 / total_elements
+        height_factor = 5.5 / total_elements
+        font_factor = 5.0 / total_elements
 
         # Iterate through the levels to create subgraphs
         for level in self._levels:
@@ -462,7 +465,12 @@ class FDD:
             # Add nodes to the corresponding subgraph
             for node in level.getNodes():
                 node_name = node.getName()
-                field_subgraphs[field_name].node(node_name, _attributes=node.getAttributes(), width = str(base_width + width_factor), height= str(base_height + height_factor))
+                field_subgraphs[field_name].node(
+                                            node_name, 
+                                            _attributes=node.getAttributes(), 
+                                            width = str(base_width + width_factor), 
+                                            height= str(base_height + height_factor), 
+                                            fontsize=str(base_font + font_factor))
 
                 # Add edges to the main graph
                 for edge in node.getOutgoing():
@@ -487,7 +495,13 @@ class FDD:
                     #dot.edge(origin_name, destination_name, label=label, tailport='s', headport='n', _attributes=edge_attributes)
 
                     # Add the intermediate node with the label
-                    dot.node(edge_node_name, label, shape='plaintext', width=str(base_width + width_factor), height=str(base_height + height_factor))
+                    dot.node(
+                        edge_node_name, 
+                        label, 
+                        shape='plaintext', 
+                        width=str(base_width + width_factor), 
+                        height=str(base_height + height_factor),
+                        fontsize=str(base_font + font_factor))
 
                     # Connect the origin to the intermediate node and intermediate node to the destination
                     dot.edge(origin_name, edge_node_name, tailport='s', headport='n', _attributes=edge_attributes)
@@ -783,7 +797,7 @@ class FDD:
 
                 if not left.isEmpty():
                     
-                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left)#, label='DEFAULT')
+                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left)
                     newEdge.autoConnect()
 
 

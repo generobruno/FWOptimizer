@@ -1,9 +1,9 @@
 
 [fdd_config]
 fields = [
-    {name = 'SrcIP', type = 'DirSet'},
-    {name = 'DstIP', type = 'DirSet'},
-    {name = 'Protocol', type = 'ProtSet'},
+    {name = 'SrcIP', type = 'DirectionSet'},
+    {name = 'DstIP', type = 'DirectionSet'},
+    {name = 'Protocol', type = 'ProtocolSet'},
     {name = 'SrcPort', type = 'PortSet'},
     {name = 'DstPort', type = 'PortSet'}
 ]

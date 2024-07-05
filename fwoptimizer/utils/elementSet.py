@@ -147,7 +147,7 @@ class ElementSet(metaclass = ElementSetRegistry):
 
 
 
-class DirSet(ElementSet):
+class DirectionSet(ElementSet):
     """_summary_
 
     Args:
@@ -167,7 +167,7 @@ class DirSet(ElementSet):
         """
         self._elements = nt.IPSet(values)
 
-    def __eq__(self, other: "DirSet") -> bool:
+    def __eq__(self, other: "DirectionSet") -> bool:
         """
         DirSet __eq__
 
@@ -197,9 +197,9 @@ class DirSet(ElementSet):
         Returns:
             DirSet: Domain of the set
         """
-        return DirSet(cls.getDomainList())
+        return DirectionSet(cls.getDomainList())
 
-    def addSet(self, otherSet: "DirSet") -> None:
+    def addSet(self, otherSet: "DirectionSet") -> None:
         """_summary_
 
         Args:
@@ -207,7 +207,7 @@ class DirSet(ElementSet):
         """
         self._elements = self._elements.union(otherSet.getElements())
 
-    def isOverlapping(self, otherSet: "DirSet") -> bool:
+    def isOverlapping(self, otherSet: "DirectionSet") -> bool:
         """_summary_
 
         Args:
@@ -226,7 +226,7 @@ class DirSet(ElementSet):
         """
         return len(self._elements) == 0
     
-    def isSubset(self, otherSet: "DirSet") -> bool:
+    def isSubset(self, otherSet: "DirectionSet") -> bool:
         """
         Checks if a DirSet is a subset of the other set.
         A set is a subset of itself.
@@ -236,7 +236,7 @@ class DirSet(ElementSet):
         """
         return self._elements.issubset(otherSet.getElements())
     
-    def isDisjoint(self, otherSet: "DirSet") -> bool:
+    def isDisjoint(self, otherSet: "DirectionSet") -> bool:
         """
         Checks if a DirSet is not a subset of the other set.
 
@@ -245,7 +245,7 @@ class DirSet(ElementSet):
         """
         return self._elements.isdisjoint(otherSet.getElements())
     
-    def intersectionSet(self, otherSet: "DirSet") -> "DirSet":
+    def intersectionSet(self, otherSet: "DirectionSet") -> "DirectionSet":
         """_summary_
 
         Args:
@@ -254,9 +254,9 @@ class DirSet(ElementSet):
         Returns:
             DirSet: _description_
         """
-        return DirSet([str(x) for x in self._elements.intersection(otherSet.getElements()).iter_cidrs()]) #TODO Revisar, le agregue iter_cidrs()
+        return DirectionSet([str(x) for x in self._elements.intersection(otherSet.getElements()).iter_cidrs()]) #TODO Revisar, le agregue iter_cidrs()
     
-    def unionSet(self, otherSet: "DirSet") -> "DirSet":
+    def unionSet(self, otherSet: "DirectionSet") -> "DirectionSet":
         """_summary_
 
         Args:
@@ -265,9 +265,9 @@ class DirSet(ElementSet):
         Returns:
             _type_: _description_
         """
-        return DirSet([str(x) for x in self._elements.union(otherSet.getElements()).iter_cidrs()])
+        return DirectionSet([str(x) for x in self._elements.union(otherSet.getElements()).iter_cidrs()])
     
-    def remove(self, otherSet: "DirSet") -> None:
+    def remove(self, otherSet: "DirectionSet") -> None:
         """_summary_
 
         Args:
@@ -298,12 +298,12 @@ class DirSet(ElementSet):
         Returns:
             DirSet: Copied DirSet
         """
-        return DirSet(self.getElementsList())
+        return DirectionSet(self.getElementsList())
     
 
 
 
-class ProtSet(ElementSet):
+class ProtocolSet(ElementSet):
     """_summary_
 
     Args:
@@ -330,7 +330,7 @@ class ProtSet(ElementSet):
             
         self._elements = set(values)
 
-    def __eq__(self, other: "ProtSet") -> bool:
+    def __eq__(self, other: "ProtocolSet") -> bool:
         """
         ProtSet __eq__
 
@@ -360,9 +360,9 @@ class ProtSet(ElementSet):
         Returns:
             ProtSet: Domain of the set
         """
-        return ProtSet(cls.getDomainList())
+        return ProtocolSet(cls.getDomainList())
 
-    def addSet(self, otherSet: "ProtSet") -> None:
+    def addSet(self, otherSet: "ProtocolSet") -> None:
         """_summary_
 
         Args:
@@ -370,7 +370,7 @@ class ProtSet(ElementSet):
         """
         self._elements.update(otherSet.getElements())
 
-    def isOverlapping(self, otherSet: "ProtSet") -> bool:
+    def isOverlapping(self, otherSet: "ProtocolSet") -> bool:
         """_summary_
 
         Args:
@@ -389,7 +389,7 @@ class ProtSet(ElementSet):
         """
         return len(self._elements) == 0
     
-    def isSubset(self, otherSet: "ProtSet") -> bool:
+    def isSubset(self, otherSet: "ProtocolSet") -> bool:
         """
         Checks if a ProtSet is a subset of the other set.
         A set is a subset of itself.
@@ -399,7 +399,7 @@ class ProtSet(ElementSet):
         """
         return self._elements.issubset(otherSet.getElements()) #TODO Revisar si influye en load
     
-    def isDisjoint(self, otherSet: "ProtSet") -> bool:
+    def isDisjoint(self, otherSet: "ProtocolSet") -> bool:
         """
         Checks if a ProtSet is not a subset of the other set.
 
@@ -408,7 +408,7 @@ class ProtSet(ElementSet):
         """
         return self._elements.isdisjoint(otherSet.getElements())
     
-    def intersectionSet(self, otherSet: "ProtSet") -> "ProtSet":
+    def intersectionSet(self, otherSet: "ProtocolSet") -> "ProtocolSet":
         """_summary_
 
         Args:
@@ -417,9 +417,9 @@ class ProtSet(ElementSet):
         Returns:
             ProtSet: _description_
         """
-        return ProtSet([str(x) for x in self._elements & otherSet.getElements()])
+        return ProtocolSet([str(x) for x in self._elements & otherSet.getElements()])
     
-    def unionSet(self, otherSet: "ProtSet"):
+    def unionSet(self, otherSet: "ProtocolSet"):
         """_summary_
 
         Args:
@@ -428,9 +428,9 @@ class ProtSet(ElementSet):
         Returns:
             _type_: _description_
         """
-        return ProtSet([str(x) for x in self._elements | otherSet.getElements()])
+        return ProtocolSet([str(x) for x in self._elements | otherSet.getElements()])
     
-    def remove(self, otherSet: "ProtSet") -> None:
+    def remove(self, otherSet: "ProtocolSet") -> None:
         """_summary_
 
         Args:
@@ -461,7 +461,7 @@ class ProtSet(ElementSet):
         Returns:
            ProtSet: Copied ProtSet
         """
-        return ProtSet(self.getElementsList())
+        return ProtocolSet(self.getElementsList())
     
 class PortSet(ElementSet):
     """_summary_

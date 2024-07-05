@@ -2,7 +2,7 @@
 """
 
 import pytest
-from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet, DirSet, ProtSet, PortSet
+from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet, DirectionSet, ProtocolSet, PortSet
 from fwoptimizer.classes.rules import Chain, Rule
 from fwoptimizer.classes.firewall import FieldList
 from fwoptimizer.classes.fdd import FDD
@@ -26,17 +26,17 @@ def test_createElementSet():
     direction = ElementSet.createElementSet('DirSet', ['0.0.10.0/24'])
     protocol = ElementSet.createElementSet('ProtSet', ['TCP'])
 
-    assert isinstance(direction, DirSet)
-    assert isinstance(protocol, ProtSet)
+    assert isinstance(direction, DirectionSet)
+    assert isinstance(protocol, ProtocolSet)
 
-    dcomp1 = DirSet(['0.0.10.0/24'])
-    dcomp2 = DirSet(['0.0.11.0/24'])
+    dcomp1 = DirectionSet(['0.0.10.0/24'])
+    dcomp2 = DirectionSet(['0.0.11.0/24'])
 
     assert direction == dcomp1
     assert direction != dcomp2
 
-    pcomp1 = ProtSet(['TCP'])
-    pcomp2 = ProtSet(['UDP'])
+    pcomp1 = ProtocolSet(['TCP'])
+    pcomp2 = ProtocolSet(['UDP'])
 
     assert protocol == pcomp1
     assert protocol != pcomp2

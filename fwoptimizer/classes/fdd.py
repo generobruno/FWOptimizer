@@ -467,10 +467,10 @@ class FDD:
                 node_name = node.getName()
                 field_subgraphs[field_name].node(
                                             node_name, 
-                                            _attributes=node.getAttributes(), 
+                                            _attributes = node.getAttributes(), 
                                             width = str(base_width + width_factor), 
                                             height= str(base_height + height_factor), 
-                                            fontsize=str(base_font + font_factor))
+                                            fontsize= str(base_font + font_factor))
 
                 # Add edges to the main graph
                 for edge in node.getOutgoing():

@@ -7,9 +7,9 @@ import fwoptimizer.classes.firewall as f
 sampleInput = 'tests/test_fdd_config.toml'
 
 expectedOutput =  [
-    {'name' : 'SrcIP', 'type' : 'DirSet'},
-    {'name' : 'DstIP', 'type' : 'DirSet'},
-    {'name' : 'Protocol', 'type' : 'ProtSet'}
+    {'name' : 'SrcIP', 'type' : 'DirectionSet'},
+    {'name' : 'DstIP', 'type' : 'DirectionSet'},
+    {'name' : 'Protocol', 'type' : 'ProtocolSet'}
 ]
 
 def test_fieldList():

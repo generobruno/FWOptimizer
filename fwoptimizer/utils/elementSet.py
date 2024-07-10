@@ -4,6 +4,7 @@
 from typing import List, Set
 from abc import abstractmethod
 import netaddr as nt
+import portion as p
 
 class ElementSetRegistry(type):
     """_summary_
@@ -147,7 +148,7 @@ class ElementSet(metaclass = ElementSetRegistry):
 
 
 
-class DirSet(ElementSet):
+class DirectionSet(ElementSet):
     """_summary_
 
     Args:
@@ -167,7 +168,7 @@ class DirSet(ElementSet):
         """
         self._elements = nt.IPSet(values)
 
-    def __eq__(self, other: "DirSet") -> bool:
+    def __eq__(self, other: "DirectionSet") -> bool:
         """
         DirSet __eq__
 
@@ -197,9 +198,9 @@ class DirSet(ElementSet):
         Returns:
             DirSet: Domain of the set
         """
-        return DirSet(cls.getDomainList())
+        return DirectionSet(cls.getDomainList())
 
-    def addSet(self, otherSet: "DirSet") -> None:
+    def addSet(self, otherSet: "DirectionSet") -> None:
         """_summary_
 
         Args:
@@ -207,7 +208,7 @@ class DirSet(ElementSet):
         """
         self._elements = self._elements.union(otherSet.getElements())
 
-    def isOverlapping(self, otherSet: "DirSet") -> bool:
+    def isOverlapping(self, otherSet: "DirectionSet") -> bool:
         """_summary_
 
         Args:
@@ -226,7 +227,7 @@ class DirSet(ElementSet):
         """
         return len(self._elements) == 0
     
-    def isSubset(self, otherSet: "DirSet") -> bool:
+    def isSubset(self, otherSet: "DirectionSet") -> bool:
         """
         Checks if a DirSet is a subset of the other set.
         A set is a subset of itself.
@@ -236,7 +237,7 @@ class DirSet(ElementSet):
         """
         return self._elements.issubset(otherSet.getElements())
     
-    def isDisjoint(self, otherSet: "DirSet") -> bool:
+    def isDisjoint(self, otherSet: "DirectionSet") -> bool:
         """
         Checks if a DirSet is not a subset of the other set.
 
@@ -245,7 +246,7 @@ class DirSet(ElementSet):
         """
         return self._elements.isdisjoint(otherSet.getElements())
     
-    def intersectionSet(self, otherSet: "DirSet") -> "DirSet":
+    def intersectionSet(self, otherSet: "DirectionSet") -> "DirectionSet":
         """_summary_
 
         Args:
@@ -254,9 +255,9 @@ class DirSet(ElementSet):
         Returns:
             DirSet: _description_
         """
-        return DirSet([str(x) for x in self._elements.intersection(otherSet.getElements()).iter_cidrs()]) #TODO Revisar, le agregue iter_cidrs()
+        return DirectionSet([str(x) for x in self._elements.intersection(otherSet.getElements()).iter_cidrs()]) #TODO Revisar, le agregue iter_cidrs()
     
-    def unionSet(self, otherSet: "DirSet") -> "DirSet":
+    def unionSet(self, otherSet: "DirectionSet") -> "DirectionSet":
         """_summary_
 
         Args:
@@ -265,9 +266,9 @@ class DirSet(ElementSet):
         Returns:
             _type_: _description_
         """
-        return DirSet([str(x) for x in self._elements.union(otherSet.getElements()).iter_cidrs()])
+        return DirectionSet([str(x) for x in self._elements.union(otherSet.getElements()).iter_cidrs()])
     
-    def remove(self, otherSet: "DirSet") -> None:
+    def remove(self, otherSet: "DirectionSet") -> None:
         """_summary_
 
         Args:
@@ -298,12 +299,12 @@ class DirSet(ElementSet):
         Returns:
             DirSet: Copied DirSet
         """
-        return DirSet(self.getElementsList())
+        return DirectionSet(self.getElementsList())
     
 
 
 
-class ProtSet(ElementSet):
+class ProtocolSet(ElementSet):
     """_summary_
 
     Args:
@@ -330,7 +331,7 @@ class ProtSet(ElementSet):
             
         self._elements = set(values)
 
-    def __eq__(self, other: "ProtSet") -> bool:
+    def __eq__(self, other: "ProtocolSet") -> bool:
         """
         ProtSet __eq__
 
@@ -360,9 +361,9 @@ class ProtSet(ElementSet):
         Returns:
             ProtSet: Domain of the set
         """
-        return ProtSet(cls.getDomainList())
+        return ProtocolSet(cls.getDomainList())
 
-    def addSet(self, otherSet: "ProtSet") -> None:
+    def addSet(self, otherSet: "ProtocolSet") -> None:
         """_summary_
 
         Args:
@@ -370,7 +371,7 @@ class ProtSet(ElementSet):
         """
         self._elements.update(otherSet.getElements())
 
-    def isOverlapping(self, otherSet: "ProtSet") -> bool:
+    def isOverlapping(self, otherSet: "ProtocolSet") -> bool:
         """_summary_
 
         Args:
@@ -389,7 +390,7 @@ class ProtSet(ElementSet):
         """
         return len(self._elements) == 0
     
-    def isSubset(self, otherSet: "ProtSet") -> bool:
+    def isSubset(self, otherSet: "ProtocolSet") -> bool:
         """
         Checks if a ProtSet is a subset of the other set.
         A set is a subset of itself.
@@ -399,7 +400,7 @@ class ProtSet(ElementSet):
         """
         return self._elements.issubset(otherSet.getElements()) #TODO Revisar si influye en load
     
-    def isDisjoint(self, otherSet: "ProtSet") -> bool:
+    def isDisjoint(self, otherSet: "ProtocolSet") -> bool:
         """
         Checks if a ProtSet is not a subset of the other set.
 
@@ -408,7 +409,7 @@ class ProtSet(ElementSet):
         """
         return self._elements.isdisjoint(otherSet.getElements())
     
-    def intersectionSet(self, otherSet: "ProtSet") -> "ProtSet":
+    def intersectionSet(self, otherSet: "ProtocolSet") -> "ProtocolSet":
         """_summary_
 
         Args:
@@ -417,9 +418,9 @@ class ProtSet(ElementSet):
         Returns:
             ProtSet: _description_
         """
-        return ProtSet([str(x) for x in self._elements & otherSet.getElements()])
+        return ProtocolSet([str(x) for x in self._elements & otherSet.getElements()])
     
-    def unionSet(self, otherSet: "ProtSet"):
+    def unionSet(self, otherSet: "ProtocolSet"):
         """_summary_
 
         Args:
@@ -428,9 +429,9 @@ class ProtSet(ElementSet):
         Returns:
             _type_: _description_
         """
-        return ProtSet([str(x) for x in self._elements | otherSet.getElements()])
+        return ProtocolSet([str(x) for x in self._elements | otherSet.getElements()])
     
-    def remove(self, otherSet: "ProtSet") -> None:
+    def remove(self, otherSet: "ProtocolSet") -> None:
         """_summary_
 
         Args:
@@ -461,19 +462,19 @@ class ProtSet(ElementSet):
         Returns:
            ProtSet: Copied ProtSet
         """
-        return ProtSet(self.getElementsList())
+        return ProtocolSet(self.getElementsList())
     
 class PortSet(ElementSet):
     """_summary_
     """
-    _domain_ = set(range(0,65536))
+    _domain_ = p.closedopen(0, 65535+1)
     _groupable_ = True
 
     def __init__(self, values: List[str]) -> None:
         """_summary_
         """
 
-        self._elements = set()
+        self._elements = p.empty()
 
         for value in values:
 
@@ -487,25 +488,23 @@ class PortSet(ElementSet):
                 
                 else:
 
-                    self._elements.add(intValue)
+                    self._elements = self._elements | p.closedopen(intValue, intValue+1)
                 
             except:
 
                 ends = value.split(":")
                 if len(ends) == 2:
 
-                    newValues = set(range(int(ends[0]),int(ends[1])+1))
+                    interval = p.closedopen(int(ends[0]), int(ends[1])+1)
 
-                    if not newValues.issubset(self._domain_):
+                    if not self._domain_.contains(interval) :
                         raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
                     else: 
-                        self._elements.update(newValues)
+                        self._elements = self._elements | interval
 
                 else:
 
                     raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
-
-
 
     def __eq__(self, other: "PortSet") -> bool:
         
@@ -513,12 +512,36 @@ class PortSet(ElementSet):
 
     def __repr__(self):
         return "PortSet" + super().__repr__()
+    
+    @classmethod
+    def _formatedList_(cls, inter: p.Interval):
+
+        formated = []
+
+        for element in p.to_data(inter):
+            if element[1] == element[2]-1 and element[0] and not element[3]:
+                formated.append(str(element[1]))
+            else:
+
+                if element[0]:
+                    string = str(element[1])
+                else:
+                    string = str(element[1]+1) 
+
+                if element[3]:
+                    string = string + ":" + str(element[2])
+                else:
+                    string = string + ":" + str(element[2]-1)
+
+                formated.append(string)
+  
+        return formated
 
     @classmethod
     def getDomainList(cls):
         """_summary_
         """
-        return list(cls._domain_)
+        return cls._formatedList_(cls._domain_)
 
     @classmethod
     def getDomain(cls):
@@ -534,37 +557,37 @@ class PortSet(ElementSet):
     def addSet(self, otherSet: "PortSet"):
         """_summary_
         """
-        self._elements.update(otherSet.getElements())
+        self._elements = self._elements | otherSet.getElements()
 
     def isOverlapping(self, otherSet: "PortSet"):
         """_summary_
         """
-        return not self._elements.isdisjoint(otherSet.getElements())
+        return self._elements.overlaps(otherSet.getElements())
 
     def isEmpty(self):
         """_summary_
         """
-        return len(self._elements) == 0
+        return self._elements.empty
     
     def isSubset(self, otherSet: "PortSet"):
         """_summary_
         """
-        return self._elements.issubset(otherSet.getElements()) #TODO Revisar si influye en load
+        return self._elements in otherSet.getElements() #TODO Revisar si influye en load
         
     def isDisjoint(self, otherSet: "PortSet"):
         """_summary_
         """
-        return self._elements.isdisjoint(otherSet.getElements())
+        return self._elements.intersection(otherSet.getElements()).empty
 
     def intersectionSet(self, otherSet: "ElementSet"):
         """_summary_
         """
-        return PortSet([str(x) for x in self._elements & otherSet.getElements()])
+        return PortSet(self._formatedList_(list(self._elements.intersection(otherSet.getElements()))))
         
     def unionSet(self, otherSet: "ElementSet"):
         """_summary_
         """
-        return PortSet([str(x) for x in self._elements | otherSet.getElements()])
+        return PortSet(self._formatedList_(list(self._elements.union(otherSet.getElements()))))
         
     def remove(self, otherSet: "ElementSet"):
         """_summary_
@@ -581,35 +604,21 @@ class PortSet(ElementSet):
         """
         if not self._groupable_:
 
-            return list(str(x) for x in self._elements)
-        
-        else:
+            noGrouped = []
 
-            toGroup = sorted(list(self._elements))
-            grouped = []
+            for element in p.to_data(self._elements):
 
-            minor = None
-
-            for i in range(len(toGroup)-1):
-
-                if toGroup[i]+1 == toGroup[i+1]:
-                    if minor == None:
-                        minor = i
-
+                if element[1] == element[2]-1 and element[0] and not element[3]:
+                    noGrouped.append(str(element[1]))
                 else:
-                    if minor == None:
-                        grouped.append(str(toGroup[i]))
-                        minor = None
-                    else:
-                        grouped.append(f"{toGroup[minor]}:{toGroup[i]}")
-                        minor = None
+                    for i in range(element[1], element[2]):
+                        noGrouped.append(str(i))
             
-            if minor != None:
-                grouped.append(f"{toGroup[minor]}:{toGroup[len(toGroup)-1]}")
-            else:
-                grouped.append(f"{toGroup[len(toGroup)-1]}")   
+            return noGrouped
+        
+        else:   
 
-            return grouped
+            return self._formatedList_(self._elements)
 
     def replicate(self):
         """_summary_

@@ -11,7 +11,7 @@ def test_registry():
     """_summary_
     """
 
-    expectedRegistred = ['ElementSet', 'DirSet', 'ProtSet']
+    expectedRegistred = ['ElementSet', 'DirectionSet', 'ProtocolSet', 'PortSet']
     
     for i in expectedRegistred:
 
@@ -23,8 +23,8 @@ def test_createElementSet():
     sumary
     """
 
-    direction = ElementSet.createElementSet('DirSet', ['0.0.10.0/24'])
-    protocol = ElementSet.createElementSet('ProtSet', ['TCP'])
+    direction = ElementSet.createElementSet('DirectionSet', ['0.0.10.0/24'])
+    protocol = ElementSet.createElementSet('ProtocolSet', ['TCP'])
 
     assert isinstance(direction, DirectionSet)
     assert isinstance(protocol, ProtocolSet)
@@ -41,14 +41,14 @@ def test_createElementSet():
     assert protocol == pcomp1
     assert protocol != pcomp2
 
-    direction2 = ElementSet.createElementSet('DirSet', [None])
-    protocol2 = ElementSet.createElementSet('ProtSet', [None])
+    direction2 = ElementSet.createElementSet('DirectionSet', [None])
+    protocol2 = ElementSet.createElementSet('ProtocolSet', [None])
 
     assert direction2.getElementsList() == ['0.0.0.0/0']
     assert sorted(protocol2.getElementsList()) == sorted(['tcp', 'icmp', 'udp'])
 
     with pytest.raises(ValueError):
-        direction3 = ElementSet.createElementSet('ProtSet', ['udo'])
+        direction3 = ElementSet.createElementSet('ProtocolSet', ['udo'])
 
 
 def test_presenseOFPredicateInFieldList():

@@ -4,6 +4,7 @@
 from typing import List, Set
 from abc import abstractmethod
 import netaddr as nt
+import portion as p
 
 class ElementSetRegistry(type):
     """_summary_
@@ -466,14 +467,14 @@ class ProtocolSet(ElementSet):
 class PortSet(ElementSet):
     """_summary_
     """
-    _domain_ = set(range(0,65536))
+    _domain_ = p.closed(0, 65536)
     _groupable_ = True
 
     def __init__(self, values: List[str]) -> None:
         """_summary_
         """
 
-        self._elements = set()
+        self._elements = p.empty()
 
         for value in values:
 
@@ -487,25 +488,23 @@ class PortSet(ElementSet):
                 
                 else:
 
-                    self._elements.add(intValue)
+                    self._elements = self._elements | p.closed(intValue, intValue)
                 
             except:
 
                 ends = value.split(":")
                 if len(ends) == 2:
 
-                    newValues = set(range(int(ends[0]),int(ends[1])+1))
+                    interval = p.closed(int(ends[0]), int(ends[1]))
 
-                    if not newValues.issubset(self._domain_):
+                    if not self._domain_.contains(interval) :
                         raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
                     else: 
-                        self._elements.update(newValues)
+                        self._elements = self._elements | interval
 
                 else:
 
                     raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
-
-
 
     def __eq__(self, other: "PortSet") -> bool:
         
@@ -513,12 +512,36 @@ class PortSet(ElementSet):
 
     def __repr__(self):
         return "PortSet" + super().__repr__()
+    
+    @classmethod
+    def _formatedList_(cls, inter: p.Interval):
+
+        formated = []
+
+        for element in p.to_data(inter):
+            if element[1] == element[2]:
+                formated.append(str(element[1]))
+            else:
+
+                if element[0]:
+                    string = str(element[1])
+                else:
+                    string = str(element[1]+1) 
+
+                if element[3]:
+                    string = string + ":" + str(element[2])
+                else:
+                    string = string + ":" + str(element[2]-1)
+
+                formated.append(string)
+  
+        return formated
 
     @classmethod
     def getDomainList(cls):
         """_summary_
         """
-        return list(cls._domain_)
+        return cls._formatedList_(cls._domain_)
 
     @classmethod
     def getDomain(cls):
@@ -534,37 +557,37 @@ class PortSet(ElementSet):
     def addSet(self, otherSet: "PortSet"):
         """_summary_
         """
-        self._elements.update(otherSet.getElements())
+        self._elements = self._elements | otherSet.getElements()
 
     def isOverlapping(self, otherSet: "PortSet"):
         """_summary_
         """
-        return not self._elements.isdisjoint(otherSet.getElements())
+        return not self._elements.overlaps(otherSet.getElements())
 
     def isEmpty(self):
         """_summary_
         """
-        return len(self._elements) == 0
+        return self._elements.empty
     
     def isSubset(self, otherSet: "PortSet"):
         """_summary_
         """
-        return self._elements.issubset(otherSet.getElements()) #TODO Revisar si influye en load
+        return self._elements in otherSet.getElements() #TODO Revisar si influye en load
         
     def isDisjoint(self, otherSet: "PortSet"):
         """_summary_
         """
-        return self._elements.isdisjoint(otherSet.getElements())
+        return self._elements.intersection(otherSet.getElements()).empty
 
     def intersectionSet(self, otherSet: "ElementSet"):
         """_summary_
         """
-        return PortSet([str(x) for x in self._elements & otherSet.getElements()])
+        return PortSet(self._formatedList_(list(self._elements.intersection(otherSet.getElements()))))
         
     def unionSet(self, otherSet: "ElementSet"):
         """_summary_
         """
-        return PortSet([str(x) for x in self._elements | otherSet.getElements()])
+        return PortSet(self._formatedList_(list(self._elements.union(otherSet.getElements()))))
         
     def remove(self, otherSet: "ElementSet"):
         """_summary_
@@ -581,35 +604,21 @@ class PortSet(ElementSet):
         """
         if not self._groupable_:
 
-            return list(str(x) for x in self._elements)
-        
-        else:
+            noGrouped = []
 
-            toGroup = sorted(list(self._elements))
-            grouped = []
+            for element in p.to_data(self._elements):
 
-            minor = None
-
-            for i in range(len(toGroup)-1):
-
-                if toGroup[i]+1 == toGroup[i+1]:
-                    if minor == None:
-                        minor = i
-
+                if element[1] == element[2]:
+                    noGrouped.append(str(element[1]))
                 else:
-                    if minor == None:
-                        grouped.append(str(toGroup[i]))
-                        minor = None
-                    else:
-                        grouped.append(f"{toGroup[minor]}:{toGroup[i]}")
-                        minor = None
+                    for i in range(element[1], element[2]+1):
+                        noGrouped.append(str(i))
             
-            if minor != None:
-                grouped.append(f"{toGroup[minor]}:{toGroup[len(toGroup)-1]}")
-            else:
-                grouped.append(f"{toGroup[len(toGroup)-1]}")   
+            return noGrouped
+        
+        else:   
 
-            return grouped
+            return self._formatedList_(self._elements)
 
     def replicate(self):
         """_summary_

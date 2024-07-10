@@ -562,7 +562,7 @@ class PortSet(ElementSet):
     def isOverlapping(self, otherSet: "PortSet"):
         """_summary_
         """
-        return not self._elements.overlaps(otherSet.getElements())
+        return self._elements.overlaps(otherSet.getElements())
 
     def isEmpty(self):
         """_summary_

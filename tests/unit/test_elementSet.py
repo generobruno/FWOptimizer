@@ -86,12 +86,47 @@ def test_PortSet():
 
     PortSet.setGroupable(True)
 
-    ports = PortSet(['88', '99'])
     assert ports.getElementsList() == ['88', '99']
 
-    ports2 = PortSet(['88', '89', '90', '99'])
     assert ports2.getElementsList() == ['88:90', '99']
 
-    ports3 = PortSet(['88:90', '99'])
     assert ports3.getElementsList() == ['88:90', '99']
-    
+
+    assert ports2 == ports3
+
+    domain = PortSet.getDomain()
+
+    assert domain.getElementsList() == ['0:65535']
+
+    new1 = PortSet(['89:91', '100', '110'])
+
+    new1.addSet(ports)
+
+    assert new1.getElementsList() == ['88:91', '99:100', '110']
+
+    new2 = PortSet(['90', '120'])
+    new3 = PortSet(['200', '300'])
+
+    assert new1.isOverlapping(new2)
+    assert not new1.isOverlapping(new3)
+
+    assert not new1.intersectionSet(new2).isEmpty()
+    assert new1.intersectionSet(new3).isEmpty()
+
+    assert ports.isSubset(ports2)
+    assert not new2.isSubset(ports2)
+
+    assert not new2.isDisjoint(ports2)
+    assert new2.isDisjoint(ports)
+
+    assert new1.intersectionSet(new2).getElementsList() == ['90']
+
+    assert new1.unionSet(new2).getElementsList() == ['88:91', '99:100', '110', '120']
+
+    new1.remove(new2)
+
+    assert new1.getElementsList() == ['88:89', '91', '99:100', '110']
+
+    new4 = ports.replicate()
+
+    assert new4.getElementsList() == ['88', '99']

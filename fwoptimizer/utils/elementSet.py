@@ -467,7 +467,7 @@ class ProtocolSet(ElementSet):
 class PortSet(ElementSet):
     """_summary_
     """
-    _domain_ = p.closed(0, 65536)
+    _domain_ = p.closedopen(0, 65535+1)
     _groupable_ = True
 
     def __init__(self, values: List[str]) -> None:
@@ -488,14 +488,14 @@ class PortSet(ElementSet):
                 
                 else:
 
-                    self._elements = self._elements | p.closed(intValue, intValue)
+                    self._elements = self._elements | p.closedopen(intValue, intValue+1)
                 
             except:
 
                 ends = value.split(":")
                 if len(ends) == 2:
 
-                    interval = p.closed(int(ends[0]), int(ends[1]))
+                    interval = p.closedopen(int(ends[0]), int(ends[1])+1)
 
                     if not self._domain_.contains(interval) :
                         raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
@@ -519,7 +519,7 @@ class PortSet(ElementSet):
         formated = []
 
         for element in p.to_data(inter):
-            if element[1] == element[2]:
+            if element[1] == element[2]-1 and element[0] and not element[3]:
                 formated.append(str(element[1]))
             else:
 
@@ -608,10 +608,10 @@ class PortSet(ElementSet):
 
             for element in p.to_data(self._elements):
 
-                if element[1] == element[2]:
+                if element[1] == element[2]-1 and element[0] and not element[3]:
                     noGrouped.append(str(element[1]))
                 else:
-                    for i in range(element[1], element[2]+1):
+                    for i in range(element[1], element[2]):
                         noGrouped.append(str(i))
             
             return noGrouped

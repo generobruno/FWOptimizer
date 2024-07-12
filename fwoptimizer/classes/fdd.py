@@ -1015,8 +1015,6 @@ class FDD:
                     if values != ElementSetRegistry.getRegistry()[field.getType()].getDomain():
                         rule.setPredicate(field.getName(), values)
                         rule.setMatchingPredicate(field.getName(), values)
-                    else:
-                        print(f"skipping {values}")
                 
                 for field, values in resolving_predicate.items():
                     rule.setResolvingPredicate(field.getName(), values)

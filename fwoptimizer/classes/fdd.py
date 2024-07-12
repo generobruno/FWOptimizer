@@ -746,7 +746,7 @@ class FDD:
             for node_v in level.getNodes():
                 v_out = node_v.getOutgoing()
                 if len(v_out) == 1:  # Simple Node
-                    print(f"REMOVING SIMPLE NODE {node_v}")
+                    # print(f"REMOVING SIMPLE NODE {node_v}")
                     e = v_out[0]    # Get the edge
                     v_prime = e.getDestination()
                     incoming_edges = list(node_v.getIncoming())  # Make a copy of the list to iterate safely
@@ -755,20 +755,20 @@ class FDD:
                         # All edges now point to Node v'
                         incoming_edge.autoDisconnect()
                         incoming_edge.setDestination(v_prime)
-                        print(f'\tAdding {incoming_edge} to incoming edges of {v_prime}')
-                        print(f'\t\tEdge {incoming_edge} label: {incoming_edge.getElementSet().getElements()}')
+                        # print(f'\tAdding {incoming_edge} to incoming edges of {v_prime}')
+                        # print(f'\t\tEdge {incoming_edge} label: {incoming_edge.getElementSet().getElements()}')
                         incoming_edge.autoConnect() 
                     
                     # Mark Node v for removal
                     nodes_to_remove.append(node_v)
                     e.autoDisconnect()
-                    print(f'\tMarked {node_v} for removal from {level.getField().getName()} Level')
+                    # print(f'\tMarked {node_v} for removal from {level.getField().getName()} Level')
                     changed = True
             
             # Remove all marked nodes after iteration
             for node in nodes_to_remove:
                 node.autoDisconnect()
-                print(f'\tRemoved Simple node {node} from {level.getField().getName()} Level')
+                # print(f'\tRemoved Simple node {node} from {level.getField().getName()} Level')
         
         return changed
             
@@ -792,14 +792,14 @@ class FDD:
                     node_v_prime = nodes[j]
                     # Check if Nodes are Isomorphic
                     if self._areIsomorphic(node_v, node_v_prime):
-                        print(f'\tREMOVING ISOMORPHIC NODES {node_v} - {node_v_prime}')
+                        # print(f'\tREMOVING ISOMORPHIC NODES {node_v} - {node_v_prime}')
                         
                         # v_prime Edges now point to v
-                        print(f'\t{node_v_prime} Edges now point to {node_v}:')
+                        # print(f'\t{node_v_prime} Edges now point to {node_v}:')
                         for incoming_edge in node_v_prime.getIncoming():
                             incoming_edge.autoDisconnect()
                             incoming_edge.setDestination(node_v)
-                            print(f'\tUpdated Edge {incoming_edge}')
+                            # print(f'\tUpdated Edge {incoming_edge}')
                             incoming_edge.autoConnect()
                         
                         # Remove v_prime's outgoing incidence 
@@ -814,7 +814,7 @@ class FDD:
             for node in nodes_to_remove:
                 if node in level.getNodes():
                     node.autoDisconnect()
-                    print(f'Removed Isomorphic node {node} from {level.getField().getName()} Level')
+                    # print(f'Removed Isomorphic node {node} from {level.getField().getName()} Level')
         
         return changed
         
@@ -834,8 +834,8 @@ class FDD:
                     if key in seen_edges:
                         seen_edge = seen_edges[key]
                         # Merge element sets
-                        print(f'MERGING edges {seen_edge} and {edge}: '
-                              f'{seen_edge.getElementSet().getElements()} U {edge.getElementSet().getElements()}')
+                        # print(f'MERGING edges {seen_edge} and {edge}: '
+                              #f'{seen_edge.getElementSet().getElements()} U {edge.getElementSet().getElements()}')
                         merged_set = seen_edge.getElementSet().unionSet(edge.getElementSet())
                         seen_edge.setElementSet(merged_set)
                         edge.autoDisconnect()
@@ -865,15 +865,15 @@ class FDD:
         Returns:
             bool: True if both nodes are isomorphic
         """
-        print(f'Checking ISOMORPHISM between {node_a} and {node_b}')
+        # print(f'Checking ISOMORPHISM between {node_a} and {node_b}')
         if len(node_a.getOutgoing()) == 0 or len(node_a.getOutgoing()) != len(node_b.getOutgoing()):
             return False
         
         for edge_v in node_a.getOutgoing():
             match = False
             for edge_v_prime in node_b.getOutgoing():
-                print(f'\t{edge_v}: {edge_v.getElementSet().getElements()}\n'
-                      f'\t{edge_v_prime}: {edge_v_prime.getElementSet().getElements()}')
+                # print(f'\t{edge_v}: {edge_v.getElementSet().getElements()}\n'
+                    #  f'\t{edge_v_prime}: {edge_v_prime.getElementSet().getElements()}')
                 if (edge_v.getDestination() == edge_v_prime.getDestination() 
                     and edge_v.getElementSet() == edge_v_prime.getElementSet()): #TODO REVISAR OTRA COSA?
                     match = True
@@ -919,7 +919,7 @@ class FDD:
                         # (a) Select the edge with the largest (load(e_j) - 1) * load(v_j)
                         best_edge = max(node.getOutgoing(), key=lambda e: (self._edgeLoad(e) - 1) * e.getDestination().getLoad())
                         best_edge.markEdge()
-                        print(f'Marking Edge {best_edge}')
+                        # print(f'Marking Edge {best_edge}')
                         best_edge.setAttributes(color='blue')
 
                         # (b) Compute the load of v
@@ -998,13 +998,13 @@ class FDD:
     
                 for v, e in decision_path:
                     element_class = ElementSetRegistry.getElementSetClass(v.getLevel().getField().getType()) # ElementSet Type
-                    field = v.getLevel().getField().getName() # Field of level
+                    field = v.getLevel().getField() # Field of level
                     element_set = e.getElementSet() # Edge elementSet
     
                     if not e.getMarking():  # Not marked with "all"
                         matching_predicate[field] = element_set
                     else:
-                        matching_predicate[field] = element_class(element_set.getDomainList())
+                        matching_predicate[field] = element_class(element_set.getDomainList()) #TODO se puede reemplazar por element_class.getDomain()?
                         
                     resolving_predicate[field] = element_set 
 
@@ -1012,11 +1012,12 @@ class FDD:
     
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():
-                    rule.setPredicate(field, values)
-                    rule.setMatchingPredicate(field, values)
+                    if values != ElementSetRegistry.getRegistry()[field.getType()].getDomain():
+                        rule.setPredicate(field.getName(), values)
+                        rule.setMatchingPredicate(field.getName(), values)
                 
                 for field, values in resolving_predicate.items():
-                    rule.setResolvingPredicate(field, values)
+                    rule.setResolvingPredicate(field.getName(), values)
                 
                 rule.setDecision(node.getName())
                 chain.addRule(rule)
@@ -1139,10 +1140,10 @@ class FDD:
             field_dom = ElementSetRegistry.getElementSetClass(field.getType()).getDomain()
             field_name = field.getName()
             
-            option1 = rule1.getMatchingPredicate(field_name, field_dom) 
+            option1 = rule1.getResolvingPredicate(field_name, field_dom) 
             option2 = rule2.getMatchingPredicate(field_name, field_dom)
             
             print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
-            if not option1.isDisjoint(option2):  # Check if they have any common elements
-                return False
-        return True
+            if option1.isDisjoint(option2):  # Check if they have any common elements
+                return True
+        return False

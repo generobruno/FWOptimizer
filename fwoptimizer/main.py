@@ -14,24 +14,24 @@ from fwoptimizer.utils import *
 
 if __name__ == '__main__':
 
-    print("TESTING...")
+    #print("TESTING...")
 
     #! Parse Instruction Set
     iptables_strat = parser.IpTablesParser()
     parser = parser.Parser(iptables_strat)
     rules_parsed = parser.parse("./example_set.txt")
 
-    print("\nRule Set:")
-    rules_parsed.printAll()
+    #print("\nRule Set:")
+    #rules_parsed.printAll()
 
     print("\nOnly INPUT in filter")
     # Tambien se puede acceder como: rules_parsed.tables['filter'].chains['INPUT']
     for rule in rules_parsed['filter']['INPUT']:
         print(rule)
 
-    print(f'\nTotal Number of Tables: {len(rules_parsed.getTables())}')
-    print(f'Total Number of Chains: {rules_parsed.numberOfChains()}')
-    print(f'Total Number of Rules: {len(rules_parsed)}\n')
+    #print(f'\nTotal Number of Tables: {len(rules_parsed.getTables())}')
+    #print(f'Total Number of Chains: {rules_parsed.numberOfChains()}')
+    #print(f'Total Number of Rules: {len(rules_parsed)}\n')
 
     fieldList = FieldList()
     fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
@@ -52,6 +52,7 @@ if __name__ == '__main__':
     
     print("\nCREATING RULES:")
     firewall_chain = fdd.firewallGen() #TODO Crear nuevo RuleSet con las chains y tablas modificadas
+    print("\nRULES CREATION FINISHED")
     print(firewall_chain)
     
     #print('\nSIMPLIFYING RULES:')

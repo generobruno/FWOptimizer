@@ -431,7 +431,7 @@ class FDD:
         dot = graphviz.Digraph()
         
         # Set graph attribute #TODO VER ranksep
-        dot.attr(ranksep='2.0',nodesep='0.5')
+        dot.attr(ranksep='1.5',nodesep='0.5')
         
         # Change layout direction (rotate 90 degrees)
         #dot.attr(rankdir='LR')

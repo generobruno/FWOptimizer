@@ -38,17 +38,15 @@ if __name__ == '__main__':
 
     chain = rules_parsed['filter']['INPUT']
 
-    """
-    print(f'EFFECTIVE PART:\n{chain[18].getEffectivePart(chain, fieldList)}\n')
-    exit(0)
+    #print(f'\nEFFECTIVE PART:\n{chain[4].getEffectivePart(chain, fieldList)}\n')
+    #exit(0)
     
-    rule_list = chain.getRules()   
-    chain_2 = rules_parsed['filter']['OUTPUT']
-    equivalence, diff_rules_1, diff_rules_2, diff_1, diff_2 = chain.isEquivalent(chain_2, fieldList)
-    print(f'DIFF: {equivalence}')
-    print(f'{diff_rules_1}\n{diff_rules_2}\n{diff_1}\n{diff_2}')
-    exit(0)
-    """
+    #rule_list = chain.getRules()   
+    #chain_2 = rules_parsed['filter']['INPUT']
+    #equivalence, diff_rules_1, diff_rules_2, diff_1, diff_2 = chain.isEquivalent(chain_2, fieldList)
+    #print(f'EQUIVALENT: {equivalence}')
+    #print(f'DIFFRULES1: {diff_rules_1}\nDIFFRULE2: {diff_rules_2}\nDIFF1:{diff_1}\nDIFF2:{diff_2}')
+    #exit(0)
 
     fdd = FDD(fieldList)
     fdd.genFDD(chain)

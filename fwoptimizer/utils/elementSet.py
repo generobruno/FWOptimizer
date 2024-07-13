@@ -579,8 +579,6 @@ class PortSet(ElementSet):
     def getElementsList(self):
         """_summary_
         """
-        if len(self._elements) == 0:
-            return []
         
         if not self._groupable_:
 

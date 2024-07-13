@@ -138,6 +138,7 @@ class IpTablesParser(ParserStrategy):
                     current_chain = rules.Chain(chain_name)
                     current_table.addChain(current_chain)
                     current_chain.setDefaultDecision(line.split()[1])
+                    rule_id = 0 #TODO REVISAR
                 elif line == 'COMMIT':              # End of Table
                     current_table = None
                     current_chain = None

@@ -522,9 +522,6 @@ class FDD:
             rule_id (int): The rule ID to highlight.
             color (str, optional): The color to use for highlighting. Defaults to 'red'.
         """
-        # Dictionary to store highlighted edges
-        highlighted_edges = set()
-
         # Traverse the graph to find all edges containing the specified rule ID
         for level in self._levels:
             for node in level.getNodes():
@@ -533,8 +530,6 @@ class FDD:
                         edge.setAttributes(color=color)
                     else:
                         edge.setAttributes(color='black')
-        # Store the highlighted edges in the instance for use in printFDD
-        self._highlighted_edges = highlighted_edges
 
         # Call the printFDD function to print the graph with the modified attributes
         self.printFDD(name=f"FilterRule_{rule_id}")

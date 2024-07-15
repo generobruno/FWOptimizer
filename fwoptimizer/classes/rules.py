@@ -148,7 +148,7 @@ class Rule:
             Rule: The effective part of this rule
         """
         # Find the index of the current rule in all_rules
-        current_rule_index = next(i for i, rule in enumerate(rules) if rule.getId() == self._id)
+        current_rule_index = self._id
 
         # If this is rule 0, return the rule itself
         if current_rule_index == 0:

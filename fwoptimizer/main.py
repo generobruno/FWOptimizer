@@ -40,8 +40,7 @@ if __name__ == '__main__':
 
     #print(f'\nEFFECTIVE PART:\n{chain[4].getEffectivePart(chain, fieldList)}\n')
     #exit(0)
-    
-    #rule_list = chain.getRules()   
+ 
     #chain_2 = rules_parsed['filter']['INPUT']
     #equivalence, diff_rules_1, diff_rules_2, diff_1, diff_2 = chain.isEquivalent(chain_2, fieldList)
     #print(f'EQUIVALENT: {equivalence}')

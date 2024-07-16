@@ -310,12 +310,12 @@ class Rule:
             option1 = element_set(self.getOption(field_name, field_dom).getElementsList())
             option2 = element_set(rule2.getOption(field_name, field_dom).getElementsList())
                 
-            #print(f'{field.getName()}: {option1} - {option2} = ')
+            #print(f'\t{field.getName()}: {option1} - {option2} = ')
             
             option1.remove(option2)
             result.setPredicate(field_name, option1)
             
-            #print(f'{option1}')
+            #print(f'\t{option1}')
         
         return result
 
@@ -542,23 +542,25 @@ class Chain:
         print()
         print('\n'.join(str(i) for i in chain_2_eff))
                
-        #print('Table1 vs Table2')
+        #print('\nTable1 vs Table2')
         for ri_eff in chain_1_eff:
             temp_ri_eff = ri_eff
             for Ri_eff in chain_2_eff:
                 temp_Ri_eff = Ri_eff
                 #print(f'\nComparing {ri_eff.getId()} to {Ri_eff.getId()}')
                 temp_ri_eff = temp_ri_eff.subtract(temp_Ri_eff, fieldList)
-                #print(f'\tResult: {temp_ri_eff}')
+                #print(f'Result: {temp_ri_eff}')
+           # print(f'\tChecking if ri {temp_ri_eff.getId()} is None...')
             if not temp_ri_eff.isNone(fieldList):
-                #print(f'\tResult is not Void -> equivalence = False')
+                #print(f'\tRule r{temp_ri_eff.getId()} is not Void -> equivalence = False')
                 equivalence = False
                 # Add ri to the list
                 diff_rules_1.append(self[temp_ri_eff.getId()])
                 # Diff_1 U temp_ri_eff
-                diff_1.append(temp_ri_eff) #TODO REVISAR
+                diff_1.append(ri_eff) #TODO REVISAR
+            #print()
                 
-        print()
+        #print()
           
         #print('Table2 vs Table1')
         for Ri_eff in chain_2_eff:
@@ -567,14 +569,16 @@ class Chain:
                 temp_ri_eff = ri_eff
                 #print(f'\nComparing {Ri_eff.getId()} to {ri_eff.getId()}')
                 temp_Ri_eff = temp_Ri_eff.subtract(temp_ri_eff, fieldList)
-                #print(f'\tResult: {temp_Ri_eff}')
+                #print(f'Result: {temp_Ri_eff}')
+            #print(f'\tChecking if Ri {temp_Ri_eff.getId()}  is None...')
             if not temp_Ri_eff.isNone(fieldList):
-                #print(f'\tResult is not Void -> equivalence = False')
+                #print(f'\tRule R{temp_Ri_eff.getId()} is not Void -> equivalence = False')
                 equivalence = False
                 # Add ri to the list
                 diff_rules_2.append(otherChain[temp_Ri_eff.getId()])
                 # Diff_1 U temp_ri_eff
-                diff_2.append(temp_Ri_eff) #TODO REVISAR
+                diff_2.append(Ri_eff) #TODO REVISAR
+            #print()
                 
         print('\nDone.\n')
         

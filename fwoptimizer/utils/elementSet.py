@@ -602,6 +602,7 @@ class PortSet(ElementSet):
     def getElementsList(self):
         """_summary_
         """
+        
         if not self._groupable_:
 
             noGrouped = []

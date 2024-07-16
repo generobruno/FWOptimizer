@@ -38,9 +38,26 @@ if __name__ == '__main__':
 
     chain = rules_parsed['filter']['INPUT']
 
+    #print(f'\nEFFECTIVE PART:\n{chain[4].getEffectivePart(chain, fieldList)}\n')
+    #exit(0)
+ 
+    # chain_2 = rules_parsed['filter']['OUTPUT']
+    # equivalence, diff_rules_1, diff_rules_2, diff_1, diff_2 = chain.isEquivalent(chain_2, fieldList)
+    # print(f'EQUIVALENT: {equivalence}\n')
+    # print('DIFF_RULES_1:')
+    # print("\n".join(str(i) for i in diff_rules_1))
+    # print('DIFF_RULES_2:')
+    # print("\n".join(str(i) for i in diff_rules_2))
+    # print()
+    # print('DIFF_1:')
+    # print("\n".join(str(i) for i in diff_1))
+    # print('DIFF_2:')
+    # print("\n".join(str(i) for i in diff_2))
+    # exit(0)
+
     fdd = FDD(fieldList)
     fdd.genFDD(chain)
-    fdd.printFDD("FDD")
+    #fdd.printFDD("FDD", 'svg')
 
     print("\nREDUCING:")
     fdd.reduction()
@@ -48,7 +65,7 @@ if __name__ == '__main__':
     
     print("\nMARKING:")
     fdd.marking()
-    fdd.printFDD("MarkedFDD")
+    #fdd.printFDD("MarkedFDD", 'svg')
     
     print("\nCREATING RULES:")
     firewall_chain = fdd.firewallGen() #TODO Crear nuevo RuleSet con las chains y tablas modificadas

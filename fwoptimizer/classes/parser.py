@@ -138,6 +138,7 @@ class IpTablesParser(ParserStrategy):
                     current_chain = rules.Chain(chain_name)
                     current_table.addChain(current_chain)
                     current_chain.setDefaultDecision(line.split()[1])
+                    rule_id = 0 #TODO REVISAR
                 elif line == 'COMMIT':              # End of Table
                     current_table = None
                     current_chain = None
@@ -204,22 +205,9 @@ class IpTablesParser(ParserStrategy):
 
                     for protocol in protocol_list:
                         rule_parts = [f"-A {chain.getName()}"]
-                        for option, value in predicates.items():                             
-                            # Get Option iptables format
-                            iptables_option = self._composeOptions(option)
-                            
-                            if option == "Protocol":
-                                if protocol:
-                                    rule_parts.append(f"{iptables_option} {protocol}")
-                            elif option == "DstPort" or option == "SrcPort":
-                                pass #TODO Port management
-                            else:
-                                # Get Elements from ElementSet
-                                if hasattr(value, 'getElementsList'):
-                                    elements_list = value.getElementsList()
-                                    rule_parts.append(f"{iptables_option} {', '.join(map(str, elements_list))}")
-                                else:
-                                    rule_parts.append(f"{iptables_option} {value}")
+                        for option, value in predicates.items():
+                            # Manage each option according to the iptables format
+                            self._manageOptions(option, value, rule_parts, protocol)
 
                         # Form Rule Decision
                         decision = rule.getDecision()
@@ -276,7 +264,7 @@ class IpTablesParser(ParserStrategy):
         """
         for pattern, field in syntaxes.fields.items():
             if field == option:
-                return pattern.split(' | ')[0]  # Return the first iptables option found
+                return pattern.split(' | ')  # Return the first iptables option found
         return option  # If no match, return the original option
 
     def _renameOptions(self, rule):
@@ -299,6 +287,38 @@ class IpTablesParser(ParserStrategy):
             new_rule[renamed_key] = value
         return new_rule
 
+    def _manageOptions(self, option, value, rule_parts, protocol):
+        """
+        Format each rule according to the iptables format
+
+        Args:
+            option (str): Rule option
+            value (str): Option value
+            rule_parts (List): List of rules for the iptables-save
+            protocol (str): Rule protocol
+        """
+        # Get Option iptables format
+        iptables_option = self._composeOptions(option)
+        
+        if option.endswith("Protocol"):
+            if protocol:
+                rule_parts.append(f"{iptables_option[0]} {protocol}")
+        elif option.endswith("Port"):
+            elements_list = value.getElementsList()
+            if len(elements_list) > 1:
+                rule_parts.append(f"-m {protocol} -m multiport {iptables_option[2]} {', '.join(map(str, elements_list))}")
+            else:
+                rule_parts.append(f"-m {protocol} {iptables_option[1]} {', '.join(map(str, elements_list))}") #TODO CAMBIAR A SOLO elements_list
+        elif option.endswith("IP"):
+            elements_list = value.getElementsList()
+            rule_parts.append(f"{iptables_option[0]} {', '.join(map(str, elements_list))}")
+        else:
+            if hasattr(value, 'getElementsList'):
+                elements_list = value.getElementsList()
+                rule_parts.append(f"{iptables_option[0]} {', '.join(map(str, elements_list))}")
+            else:
+                rule_parts.append(f"{iptables_option[0]} {value}")
+ 
     def _parseOptions(self, line, line_num, current_table):
         """Parse options from a line of the iptables configuration
 

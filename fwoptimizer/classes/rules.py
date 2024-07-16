@@ -1,6 +1,7 @@
 """
 rules Module
 """
+from fwoptimizer.utils.elementSet import ElementSetRegistry
 
 class Rule:
     """
@@ -134,6 +135,234 @@ class Rule:
             new_id: New Id
         """
         self._id = new_id
+        
+    def getEffectivePart(self, rules, field_list):
+        """
+        Compute the effective part of this rule based on the previous rules.
+        
+        Args:
+            rules (list[Rule]): List of rules with higher priority
+            field_list (FieldList): List of fields in the rule
+        
+        Returns:
+            Rule: The effective part of this rule
+        """
+        # Find the index of the current rule in all_rules
+        current_rule_index = self._id
+
+        # If this is rule 0, return the rule itself
+        if current_rule_index == 0:
+            return self._formatRule(field_list)
+        
+        Ri_redundant = set()
+        Ri_shadowed = set()
+
+        # Iterate over all previous rules
+        for j in range(current_rule_index):
+            #print(f'Rule {current_rule_index} vs {j}')
+            Rj = rules[j]
+            intersection = self._intersection(Rj, self, field_list)
+            if intersection is not None:
+                if Rj.getDecision() == "ACCEPT":  # Assuming positive rules have ACCEPT decision
+                    Ri_redundant.add(intersection)
+                    #print(f'\tRedundant part: {Ri_redundant}\n')
+                else:
+                    Ri_shadowed.add(intersection)
+                    #print(f'\tShadowed part: {Ri_shadowed}\n')
+
+        # Calculate the effective part
+        #print(f'Rule {current_rule_index} Sub-Rules:')
+        #print('Redundant Part:\n' + '\n'.join(str(r) for r in Ri_redundant))
+        #print('DirSet Ranges:')
+        #for rule in Ri_redundant:
+        #    for pred, val in rule.getPredicates().items():
+        #        if pred == 'SrcIP' or pred == 'DstIP':
+        #            print(f'\t({pred}): {list(val.getElements().iter_ipranges())}')
+        #print('Shadowed Part:\n' + '\n'.join(str(r) for r in Ri_shadowed))
+        #print('DirSet Ranges:')
+        #for rule in Ri_shadowed:
+        #    for pred, val in rule.getPredicates().items():
+        #        if pred == 'SrcIP' or pred == 'DstIP':
+        #            print(f'\t({pred}): {list(val.getElements().iter_ipranges())}')
+        
+        # Calculate the effective part: ri - ri' - ri''
+        res = self._subtractList(Ri_redundant, Ri_shadowed, field_list)
+        res.setDecision(self.getDecision())
+    
+        #print(f'EFFECTIVE: {res}')
+        #print(f"\nEffective ranges (DirSets):")
+        #print(list(res.getPredicates()['SrcIP'].getElements().iter_ipranges()))
+        #print(list(res.getPredicates()['DstIP'].getElements().iter_ipranges()))
+        
+        return res
+    
+    def _formatRule(self, field_list):
+        """
+        Format the rule to get pass the values as ElementSet
+
+        Args:
+            field_list (_type_): List of Fields
+
+        Returns:
+            Rule: Formatted Rule
+        """
+        result = Rule(self._id)
+        for field in field_list.getFields():
+            field_name = field.getName()
+            element_set = ElementSetRegistry.getElementSetClass(field.getType())
+            field_dom = element_set.getDomain()
+            
+            option = self.getOption(field_name, field_dom)
+            
+            # Cast to ElementSet if not already the domain
+            if not isinstance(option, element_set):
+                option = element_set([option]) if option is not None else element_set([])
+                
+            result.setPredicate(field_name, option)
+        
+        result.setDecision(self.getDecision())
+        return result
+    
+    def _subtractList(self, Ri_redundant, Ri_shadowed, field_list):
+        """
+        Subtract The redundant and shadowed parts from the rule.
+        
+        Args:
+            Ri_redundant (set): Set of redundant rules.
+            Ri_shadowed (set): Set of shadowed rules.
+            field_list (FieldList): List of fields in the rule.
+        
+        Returns:
+            Rule: The resulting rule after subtraction.
+        """
+        res_rule = Rule(self._id)
+        # Get the effective part for each field
+        for field in field_list.getFields():
+            #print(f"\nGetting Subtraction ({field.getName()}):")
+            # Get the field Name
+            field_name = field.getName()
+            # Get ElementSet Type
+            element_set = ElementSetRegistry.getElementSetClass(field.getType())
+            # Get Field Domain
+            field_dom = element_set.getDomain()
+            # ElementSet Result
+            result_set = element_set([])
+            
+            # Make the subtraction
+            for rule1 in Ri_redundant:
+                for rule2 in Ri_shadowed:
+                    option0 = self.getOption(field_name, field_dom)     # Ri
+                    option1 = rule1.getOption(field_name, field_dom)    # Ri Redundant
+                    option2 = rule2.getOption(field_name, field_dom)    # Ri Shadowed
+                    
+                    # Ensure both options are ElementSet instances 
+                    if not isinstance(option0, element_set):
+                        option0 = element_set([option0]) if option1 is not None else element_set([])
+                    if not isinstance(option1, element_set):
+                        option1 = element_set([option1]) if option1 is not None else element_set([])
+                    if not isinstance(option2, element_set):
+                        option2 = element_set([option2]) if option2 is not None else element_set([])
+                     
+                    #if field.getName() in ['Protocol', 'SrcIP']:   
+                    #    print(f'{field.getName()}: {option0} - {option1} - {option2} = ')
+                    option0.remove(option1)
+                    #if field.getName() in ['Protocol', 'SrcIP']:  
+                    #    print(f'\t1: {option0.getElements()} - {option1.getElements()} = {option0}')
+                    option0.remove(option2)
+                    #if field.getName() in ['Protocol', 'SrcIP']:  
+                    #    print(f'\t2: {option0.getElements()} - {option2.getElements()} = {option0}')
+                    
+                    #if isinstance(option0, ElementSetRegistry.getElementSetClass('DirSet')):
+                    #    print(f'\t{field.getName()}: {list(option0.getElements().iter_ipranges())}')
+                    #else:
+                    #    print(f'\t{field.getName()}: {option0}')
+                        
+                    if len(option0.getElements()) != 0:
+                        result_set.addSet(option0) #TODO REVISAR (addSet (es decir, union)? u algo como append?)
+                        
+                    #print(f'\tResult Set: {result_set}')
+                 
+            res_rule.setPredicate(field_name, result_set)
+                    
+        #print(f'\nRESULT: {res_rule}\n')
+        
+        return res_rule
+
+    def subtract(self, rule2, field_list):
+        """
+        Compute the difference of two rules.
+
+        Args:
+            rule2 (Rule): Rule to subtract
+            field_list (FieldList): List of Rule Fields
+
+        Returns:
+            Rule: Rule with fields Subtracted
+        """
+        result = Rule(self._id)
+        #print(f"Geting Subtraction:")
+        for field in field_list.getFields():
+            field_name = field.getName()
+            element_set = ElementSetRegistry.getElementSetClass(field.getType())
+            field_dom = element_set.getDomain()
+            
+            # Create Copy of option values
+            option1 = element_set(self.getOption(field_name, field_dom).getElementsList())
+            option2 = element_set(rule2.getOption(field_name, field_dom).getElementsList())
+                
+            #print(f'\t{field.getName()}: {option1} - {option2} = ')
+            
+            option1.remove(option2)
+            result.setPredicate(field_name, option1)
+            
+            #print(f'\t{option1}')
+        
+        return result
+
+    def _intersection(self, rule1, rule2, field_list):
+        """
+        Compute the intersection of two rules.
+        """
+        result = Rule(self._id)
+        #print("Geting Intersection")
+        for field in field_list.getFields():
+            field_name = field.getName()
+            element_set = ElementSetRegistry.getElementSetClass(field.getType())
+            field_dom = element_set.getDomain()
+            
+            option1 = rule1.getOption(field_name, field_dom)
+            option2 = rule2.getOption(field_name, field_dom)
+            
+            # Cast to ElementSet if not already the domain #TODO MEJORAR
+            if str(option1) != str(field_dom) and not isinstance(option1, element_set):
+                option1 = element_set([option1])
+            if str(option2) != str(field_dom) and not isinstance(option2, element_set):
+                option2 = element_set([option2])
+                
+            #print(f'{field.getName()}: {option1} ∩ {option2} = {option1.intersectionSet(option2)}')
+            
+            result.setPredicate(field_name, option1.intersectionSet(option2))
+        
+        return result
+    
+    def isNone(self, fieldList) -> bool:
+        """
+        Check whether all predicates of this rule are None.
+        
+        Returns:
+            bool: True if all predicates are None, False otherwise
+        """
+        for field in fieldList.getFields():
+            val = self.getOption(field.getName(), None)
+            element_set = ElementSetRegistry.getElementSetClass(field.getType())
+            
+            if not isinstance(val, element_set) and val is not None:
+                val = element_set([val]) if val is not None else element_set([])
+            
+            if not val.isEmpty():
+                return False
+            
+        return True
 
 class Chain:
     """
@@ -264,6 +493,96 @@ class Chain:
         # Fix Rules Ids after removal
         for idx, rule in enumerate(self._rules):
             rule.setId(idx)
+
+    def isEquivalent(self, otherChain: "Chain", fieldList):
+        """
+        Check whether 2 chains are equivalent.
+
+        Args:
+            otherChain (Chain): Other chain to check
+            fieldList (FieldList): List of Rule Fields
+
+        Returns:
+            equivalence: True if the tables are equivalent
+            diff_rules_1, diff_rules_2: Rules that conflict between tables
+            diff_1, diff_2: Packets permited by one of the tables only
+        """
+        # Boolean for equivalence
+        equivalence = True
+        # Opposite Rules
+        diff_rules_1 = []
+        diff_rules_2 = []
+        # Packets permitted by one chain
+        diff_1 = []
+        diff_2 = []
+
+        print('Getting Effective Parts...\n')
+
+        # Get Chain effective rules
+        chain_1_eff = []        
+        for ri in self._rules:
+            #print(f'Getting effective part of {ri}')
+            ri_effective = ri.getEffectivePart(self._rules, fieldList)
+            #print(f'\t{ri_effective}')
+            chain_1_eff.append(ri_effective)
+            
+        print()
+        
+        # Get other chain effective rules
+        otherRules = otherChain.getRules()
+        chain_2_eff = []
+        for Ri in otherRules:
+            #print(f'Getting effective part of {Ri}')
+            Ri_effective = Ri.getEffectivePart(otherRules, fieldList)
+            #print(f'\t{Ri_effective}')
+            chain_2_eff.append(Ri_effective)
+        
+        print('\nComparing Chains...\n')
+        print('\n'.join(str(i) for i in chain_1_eff))
+        print()
+        print('\n'.join(str(i) for i in chain_2_eff))
+               
+        #print('\nTable1 vs Table2')
+        for ri_eff in chain_1_eff:
+            temp_ri_eff = ri_eff
+            for Ri_eff in chain_2_eff:
+                temp_Ri_eff = Ri_eff
+                #print(f'\nComparing {ri_eff.getId()} to {Ri_eff.getId()}')
+                temp_ri_eff = temp_ri_eff.subtract(temp_Ri_eff, fieldList)
+                #print(f'Result: {temp_ri_eff}')
+           # print(f'\tChecking if ri {temp_ri_eff.getId()} is None...')
+            if not temp_ri_eff.isNone(fieldList):
+                #print(f'\tRule r{temp_ri_eff.getId()} is not Void -> equivalence = False')
+                equivalence = False
+                # Add ri to the list
+                diff_rules_1.append(self[temp_ri_eff.getId()])
+                # Diff_1 U temp_ri_eff
+                diff_1.append(ri_eff) #TODO REVISAR
+            #print()
+                
+        #print()
+          
+        #print('Table2 vs Table1')
+        for Ri_eff in chain_2_eff:
+            temp_Ri_eff = Ri_eff
+            for ri_eff in chain_1_eff:
+                temp_ri_eff = ri_eff
+                #print(f'\nComparing {Ri_eff.getId()} to {ri_eff.getId()}')
+                temp_Ri_eff = temp_Ri_eff.subtract(temp_ri_eff, fieldList)
+                #print(f'Result: {temp_Ri_eff}')
+            #print(f'\tChecking if Ri {temp_Ri_eff.getId()}  is None...')
+            if not temp_Ri_eff.isNone(fieldList):
+                #print(f'\tRule R{temp_Ri_eff.getId()} is not Void -> equivalence = False')
+                equivalence = False
+                # Add ri to the list
+                diff_rules_2.append(otherChain[temp_Ri_eff.getId()])
+                # Diff_1 U temp_ri_eff
+                diff_2.append(Ri_eff) #TODO REVISAR
+            #print()
+                
+        print('\nDone.\n')
+        
+        return equivalence, diff_rules_1, diff_rules_2, diff_1, diff_2
 
 class Table:
     """

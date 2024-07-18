@@ -85,3 +85,12 @@ if __name__ == '__main__':
     testRuleSet.addTable(testTable)
     # Create rules file according to parser strategy
     print(parser.compose(testRuleSet))
+    
+    print("\n\n******************************************")
+    print("COMPARACION ENTRE: ")
+    print(chain)
+    print()
+    print(firewall_chain)
+    print()
+
+    print(chain.isEquivalent(firewall_chain, fieldList))

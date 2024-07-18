@@ -1143,26 +1143,27 @@ class FDD:
         n = len(chain.getRules())
         for i in range(n - 1, -1, -1):
             for k in range(i + 1, n):
-                print(f'CHECKING RULES {i} and {k}')
+                #print(f'CHECKING RULES {i} and {k}')
                 if (not redundant[k] and
                     self._sameDecision(chain[i], chain[k]) and
                     self._implies(chain[i], chain[k])):
                     # Check if rule i is redundant based on rule k
                     is_redundant = True
                     for j in range(i + 1, k):
-                        print(f'\tIntermediate rule check: {j}')
+                        #print(f'\tIntermediate rule check: {j}')
                         if (not redundant[j] and
                             not self._sameDecision(chain[i], chain[j]) and
                             not self._mutuallyExclusive(chain[i], chain[j])):
-                            print(f'\t\tRule {i} and rule {j} are NOT REDUNDANT.')
+                            #print(f'\t\tRule {i} and rule {j} are NOT REDUNDANT.')
                             is_redundant = False
                             break
                     if is_redundant:
-                        print(f'\t\tMarking rule {i} as REDUNDANT based on rule {k}.')
+                        #print(f'\t\tMarking rule {i} as REDUNDANT based on rule {k}.')
                         redundant[i] = True
                         break
                 else:
-                    print(f'\tRule {i} and rule {k} did not get to the intermediate Rule check.')
+                    pass
+                    #print(f'\tRule {i} and rule {k} did not get to the intermediate Rule check.')
 
         # Remove redundant rules
         new_rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
@@ -1187,7 +1188,7 @@ class FDD:
         Returns:
             bool: True if rule1 and rule2 have the same decision, False otherwise.
         """
-        print(f'\tCheck sameDecision: Rule_{rule1.getId()} & Rule_{rule2.getId()} = {rule1.getDecision() == rule2.getDecision()}')
+        #print(f'\tCheck sameDecision: Rule_{rule1.getId()} & Rule_{rule2.getId()} = {rule1.getDecision() == rule2.getDecision()}')
         return rule1.getDecision() == rule2.getDecision()
 
     def _implies(self, rule1: Rule, rule2: Rule) -> bool:
@@ -1213,7 +1214,7 @@ class FDD:
             option1 = rule1.getResolvingPredicate(field_name, field_dom)
             option2 = rule2.getMatchingPredicate(field_name, field_dom)
 
-            print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
+            #print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
             if not option1.isSubset(option2):
                 return False
         return True
@@ -1238,7 +1239,7 @@ class FDD:
             option1 = rule1.getResolvingPredicate(field_name, field_dom) 
             option2 = rule2.getMatchingPredicate(field_name, field_dom)
             
-            print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
+            #print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
             if option1.isDisjoint(option2):  # Check if they have any common elements
                 return True
         return False

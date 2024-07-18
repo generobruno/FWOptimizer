@@ -319,7 +319,7 @@ class IpTablesParser(ParserStrategy):
             else:
                 rule_parts.append(f"{iptables_option[0]} {value}")
  
-    def _parseOptions(self, line, line_num, current_table):
+    def _parseOptions(self, line, line_num, current_table): #TODO arreglar portset separados por comas
         """Parse options from a line of the iptables configuration
 
         Args:

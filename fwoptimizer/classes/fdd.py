@@ -4,8 +4,6 @@ Firewall Decision Diagram (FDD) module
 
 from typing import List
 import graphviz
-import pygraphviz as pgv
-import networkx as nx
 
 from fwoptimizer.classes.firewall import Field, FieldList
 from fwoptimizer.classes.rules import Chain, Rule
@@ -422,7 +420,7 @@ class FDD:
         return self._decisions[decision]
 
 
-    def printFDD(self, name: str, img_format='png', rank_dir='TB'):
+    def printFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False):
         """
         Generate a graph image from the data structure
 
@@ -497,6 +495,15 @@ class FDD:
             # Add nodes to the corresponding subgraph
             for node in level.getNodes():
                 node_name = node.getName()
+                
+                # Skip adding ACCEPT and DROP nodes if unroll_decisions is True
+                if unroll_decisions and node_name in ['ACCEPT', 'DROP']:
+                    dot.node(
+                        node_name, 
+                        style='invis'  # Make the node invisible
+                    )
+                    continue
+                
                 field_subgraphs[field_name].node(
                                             node_name, 
                                             _attributes = node.getAttributes(), 
@@ -534,7 +541,22 @@ class FDD:
 
                     # Connect the origin to the intermediate node and intermediate node to the destination
                     dot.edge(origin_name, edge_node_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
-                    dot.edge(edge_node_name, destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
+
+                    if unroll_decisions and destination_name in ['ACCEPT', 'DROP']:
+                        unique_destination_name = f"{destination_name}_{edge_node_counter}"
+                        dot.node(
+                            unique_destination_name, 
+                            destination_name, 
+                            style='filled',
+                            shape='box' if destination_name == 'ACCEPT' else 'diamond',
+                            fillcolor='greenyellow' if destination_name == 'ACCEPT' else 'crimson',
+                            width=str(base_width + width_factor), 
+                            height=str(base_height + height_factor), 
+                            fontsize=str(base_font + font_factor)
+                        )
+                        dot.edge(edge_node_name, unique_destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
+                    else:
+                        dot.edge(edge_node_name, destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
 
         # Add each subgraph to the main graph
         for subgraph in field_subgraphs.values():

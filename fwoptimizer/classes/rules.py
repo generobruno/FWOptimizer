@@ -163,7 +163,7 @@ class Rule:
             Rj = rules[j]
             intersection = self._intersection(Rj, self, field_list)
             if intersection is not None:
-                if Rj.getDecision() == "ACCEPT":  # Assuming positive rules have ACCEPT decision
+                if Rj.getDecision() == "ACCEPT":  # Assuming positive rules have ACCEPT decision #TODO CAMBIAR
                     Ri_redundant.add(intersection)
                     #print(f'\tRedundant part: {Ri_redundant}\n')
                 else:

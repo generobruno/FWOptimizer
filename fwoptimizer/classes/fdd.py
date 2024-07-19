@@ -460,11 +460,11 @@ class FDD:
             
         # Set SVG for large graphs
         if total_elements >= 1500:
-            print(f'Large to graph ({total_elements} elements). Rendering to .svg')
+            print(f'Graph too Large ({total_elements} elements). Rendering to .svg')
             img_format = 'svg'
         
         # Set graph attributes
-        dot.attr(ranksep=str(ranksep_factor),nodesep='0.5')
+        dot.attr(ranksep=str(ranksep_factor),nodesep='0.5')#, overlap='scale', pack='true', sep='+4')
         
         # Change layout direction (rotate 90 degrees)
         dot.attr(rankdir=rank_dir)

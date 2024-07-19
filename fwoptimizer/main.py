@@ -50,7 +50,7 @@ if __name__ == '__main__':
     execution_times['marking'] = marking_end - marking_start
     
     print_start = time.time()
-    fdd.printFDD("MarkedFDD", 'svg', rank_dir='LR', unroll_decisions=True)
+    fdd.printFDD("MarkedFDD", 'svg')
     print_end = time.time()
     execution_times['printFDD'] = print_end - print_start
     

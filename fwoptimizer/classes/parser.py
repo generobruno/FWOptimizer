@@ -195,13 +195,7 @@ class IpTablesParser(ParserStrategy):
                 # Add rules in the chain
                 for rule in chain.getRules():
                     predicates = rule.getPredicates()
-                    protocols = predicates.get("Protocol", None)
-                    
-                    # Get protocols as a list
-                    if protocols:
-                        protocol_list = protocols.getElementsList()
-                    else:
-                        protocol_list = [None]
+                    protocol_list = predicates.get("Protocol", [None])
 
                     for protocol in protocol_list:
                         rule_parts = [f"-A {chain.getName()}"]
@@ -304,20 +298,14 @@ class IpTablesParser(ParserStrategy):
             if protocol:
                 rule_parts.append(f"{iptables_option[0]} {protocol}")
         elif option.endswith("Port"):
-            elements_list = value.getElementsList()
-            if len(elements_list) > 1:
-                rule_parts.append(f"-m {protocol} -m multiport {iptables_option[2]} {', '.join(map(str, elements_list))}")
+            if len(value) > 1:
+                rule_parts.append(f"-m {protocol} -m multiport {iptables_option[2]} {', '.join(map(str, value))}")
             else:
-                rule_parts.append(f"-m {protocol} {iptables_option[1]} {', '.join(map(str, elements_list))}") #TODO CAMBIAR A SOLO elements_list
+                rule_parts.append(f"-m {protocol} {iptables_option[1]} {', '.join(map(str, value))}") #TODO CAMBIAR A SOLO elements_list
         elif option.endswith("IP"):
-            elements_list = value.getElementsList()
-            rule_parts.append(f"{iptables_option[0]} {', '.join(map(str, elements_list))}")
+            rule_parts.append(f"{iptables_option[0]} {', '.join(map(str, value))}")
         else:
-            if hasattr(value, 'getElementsList'):
-                elements_list = value.getElementsList()
-                rule_parts.append(f"{iptables_option[0]} {', '.join(map(str, elements_list))}")
-            else:
-                rule_parts.append(f"{iptables_option[0]} {value}")
+            rule_parts.append(f"{iptables_option[0]} {value}")
  
     def _parseOptions(self, line, line_num, current_table): #TODO arreglar portset separados por comas
         """Parse options from a line of the iptables configuration

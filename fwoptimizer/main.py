@@ -24,10 +24,10 @@ if __name__ == '__main__':
     #print("\nRule Set:")
     #rules_parsed.printAll()
 
-    print("\nOnly INPUT in filter")
+    # print("\nOnly INPUT in filter")
     # Tambien se puede acceder como: rules_parsed.tables['filter'].chains['INPUT']
-    for rule in rules_parsed['filter']['INPUT']:
-        print(rule)
+    # for rule in rules_parsed['filter']['INPUT']:
+    #     print(rule)
 
     #print(f'\nTotal Number of Tables: {len(rules_parsed.getTables())}')
     #print(f'Total Number of Chains: {rules_parsed.numberOfChains()}')
@@ -37,6 +37,51 @@ if __name__ == '__main__':
     fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
 
     chain = rules_parsed['filter']['INPUT']
+
+
+    chain2 = Chain("MANUALINPUT")
+    chain2.setDefaultDecision("DROP")
+
+    r = Rule(0)
+    r.setPredicate('SrcIP', ['1.1.1.0/24'])
+    r.setPredicate('DstIP', ['2.2.2.0/24'])
+    r.setPredicate('Protocol', ['udp'])
+    r.setDecision('DROP')
+    chain2.addRule(r)
+
+    r = Rule(1)
+    r.setPredicate('SrcIP', ['1.1.1.128/25'])
+    r.setPredicate('DstIP', ['3.3.3.0/24'])
+    r.setPredicate('Protocol', ['tcp'])
+    r.setDecision('ACCEPT')
+    chain2.addRule(r)
+
+    r = Rule(2)
+    r.setPredicate('SrcIP', ['1.1.1.128/25'])
+    r.setPredicate('DstIP', ['3.3.3.0/25'])
+    r.setPredicate('Protocol', ['udp'])
+    r.setDecision('DROP')
+    chain2.addRule(r)
+
+    r = Rule(3)
+    r.setPredicate('SrcIP', ['1.1.1.128/25'])
+    r.setPredicate('DstIP', ['3.3.3.64/30'])
+    r.setPredicate('Protocol', ['udp'])
+    r.setDecision('ACCEPT')
+    chain2.addRule(r)
+
+    r = Rule(3)
+    r.setPredicate('SrcIP', ['1.1.1.128/25'])
+    r.setPredicate('DstIP', ['3.3.3.68/30'])
+    r.setPredicate('Protocol', ['udp'])
+    r.setDecision('DROP')
+    chain2.addRule(r)
+
+    print(chain)
+    print()
+    print(chain2)
+    print()
+
 
     #print(f'\nEFFECTIVE PART:\n{chain[4].getEffectivePart(chain, fieldList)}\n')
     #exit(0)
@@ -56,16 +101,16 @@ if __name__ == '__main__':
     # exit(0)
 
     fdd = FDD(fieldList)
-    fdd.genFDD(chain)
-    #fdd.printFDD("FDD", 'svg')
+    fdd.genFDD(chain2)
+    fdd.printFDD("FDD", 'png')
 
     print("\nREDUCING:")
     fdd.reduction()
-    #fdd.printFDD("reducedFDD")
+    fdd.printFDD("reducedFDD")
     
     print("\nMARKING:")
     fdd.marking()
-    #fdd.printFDD("MarkedFDD", 'svg')
+    fdd.printFDD("MarkedFDD", 'png')
     
     print("\nCREATING RULES:")
     firewall_chain = fdd.firewallGen() #TODO Crear nuevo RuleSet con las chains y tablas modificadas
@@ -88,9 +133,9 @@ if __name__ == '__main__':
     
     print("\n\n******************************************")
     print("COMPARACION ENTRE: ")
-    print(chain)
+    print(chain2)
     print()
     print(firewall_chain)
     print()
 
-    print(chain.isEquivalent(firewall_chain, fieldList))
+    #print(chain2.isEquivalent(firewall_chain, fieldList))

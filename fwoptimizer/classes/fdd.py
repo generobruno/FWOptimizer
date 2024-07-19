@@ -588,7 +588,7 @@ class FDD:
             for j in range(1, len(nodes)):
 
                 elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
-                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
+                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), elements if elements else [])
                 newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
                 newEdge.autoConnect()
 
@@ -784,7 +784,7 @@ class FDD:
 
             for node in level.getNodes():
 
-                left = ElementSet.createElementSet(level.getField().getType(), [None])
+                left = ElementSet.createElementSet(level.getField().getType(), [])
 
                 for edge in node.getOutgoing():
 
@@ -1108,7 +1108,7 @@ class FDD:
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():
                     if values != ElementSetRegistry.getRegistry()[field.getType()].getDomain():
-                        rule.setPredicate(field.getName(), values)
+                        rule.setPredicate(field.getName(), values.getElementsList())
                         rule.setMatchingPredicate(field.getName(), values)
                 
                 for field, values in resolving_predicate.items():

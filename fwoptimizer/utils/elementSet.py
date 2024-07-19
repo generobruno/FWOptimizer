@@ -61,7 +61,7 @@ class ElementSet(metaclass = ElementSetRegistry):
         """
         registry = ElementSetRegistry.getRegistry()
         if elementType in registry:
-            if values == [None]:
+            if values == []:
                 return registry[elementType](registry[elementType].getDomainList())
             return registry[elementType](values)
         raise TypeError()

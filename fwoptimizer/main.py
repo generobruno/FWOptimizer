@@ -139,3 +139,10 @@ if __name__ == '__main__':
     print()
 
     #print(chain2.isEquivalent(firewall_chain, fieldList))
+
+    comparator = ChainComparator(fieldList, chain2, firewall_chain)
+    print()
+    print(comparator)
+
+    print()
+    print(comparator.checkEquivalence())

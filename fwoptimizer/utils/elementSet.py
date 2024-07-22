@@ -127,6 +127,11 @@ class ElementSet(metaclass = ElementSetRegistry):
         """
 
     @abstractmethod
+    def differenceSet(self, otherSet: "ElementSet"):
+        """_summary_
+        """
+
+    @abstractmethod
     def remove(self, otherSet: "ElementSet"):
         """_summary_
         """
@@ -266,7 +271,18 @@ class DirectionSet(ElementSet):
         Returns:
             _type_: _description_
         """
-        return DirectionSet([str(x) for x in self._elements.union(otherSet.getElements()).iter_cidrs()])
+        return DirectionSet([str(x) for x in self._elements.union(otherSet.getElements()).iter_cidrs()]) 
+
+    def differenceSet(self, otherSet: "DirectionSet"):
+        """_summary_
+
+        Args:
+            otherSet (ElementSet): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        return DirectionSet([str(x) for x in self._elements.difference(otherSet.getElements()).iter_cidrs()])
     
     def remove(self, otherSet: "DirectionSet") -> None:
         """_summary_
@@ -431,6 +447,17 @@ class ProtocolSet(ElementSet):
         """
         return ProtocolSet([str(x) for x in self._elements | otherSet.getElements()])
     
+    def differenceSet(self, otherSet: "ProtocolSet"):
+        """_summary_
+
+        Args:
+            otherSet (ElementSet): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        return ProtocolSet([str(x) for x in self._elements - otherSet.getElements()])
+    
     def remove(self, otherSet: "ProtocolSet") -> None:
         """_summary_
 
@@ -589,6 +616,11 @@ class PortSet(ElementSet):
         """
         return PortSet(self._formatedList_(list(self._elements.union(otherSet.getElements()))))
         
+    def differenceSet(self, otherSet: "ElementSet"):
+        """_summary_
+        """
+        return PortSet(self._formatedList_(list(self._elements.difference(otherSet.getElements()))))
+    
     def remove(self, otherSet: "ElementSet"):
         """_summary_
         """

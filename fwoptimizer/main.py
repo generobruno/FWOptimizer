@@ -24,10 +24,10 @@ if __name__ == '__main__':
     #print("\nRule Set:")
     #rules_parsed.printAll()
 
-    # print("\nOnly INPUT in filter")
+    #print("\nOnly INPUT in filter")
     # Tambien se puede acceder como: rules_parsed.tables['filter'].chains['INPUT']
-    # for rule in rules_parsed['filter']['INPUT']:
-    #     print(rule)
+    #for rule in rules_parsed['filter']['INPUT']:
+    #    print(rule)
 
     #print(f'\nTotal Number of Tables: {len(rules_parsed.getTables())}')
     #print(f'Total Number of Chains: {rules_parsed.numberOfChains()}')
@@ -81,7 +81,6 @@ if __name__ == '__main__':
     print()
     print(chain2)
     print()
-
 
     #print(f'\nEFFECTIVE PART:\n{chain[4].getEffectivePart(chain, fieldList)}\n')
     #exit(0)

@@ -34,7 +34,7 @@ def test_parser_initialization():
     
     # Compare each rule in the chain with the corresponding expected rule
     for i, rule in enumerate(chain.getRules()):
-        assert rule.getOption('SrcIP') == expected_rules[i]['source'], f"Rule {i} source mismatch."
-        assert rule.getOption('DstIP') == expected_rules[i]['destination'], f"Rule {i} destination mismatch."
-        assert rule.getOption('Protocol') == expected_rules[i]['protocol'], f"Rule {i} protocol mismatch."
+        assert rule.getOption('SrcIP') == [expected_rules[i]['source']], f"Rule {i} source mismatch."
+        assert rule.getOption('DstIP') == [expected_rules[i]['destination']], f"Rule {i} destination mismatch."
+        assert rule.getOption('Protocol') == [expected_rules[i]['protocol']], f"Rule {i} protocol mismatch."
         assert rule.getDecision() == expected_rules[i]['decision'], f"Rule {i} decision mismatch."

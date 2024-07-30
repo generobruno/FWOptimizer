@@ -420,7 +420,7 @@ class FDD:
         return self._decisions[decision]
 
 
-    def printFDD(self, name: str, img_format='png'):
+    def printFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False):
         """
         Generate a graph image from the data structure
 
@@ -428,13 +428,7 @@ class FDD:
             name (str): Name of the graph
             img_format (str, optional): Output Format. Defaults to 'png'.
         """
-        dot = graphviz.Digraph()
-        
-        # Set graph attribute #TODO VER ranksep
-        dot.attr(ranksep='1.5',nodesep='0.5')
-        
-        # Change layout direction (rotate 90 degrees)
-        #dot.attr(rankdir='LR')
+        dot = graphviz.Digraph(engine='dot')
 
         # Create a dictionary to hold subgraphs for each field level
         field_subgraphs = {}
@@ -452,6 +446,42 @@ class FDD:
         width_factor = 10.0 / total_elements
         height_factor = 5.5 / total_elements
         font_factor = 5.0 / total_elements
+        
+        if total_nodes < 50:
+            ranksep_factor = 2.5
+        elif total_nodes < 100:
+            ranksep_factor = 3.0
+        elif total_nodes < 200:
+            ranksep_factor = 3.5
+        elif total_nodes < 500:
+            ranksep_factor = 4.0
+        else:
+            ranksep_factor = 5.0
+            
+        # Set SVG for large graphs
+        if total_elements >= 1500:
+            print(f'Graph too Large ({total_elements} elements). Rendering to .svg')
+            img_format = 'svg'
+        
+        # Set graph attributes
+        dot.attr(ranksep=str(ranksep_factor),nodesep='0.5')#, overlap='scale', pack='true', sep='+4')
+        
+        # Change layout direction (rotate 90 degrees)
+        dot.attr(rankdir=rank_dir)
+        
+        # Set tail and head ports
+        if rank_dir == 'BT':
+            head_port = 's'
+            tail_port = 'n'
+        elif rank_dir == 'LR':
+            head_port = 'w'
+            tail_port = 'e'
+        elif rank_dir == 'RL':
+            head_port = 'e'
+            tail_port = 'w'
+        else: # TB
+            head_port = 'n'
+            tail_port = 's'
 
         # Iterate through the levels to create subgraphs
         for level in self._levels:
@@ -465,6 +495,15 @@ class FDD:
             # Add nodes to the corresponding subgraph
             for node in level.getNodes():
                 node_name = node.getName()
+                
+                # Skip adding ACCEPT and DROP nodes if unroll_decisions is True
+                if unroll_decisions and node_name in ['ACCEPT', 'DROP']:
+                    dot.node(
+                        node_name, 
+                        style='invis'  # Make the node invisible
+                    )
+                    continue
+                
                 field_subgraphs[field_name].node(
                                             node_name, 
                                             _attributes = node.getAttributes(), 
@@ -490,9 +529,6 @@ class FDD:
                         label = f"{edge.getId()},\n{elements_str}"
 
                     edge_attributes = edge.getAttributes()
-                    
-                    # Create Edge between nodes
-                    #dot.edge(origin_name, destination_name, label=label, tailport='s', headport='n', _attributes=edge_attributes)
 
                     # Add the intermediate node with the label
                     dot.node(
@@ -504,12 +540,28 @@ class FDD:
                         fontsize=str(base_font + font_factor))
 
                     # Connect the origin to the intermediate node and intermediate node to the destination
-                    dot.edge(origin_name, edge_node_name, tailport='s', headport='n', _attributes=edge_attributes)
-                    dot.edge(edge_node_name, destination_name, tailport='s', headport='n', _attributes=edge_attributes)
+                    dot.edge(origin_name, edge_node_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
+
+                    if unroll_decisions and destination_name in ['ACCEPT', 'DROP']:
+                        unique_destination_name = f"{destination_name}_{edge_node_counter}"
+                        dot.node(
+                            unique_destination_name, 
+                            destination_name, 
+                            style='filled',
+                            shape='box' if destination_name == 'ACCEPT' else 'diamond',
+                            fillcolor='greenyellow' if destination_name == 'ACCEPT' else 'crimson',
+                            width=str(base_width + width_factor), 
+                            height=str(base_height + height_factor), 
+                            fontsize=str(base_font + font_factor)
+                        )
+                        dot.edge(edge_node_name, unique_destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
+                    else:
+                        dot.edge(edge_node_name, destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
 
         # Add each subgraph to the main graph
         for subgraph in field_subgraphs.values():
             dot.subgraph(subgraph)
+            
 
         # Render the graph to a file
         dot.render(name, format=img_format, view=False, cleanup=True)

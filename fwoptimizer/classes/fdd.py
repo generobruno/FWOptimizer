@@ -1134,7 +1134,7 @@ class FDD:
         dfs(self._levels[0].getNodes()[0], []) 
         
         #return chain
-        print(f'NOT COMPACTED CHAIN:\n{chain}\n\nCompacting Rules...')
+        #print(f'NOT COMPACTED CHAIN:\n{chain}\n\nCompacting Rules...')
 
         # Step 2: Compact Rules
         redundant = [False] * len(chain.getRules())
@@ -1314,19 +1314,35 @@ class ChainComparator:
 
                 result.setPredicate(field.getName(), intersection)
             
+            if result.isNull():
+                return None
             return result
         
-        def difference(self, other: "ChainComparator.PseudoRule", fieldList: FieldList):
+        def difference(self, other: "ChainComparator.PseudoRule", fieldList: FieldList) -> List[Rule]:
                 
-            res = ChainComparator.PseudoRule()
-            res.setId(self.getId())
-            res.setDecision(self.getDecision())
+            diff = []
+
+            print(f"Estoy en difference:")
+            print(f"A: {self}\nB: {other}")
+
+            if not self.intersection(other, fieldList):
+
+                return None
 
             for field in fieldList.getFields():
 
-                res.setPredicate(field.getName(), self._predicates[field.getName()].differenceSet(other.getPredicates()[field.getName()]))
+                fDiff = self.getPredicates()[field.getName()].differenceSet(other.getPredicates()[field.getName()])
+                #print(f"{self.getPredicates()[field.getName()]} vs {other.getPredicates()[field.getName()]} = {fDiff}")
+                if not fDiff.isEmpty() and fDiff != self.getPredicates()[field.getName()]:
+                    rule = self.replicate()
+                    rule.setPredicate(field.getName(), fDiff)
+                    diff.append(rule)
 
-            return res
+            # print("Resultado:")
+            # for rule in diff:
+            #     print(f"*** {rule}")
+
+            return diff
         
         def isNull(self):
 
@@ -1398,7 +1414,9 @@ class ChainComparator:
         self._rawChain2 = self.PseudoChain()
         self._rawChain2.fillFromChain(chain2, fieldList)
 
+        print("obteniendo eq1")
         self._effectiveChain1 = self.getEffectiveChain(self._rawChain1, fieldList)
+        print("obteniendo eq2")
         self._effectiveChain2 = self.getEffectiveChain(self._rawChain2, fieldList)
 
         self._equivalence = self.isEquivalent(self._effectiveChain1, self._effectiveChain2, fieldList)
@@ -1413,16 +1431,38 @@ class ChainComparator:
         if chain.getDefaultDecision() != "DROP":
             raise ValueError(f"La cadena tiene Default decision {chain.getDefaultDecision()} y por el momento solo se pueden comparar cadenas con default decision DROP")
 
-        newChain = chain.replicate()
+        newChain = ChainComparator.PseudoChain()
+        newChain.setDefaultDecision(chain.getDefaultDecision())
         newChain.setName(f"effective-{newChain.getName()}")
 
-        for i in range(len(newChain.getRules())):
+        rules = chain.getRules()
 
-            for j in range(i):
+        for i in range(len(rules)):
 
-                intersection = newChain.getRules()[i].intersection(newChain.getRules()[j], fieldList)
+            if rules[i].getDecision() == "ACCEPT":
 
-                newChain.getRules()[i] = newChain.getRules()[i].difference(intersection, fieldList)
+                resRules = [rules[i]]
+
+                for j in range(i):
+
+                    resRules2 = []
+
+                    for k in range(len(resRules)):
+
+                        diff = resRules[k].difference(rules[j], fieldList)
+
+                        if diff != None:
+
+                            resRules2 += diff
+
+                    if resRules2:
+
+                        resRules.remove(resRules[k])
+                        resRules += resRules2
+
+                for rule in resRules:
+
+                    newChain.addRule(rule)
             
         return newChain
 

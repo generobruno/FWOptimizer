@@ -12,7 +12,7 @@ from fwoptimizer.classes import parser
 from fwoptimizer.classes import *
 from fwoptimizer.utils import *
 
-if __name__ == '__main__':
+if __name__ == '__maine__':
 
     #print("TESTING...")
 
@@ -38,48 +38,7 @@ if __name__ == '__main__':
 
     chain = rules_parsed['filter']['INPUT']
 
-
-    chain2 = Chain("MANUALINPUT")
-    chain2.setDefaultDecision("DROP")
-
-    r = Rule(0)
-    r.setPredicate('SrcIP', ['1.1.1.0/24'])
-    r.setPredicate('DstIP', ['2.2.2.0/24'])
-    r.setPredicate('Protocol', ['udp'])
-    r.setDecision('DROP')
-    chain2.addRule(r)
-
-    r = Rule(1)
-    r.setPredicate('SrcIP', ['1.1.1.128/25'])
-    r.setPredicate('DstIP', ['3.3.3.0/24'])
-    r.setPredicate('Protocol', ['tcp'])
-    r.setDecision('ACCEPT')
-    chain2.addRule(r)
-
-    r = Rule(2)
-    r.setPredicate('SrcIP', ['1.1.1.128/25'])
-    r.setPredicate('DstIP', ['3.3.3.0/25'])
-    r.setPredicate('Protocol', ['udp'])
-    r.setDecision('DROP')
-    chain2.addRule(r)
-
-    r = Rule(3)
-    r.setPredicate('SrcIP', ['1.1.1.128/25'])
-    r.setPredicate('DstIP', ['3.3.3.64/30'])
-    r.setPredicate('Protocol', ['udp'])
-    r.setDecision('ACCEPT')
-    chain2.addRule(r)
-
-    r = Rule(3)
-    r.setPredicate('SrcIP', ['1.1.1.128/25'])
-    r.setPredicate('DstIP', ['3.3.3.68/30'])
-    r.setPredicate('Protocol', ['udp'])
-    r.setDecision('DROP')
-    chain2.addRule(r)
-
     print(chain)
-    print()
-    print(chain2)
     print()
 
     #print(f'\nEFFECTIVE PART:\n{chain[4].getEffectivePart(chain, fieldList)}\n')
@@ -100,18 +59,18 @@ if __name__ == '__main__':
     # exit(0)
 
     fdd = FDD(fieldList)
-    fdd.genFDD(chain2)
+    fdd.genFDD(chain)
     fdd.printFDD("FDD", 'png')
 
-    print("\nREDUCING:")
+    #print("\nREDUCING:")
     fdd.reduction()
     fdd.printFDD("reducedFDD")
     
-    print("\nMARKING:")
+    #print("\nMARKING:")
     fdd.marking()
     fdd.printFDD("MarkedFDD", 'png')
     
-    print("\nCREATING RULES:")
+    #print("\nCREATING RULES:")
     firewall_chain = fdd.firewallGen() #TODO Crear nuevo RuleSet con las chains y tablas modificadas
     print("\nRULES CREATION FINISHED")
     print(firewall_chain)
@@ -132,16 +91,97 @@ if __name__ == '__main__':
     
     print("\n\n******************************************")
     print("COMPARACION ENTRE: ")
-    print(chain2)
+    print(chain)
     print()
     print(firewall_chain)
     print()
 
     #print(chain2.isEquivalent(firewall_chain, fieldList))
 
-    comparator = ChainComparator(fieldList, chain2, firewall_chain)
+    comparator = ChainComparator(fieldList, chain, firewall_chain)
     print()
     print(comparator)
 
     print()
     print(comparator.checkEquivalence())
+
+if __name__ == '__main__':
+    
+    fieldList = FieldList()
+    fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
+
+    # chainA = Chain("A")
+    # chainA.setDefaultDecision("DROP")
+
+    # r = Rule(0)
+    # r.setPredicate('SrcIP', ['1.1.1.0/24'])
+    # r.setPredicate('DstIP', ['2.2.2.0/24'])
+    # r.setPredicate('Protocol', ['udp', 'tcp'])
+    # r.setDecision('ACCEPT')
+    # chainA.addRule(r)
+
+    # r = Rule(1)
+    # r.setPredicate('SrcIP', ['1.1.1.128/26'])
+    # r.setPredicate('DstIP', ['2.2.2.0/24'])
+    # r.setPredicate('Protocol', ['udp'])
+    # r.setDecision('ACCEPT')
+    # chainA.addRule(r)
+
+    chainA = Chain("A")
+    chainA.setDefaultDecision("DROP")
+
+    r = Rule(0)
+    r.setPredicate('SrcIP', ['0.0.0.0/0'])
+    r.setPredicate('DstIP', ['0.0.0.0/0'])
+    r.setPredicate('Protocol', ['udp', 'tcp', 'icmp'])
+    r.setDecision('ACCEPT')
+    chainA.addRule(r)
+
+    r = Rule(1)
+    r.setPredicate('SrcIP', ['128.0.0.0/2'])
+    r.setPredicate('DstIP', ['0.0.0.0/1'])
+    r.setPredicate('Protocol', ['icmp'])
+    r.setDecision('ACCEPT')
+    chainA.addRule(r)
+
+    chainB = Chain("B")
+    chainB.setDefaultDecision("DROP")
+
+    r = Rule(0)
+    r.setPredicate('SrcIP', ['1.1.1.0/24'])
+    r.setPredicate('DstIP', ['2.2.2.0/24'])
+    r.setPredicate('Protocol', ['udp'])
+    r.setDecision('ACCEPT')
+    chainB.addRule(r)
+
+    r = Rule(1)
+    r.setPredicate('SrcIP', ['1.1.2.0/25'])
+    r.setPredicate('DstIP', ['2.2.2.0/24'])
+    r.setPredicate('Protocol', ['udp'])
+    r.setDecision('ACCEPT')
+    chainB.addRule(r)
+
+    r = Rule(2)
+    r.setPredicate('SrcIP', ['1.1.3.128/25'])
+    r.setPredicate('DstIP', ['2.2.2.0/24'])
+    r.setPredicate('Protocol', ['udp'])
+    r.setDecision('ACCEPT')
+    chainB.addRule(r)
+
+    chainAp = ChainComparator.PseudoChain()
+    chainAp.fillFromChain(chainA, fieldList)
+    reglas = chainAp.getRules()
+    for r in reglas:
+        print(f"{r}")
+    diff = reglas[0].difference(reglas[1], fieldList)
+    for x in diff:
+        print(f"{x}")
+
+
+    # print(f"ChainA: {chainA}\nChainB: {chainB}")
+
+    # comparator = ChainComparator(fieldList, chainA, chainB)
+
+    # print(comparator)
+    # print()
+    # print(comparator.checkEquivalence())

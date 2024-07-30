@@ -640,7 +640,7 @@ class FDD:
             for j in range(1, len(nodes)):
 
                 elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
-                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
+                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), elements if elements else [])
                 newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
                 newEdge.autoConnect()
 
@@ -836,7 +836,7 @@ class FDD:
 
             for node in level.getNodes():
 
-                left = ElementSet.createElementSet(level.getField().getType(), [None])
+                left = ElementSet.createElementSet(level.getField().getType(), [])
 
                 for edge in node.getOutgoing():
 
@@ -1160,7 +1160,7 @@ class FDD:
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():
                     if values != ElementSetRegistry.getRegistry()[field.getType()].getDomain():
-                        rule.setPredicate(field.getName(), values)
+                        rule.setPredicate(field.getName(), values.getElementsList())
                         rule.setMatchingPredicate(field.getName(), values)
                 
                 for field, values in resolving_predicate.items():
@@ -1186,7 +1186,7 @@ class FDD:
         dfs(self._levels[0].getNodes()[0], []) 
         
         #return chain
-        print(f'NOT COMPACTED CHAIN:\n{chain}\n\nCompacting Rules...')
+        #print(f'NOT COMPACTED CHAIN:\n{chain}\n\nCompacting Rules...')
 
         # Step 2: Compact Rules
         redundant = [False] * len(chain.getRules())
@@ -1195,26 +1195,27 @@ class FDD:
         n = len(chain.getRules())
         for i in range(n - 1, -1, -1):
             for k in range(i + 1, n):
-                print(f'CHECKING RULES {i} and {k}')
+                #print(f'CHECKING RULES {i} and {k}')
                 if (not redundant[k] and
                     self._sameDecision(chain[i], chain[k]) and
                     self._implies(chain[i], chain[k])):
                     # Check if rule i is redundant based on rule k
                     is_redundant = True
                     for j in range(i + 1, k):
-                        print(f'\tIntermediate rule check: {j}')
+                        #print(f'\tIntermediate rule check: {j}')
                         if (not redundant[j] and
                             not self._sameDecision(chain[i], chain[j]) and
                             not self._mutuallyExclusive(chain[i], chain[j])):
-                            print(f'\t\tRule {i} and rule {j} are NOT REDUNDANT.')
+                            #print(f'\t\tRule {i} and rule {j} are NOT REDUNDANT.')
                             is_redundant = False
                             break
                     if is_redundant:
-                        print(f'\t\tMarking rule {i} as REDUNDANT based on rule {k}.')
+                        #print(f'\t\tMarking rule {i} as REDUNDANT based on rule {k}.')
                         redundant[i] = True
                         break
                 else:
-                    print(f'\tRule {i} and rule {k} did not get to the intermediate Rule check.')
+                    pass
+                    #print(f'\tRule {i} and rule {k} did not get to the intermediate Rule check.')
 
         # Remove redundant rules
         new_rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
@@ -1239,7 +1240,7 @@ class FDD:
         Returns:
             bool: True if rule1 and rule2 have the same decision, False otherwise.
         """
-        print(f'\tCheck sameDecision: Rule_{rule1.getId()} & Rule_{rule2.getId()} = {rule1.getDecision() == rule2.getDecision()}')
+        #print(f'\tCheck sameDecision: Rule_{rule1.getId()} & Rule_{rule2.getId()} = {rule1.getDecision() == rule2.getDecision()}')
         return rule1.getDecision() == rule2.getDecision()
 
     def _implies(self, rule1: Rule, rule2: Rule) -> bool:
@@ -1265,7 +1266,7 @@ class FDD:
             option1 = rule1.getResolvingPredicate(field_name, field_dom)
             option2 = rule2.getMatchingPredicate(field_name, field_dom)
 
-            print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
+            #print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
             if not option1.isSubset(option2):
                 return False
         return True
@@ -1290,7 +1291,263 @@ class FDD:
             option1 = rule1.getResolvingPredicate(field_name, field_dom) 
             option2 = rule2.getMatchingPredicate(field_name, field_dom)
             
-            print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
+            #print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
             if option1.isDisjoint(option2):  # Check if they have any common elements
                 return True
         return False
+
+
+class ChainComparator:
+
+    class PseudoRule:
+
+        def __init__(self) -> None:
+
+            self._id = None
+            self._decision = None
+            self._predicates = {}
+
+        def __repr__(self) -> str:
+            """
+            Rule __repr__
+            
+            Returns:
+                str: PseudoRule String representation
+            """
+            return f"PseudoRule {self._id}: {self._predicates} -> {self._decision}"
+
+        def fillFromRule(self, rule: Rule, fieldList: FieldList):
+
+            self._id = rule.getId()
+            self._decision = rule.getDecision()
+            self._predicates = {}
+
+            for field in fieldList.getFields():
+                element_list = rule.getOption(field.getName(), None)
+                self._predicates[field.getName()] = ElementSet.createElementSet(field.getType(), element_list if element_list else [])
+        
+        def setId(self, id):
+            self._id = id
+
+        def getId(self):
+            return self._id
+
+        def setDecision(self, decision):
+            self._decision = decision
+
+        def getDecision(self):
+            return self._decision
+        
+        def setPredicate(self, key, value):
+            self._predicates[key] = value
+
+        def getPredicates(self):
+            return self._predicates
+        
+        def replicate(self):
+            rep = ChainComparator.PseudoRule()
+            rep.setId(self.getId())
+            rep.setDecision(self.getDecision())
+            for key in self.getPredicates():
+                rep.setPredicate(key, self.getPredicates()[key].replicate())
+            return rep
+
+        
+        def intersection(self, other: "ChainComparator.PseudoRule", fieldList: FieldList):
+
+            result = ChainComparator.PseudoRule()
+
+            for field in fieldList.getFields():
+                
+                option1 = self.getPredicates().get(field.getName())
+                option2 = other.getPredicates().get(field.getName())
+
+                intersection = option1.intersectionSet(option2)
+
+                result.setPredicate(field.getName(), intersection)
+            
+            if result.isNull():
+                return None
+            return result
+        
+        def difference(self, other: "ChainComparator.PseudoRule", fieldList: FieldList) -> List[Rule]:
+                
+            diff = []
+
+            print(f"Estoy en difference:")
+            print(f"A: {self}\nB: {other}")
+
+            if not self.intersection(other, fieldList):
+
+                return None
+
+            for field in fieldList.getFields():
+
+                fDiff = self.getPredicates()[field.getName()].differenceSet(other.getPredicates()[field.getName()])
+                #print(f"{self.getPredicates()[field.getName()]} vs {other.getPredicates()[field.getName()]} = {fDiff}")
+                if not fDiff.isEmpty() and fDiff != self.getPredicates()[field.getName()]:
+                    rule = self.replicate()
+                    rule.setPredicate(field.getName(), fDiff)
+                    diff.append(rule)
+
+            # print("Resultado:")
+            # for rule in diff:
+            #     print(f"*** {rule}")
+
+            return diff
+        
+        def isNull(self):
+
+            for key in self.getPredicates():
+                if self.getPredicates()[key].isEmpty():
+                    return True
+            return False
+
+    
+    class PseudoChain:
+
+        def __init__(self) -> None:
+            self._name = None
+            self._defaultdecision = None
+            self._rules = []
+
+        def __repr__(self) -> str:
+            """
+            Chain __repr__
+
+            Returns:
+                str: Chain String representation
+            """
+            rules_str = "\n".join([str(rule) for rule in self._rules])
+            return f"{self._name}:\n{rules_str if rules_str else ''}"
+        
+        def fillFromChain(self, chain: Chain, fieldList: FieldList):
+            self._name = chain.getName()
+            self._defaultdecision = chain.getDefaultDecision()
+            self._rules = []
+
+            for rule in chain.getRules():
+                aux = ChainComparator.PseudoRule()
+                aux.fillFromRule(rule, fieldList)
+                self._rules.append(aux)
+
+        def addRule(self, rule):
+            self._rules.append(rule)
+
+        def getRules(self):
+            return self._rules
+
+        def setName(self, name):
+            self._name = name
+        
+        def getName(self):
+            return self._name
+        
+        def setDefaultDecision(self, defaultDecision):
+            self._defaultdecision = defaultDecision
+        
+        def getDefaultDecision(self):
+            return self._defaultdecision
+        
+        def replicate(self):
+
+            rep = ChainComparator.PseudoChain()
+            rep.setName(self.getName())
+            rep.setDefaultDecision(self.getDefaultDecision())
+            for rule in self.getRules():
+                rep.addRule(rule.replicate())
+            return rep
+
+
+    def __init__(self, fieldList: FieldList, chain1: Chain, chain2: Chain) -> None:
+        
+        self._rawChain1 = self.PseudoChain()
+        self._rawChain1.fillFromChain(chain1, fieldList)
+        self._rawChain2 = self.PseudoChain()
+        self._rawChain2.fillFromChain(chain2, fieldList)
+
+        print("obteniendo eq1")
+        self._effectiveChain1 = self.getEffectiveChain(self._rawChain1, fieldList)
+        print("obteniendo eq2")
+        self._effectiveChain2 = self.getEffectiveChain(self._rawChain2, fieldList)
+
+        self._equivalence = self.isEquivalent(self._effectiveChain1, self._effectiveChain2, fieldList)
+    
+    def __repr__(self) -> str:
+        
+        return f"CHAIN COMPARATOR\n\nORIGINALS\n\n{self._rawChain1}\n\n{self._rawChain2}\
+                \n\nCONVERTED\n\n{self._effectiveChain1}\n\n{self._effectiveChain2}"
+    
+    def getEffectiveChain(self, chain: PseudoChain, fieldList: FieldList):
+
+        if chain.getDefaultDecision() != "DROP":
+            raise ValueError(f"La cadena tiene Default decision {chain.getDefaultDecision()} y por el momento solo se pueden comparar cadenas con default decision DROP")
+
+        newChain = ChainComparator.PseudoChain()
+        newChain.setDefaultDecision(chain.getDefaultDecision())
+        newChain.setName(f"effective-{newChain.getName()}")
+
+        rules = chain.getRules()
+
+        for i in range(len(rules)):
+
+            if rules[i].getDecision() == "ACCEPT":
+
+                resRules = [rules[i]]
+
+                for j in range(i):
+
+                    resRules2 = []
+
+                    for k in range(len(resRules)):
+
+                        diff = resRules[k].difference(rules[j], fieldList)
+
+                        if diff != None:
+
+                            resRules2 += diff
+
+                    if resRules2:
+
+                        resRules.remove(resRules[k])
+                        resRules += resRules2
+
+                for rule in resRules:
+
+                    newChain.addRule(rule)
+            
+        return newChain
+
+    def isEquivalent(self, effectiveChain1: PseudoChain, effectiveChain2: PseudoChain, fieldList: FieldList):
+
+        # Boolean for equivalence
+        equivalence = True
+
+        for rule1 in effectiveChain1.getRules():
+
+            for rule2 in effectiveChain2.getRules():
+
+                rule1 = rule1.difference(rule2, fieldList)
+
+            if not rule1.isNull():
+
+                equivalence = False
+
+        for rule2 in effectiveChain2.getRules():
+
+            for rule1 in effectiveChain1.getRules():
+
+                rule2 = rule2.difference(rule1, fieldList)
+
+            if not rule2.isNull():
+
+                equivalence = False
+
+        return equivalence
+
+    def checkEquivalence(self):
+        return self._equivalence
+            
+                    
+
+        

@@ -41,8 +41,8 @@ def test_createElementSet():
     assert protocol == pcomp1
     assert protocol != pcomp2
 
-    direction2 = ElementSet.createElementSet('DirectionSet', [None])
-    protocol2 = ElementSet.createElementSet('ProtocolSet', [None])
+    direction2 = ElementSet.createElementSet('DirectionSet', [])
+    protocol2 = ElementSet.createElementSet('ProtocolSet', [])
 
     assert direction2.getElementsList() == ['0.0.0.0/0']
     assert sorted(protocol2.getElementsList()) == sorted(['tcp', 'icmp', 'udp'])

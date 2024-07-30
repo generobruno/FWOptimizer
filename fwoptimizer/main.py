@@ -29,3 +29,20 @@ if __name__ == '__main__':
     fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
 
     chain = rules_parsed['filter']['INPUT']
+    
+    fdd = FDD(fieldList)
+    fdd.genFDD(chain)
+    #fdd.printFDD("FDD", 'svg')
+
+    print("\nREDUCING:")
+    fdd.reduction()
+    #fdd.printFDD("reducedFDD")
+    
+    print("\nMARKING:")
+    fdd.marking()
+    #fdd.printFDD("MarkedFDD", 'svg')
+    
+    print("\nCREATING RULES:")
+    firewall_chain = fdd.firewallGen() #TODO Crear nuevo RuleSet con las chains y tablas modificadas
+    print("\nRULES CREATION FINISHED")
+    print(firewall_chain)

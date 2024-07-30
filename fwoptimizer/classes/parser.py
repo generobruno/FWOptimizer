@@ -133,12 +133,12 @@ class IpTablesParser(ParserStrategy):
                 if line.startswith('*'):            # Start of Table
                     current_table = rules.Table(line[1:])
                     self._ruleSet.addTable(current_table)
-                elif line.startswith(':'):          # Define Chain #TODO DEFINE CHAIN packet AND byte COUNTERS
+                elif line.startswith(':'):          # Define Chain 
                     chain_name = line.split()[0][1:]
                     current_chain = rules.Chain(chain_name)
                     current_table.addChain(current_chain)
                     current_chain.setDefaultDecision(line.split()[1])
-                    rule_id = 0 #TODO REVISAR
+                    rule_id = 0
                 elif line == 'COMMIT':              # End of Table
                     current_table = None
                     current_chain = None
@@ -192,7 +192,7 @@ class IpTablesParser(ParserStrategy):
             for chain in table.getChains().values():
                 # Add chain with default policy if any
                 default_decision = chain.getDefaultDecision()
-                if default_decision: #TODO DEFINE CHAIN packet AND byte COUNTERS
+                if default_decision: 
                     iptables_save_lines.append(f":{chain.getName()} {default_decision} [0:0]")
                 else:
                     iptables_save_lines.append(f":{chain.getName()} - [0:0]")  

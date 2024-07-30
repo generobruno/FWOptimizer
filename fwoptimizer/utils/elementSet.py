@@ -260,7 +260,7 @@ class DirectionSet(ElementSet):
         Returns:
             DirSet: _description_
         """
-        return DirectionSet([str(x) for x in self._elements.intersection(otherSet.getElements()).iter_cidrs()]) #TODO Revisar, le agregue iter_cidrs()
+        return DirectionSet([str(x) for x in self._elements.intersection(otherSet.getElements()).iter_cidrs()])
     
     def unionSet(self, otherSet: "DirectionSet") -> "DirectionSet":
         """_summary_
@@ -414,7 +414,7 @@ class ProtocolSet(ElementSet):
         Args:
             otherSet (ProtSet): Other ProtSet to compare
         """
-        return self._elements.issubset(otherSet.getElements()) #TODO Revisar si influye en load
+        return self._elements.issubset(otherSet.getElements())
     
     def isDisjoint(self, otherSet: "ProtocolSet") -> bool:
         """
@@ -599,7 +599,7 @@ class PortSet(ElementSet):
     def isSubset(self, otherSet: "PortSet"):
         """_summary_
         """
-        return self._elements in otherSet.getElements() #TODO Revisar si influye en load
+        return self._elements in otherSet.getElements() 
         
     def isDisjoint(self, otherSet: "PortSet"):
         """_summary_

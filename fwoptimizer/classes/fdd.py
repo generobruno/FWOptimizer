@@ -203,7 +203,7 @@ class Edge:
         self._destination: Node = destination
         self._elementSet = elementSet
         self._markedAny = False
-        self._load = 0 #TODO Revisar, quizas no hace falta markedAny, ya que un arco marcado tiene load = 1
+        self._load = 0
         self._attributes = attrs if attrs else {}
 
     def __repr__(self) -> str:
@@ -383,11 +383,14 @@ class FDD:
     def __init__(self, fieldList: FieldList):
         """_summary_
         """
+        # FDD Name
+        self._name = "Unnamed_FDD"
+        # FDD Levels
         self._levels = []
         # Un diccionario de decisiones, deberíamos ver bien como tratarlo en el futuro
         self._decisions = {}
         # FieldList del FDD
-        self._fieldList = fieldList #TODO REVISAR
+        self._fieldList = fieldList
 
         # Primero creamos la lista de niveles del arbol, usando las configuraciones extraidas de la FieldList
         # Lanzamos un Type error si alguno de los tipos especificados para el nivel no es valido (no existe su ElementSet correspondiente)
@@ -611,6 +614,8 @@ class FDD:
     def _genPre(self, chain: Chain):
         """sumary
         """
+        # Set FDD Name
+        self._name = chain.getName()
         
         # Recorremos la lista de Rules
         for rule in chain.getRules():
@@ -888,7 +893,7 @@ class FDD:
         to v'.
         """
         changed = False
-        for level in self._levels[1:-1]: # TODO REVISAR DE CAMBIAR [1:-1] para no tomar el root
+        for level in self._levels[1:-1]:
             nodes_to_remove = []
             for node_v in level.getNodes():
                 v_out = node_v.getOutgoing()
@@ -926,7 +931,7 @@ class FDD:
         its outgoing edges, and make all edges that pointed to v' now point to v.
         """
         changed = False
-        for level in self._levels[:-1]: #TODO REVISAR (SI SOLO HACEMOS UN NODO POR DECISION ESTO NO HACE FALTA)
+        for level in self._levels[:-1]: 
             nodes_to_remove = []
             
             # Convert nodes list to a temporary list to avoid modification issues
@@ -1022,7 +1027,7 @@ class FDD:
                 # print(f'\t{edge_v}: {edge_v.getElementSet().getElements()}\n'
                     #  f'\t{edge_v_prime}: {edge_v_prime.getElementSet().getElements()}')
                 if (edge_v.getDestination() == edge_v_prime.getDestination() 
-                    and edge_v.getElementSet() == edge_v_prime.getElementSet()): #TODO REVISAR OTRA COSA?
+                    and edge_v.getElementSet() == edge_v_prime.getElementSet()):
                     match = True
                 else:
                     match = False
@@ -1080,7 +1085,7 @@ class FDD:
         """
         if edge.getMarking():
             return 1
-        return len(edge.getElementSet().getElementsList()) #TODO Revisar si esto esta bien o hay que calcularlo de otra forma
+        return len(edge.getElementSet().getElementsList())
         
     def firewallGen(self) -> Chain:
         """
@@ -1131,15 +1136,13 @@ class FDD:
         Returns:
             Chain: Set of Rules equivalent to the FDD
         """
-        #TODO Ver si pasarle el nombre de la chain o setearlo despues? -> Tambien ver si guardar el nombre de la chain original en el fdd para usar este
-        #TODO Setear chain default decision tambn
-        chain = Chain("FirewallGenChain")
+        chain = Chain(f"{self._name}")
     
         # We don't mark visited nodes since we need to traverse all paths (rules)
         # There is no risk of divergence since there are no cycles (DAG) 
         def dfs(node, decision_path):
             if not node.getOutgoing():  # Terminal node
-                rule = Rule(len(chain.getRules())) #TODO REVISAR CUAL DEBERIA SER EL rule_id
+                rule = Rule(len(chain.getRules())) 
                 matching_predicate = {}
                 resolving_predicate = {}
     
@@ -1151,11 +1154,9 @@ class FDD:
                     if not e.getMarking():  # Not marked with "all"
                         matching_predicate[field] = element_set
                     else:
-                        matching_predicate[field] = element_class(element_set.getDomainList()) #TODO se puede reemplazar por element_class.getDomain()?
+                        matching_predicate[field] = element_class.getDomain() 
                         
                     resolving_predicate[field] = element_set 
-
-                #TODO Tambien se deben setear los predicados que no afectan al fdd, como "-m conntrack"
     
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():

@@ -12,37 +12,129 @@ from fwoptimizer.classes import parser
 from fwoptimizer.classes import *
 from fwoptimizer.utils import *
 
+ruleset = None
+field_list = None
+fdds = {}
+
+def parse_file():
+    try:
+        global ruleset
+        filename = input("Enter the filename to parse: ")
+        # Select Parse Strategy
+        iptables_strat = parser.IpTablesParser() # TODO Set parse strat
+        # Create Parser Object
+        parser_obj = parser.Parser(iptables_strat)
+        # Parse File
+        ruleset = parser_obj.parse(filename)
+        print("File parsed successfully.")
+    except Exception as e:
+        print(f'Could not parse file. {e}')
+
+def display_rules():
+    try:
+        if not ruleset:
+            print("No ruleset parsed yet. Please parse a file first.")
+            return
+        table = input("Enter table name: ")
+        chain = input("Enter chain name: ")
+
+        print(ruleset[table][chain])
+    except Exception as e:
+        print(f'Could not Display rules: {e}')
+
+def add_field_list():
+    try:
+        global field_list
+        config_file = input("Enter config file path: ")
+        # Create FieldList Object
+        field_list = FieldList()
+        # Load Config
+        field_list.loadConfig(config_file)
+        print("Field list added successfully.")
+    except Exception as e:
+        print(f'Could not add FieldList. {e}')
+
+def generate_fdds():
+    try:
+        global fdds, ruleset, field_list
+        if not ruleset or not field_list:
+            print("Ruleset or field list not set. Please parse a file and add field list first.")
+            return
+        
+        for table in ruleset.getTables():
+            fdds[table] = {}
+            for chain in ruleset[table].getChains():
+                if len(ruleset[table][chain].getRules()) != 0: 
+                    fdd = FDD(field_list)
+                    fdd.genFDD(ruleset[table][chain])
+                    fdds[table][chain] = fdd
+
+        print("FDDs generated successfully.")
+    except Exception as e:
+        print(f'Could not generate FDD. {e}')
+
+def compile_fdd():
+    if not fdds:
+        print("No FDDs generated yet. Please generate FDDs first.")
+        return
+    
+    table = input("Enter table name: ")
+    chain = input("Enter chain name: ")
+    # Execute Reduction and Marking
+    if table in fdds and chain in fdds[table]:
+        fdds[table][chain].reduction()
+        fdds[table][chain].marking()
+        print(f"FDD for {table}/{chain} compiled successfully.")
+    else:
+        print(f"FDD for {table}/{chain} not found.")
+
+def generate_optimized_ruleset():
+    if not fdds:
+        print("No FDDs generated yet. Please generate FDDs first.")
+        return
+    
+    table = input("Enter table name: ")
+    chain = input("Enter chain name: ")
+    if table in fdds and chain in fdds[table]:
+        optimized_ruleset = fdds[table][chain].firewallGen()
+        print("Optimized ruleset generated:")
+        print(optimized_ruleset)
+    else:
+        print(f"FDD for {table}/{chain} not found.")
+
+def print_fdd():
+    if not fdds:
+        print("No FDDs generated yet. Please generate FDDs first.")
+        return
+    
+    table = input("Enter table name: ")
+    chain = input("Enter chain name: ")
+    if table in fdds and chain in fdds[table]:
+        name = input("Enter output file name: ")
+        format = input("Enter output format (default: svg): ") or 'svg'
+        fdds[table][chain].printFDD(name, format)
+        print(f"FDD for {table}/{chain} printed to {name}.{format}")
+    else:
+        print(f"FDD for {table}/{chain} not found.")
+
 if __name__ == '__main__':
-    total_start_time = time.time()
-    execution_times = {}
+    commands = {
+        "parse": parse_file,
+        "display": display_rules,
+        "addfields": add_field_list,
+        "generate": generate_fdds,
+        "compile": compile_fdd,
+        "optimize": generate_optimized_ruleset,
+        "print": print_fdd
+    }
 
-    #! Parse Instruction Set
-    iptables_strat = parser.IpTablesParser()
-    parser = parser.Parser(iptables_strat)
-    rules_parsed = parser.parse("./example_set.txt")
-
-    print("\nOnly INPUT in filter")
-    for rule in rules_parsed['filter']['INPUT']:
-        print(rule)
-
-    fieldList = FieldList()
-    fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
-
-    chain = rules_parsed['filter']['INPUT']
-    
-    fdd = FDD(fieldList)
-    fdd.genFDD(chain)
-    #fdd.printFDD("FDD", 'svg')
-
-    print("\nREDUCING:")
-    fdd.reduction()
-    #fdd.printFDD("reducedFDD")
-    
-    print("\nMARKING:")
-    fdd.marking()
-    #fdd.printFDD("MarkedFDD", 'svg')
-    
-    print("\nCREATING RULES:")
-    firewall_chain = fdd.firewallGen() #TODO Crear nuevo RuleSet con las chains y tablas modificadas
-    print("\nRULES CREATION FINISHED")
-    print(firewall_chain)
+    while True:
+        command = input("\n--- Insert a command: ").strip().lower()
+        if command == "exit":
+            break
+        elif command == "help":
+            print("Available commands are: " + ", ".join(commands.keys()))
+        elif command in commands:
+            commands[command]()
+        else:
+            print("Invalid command, type \"help\" for more information.")

@@ -152,10 +152,8 @@ class IpTablesParser(ParserStrategy):
                         # Set rule predicates and filter -m options
                         for k, v in current_rule.items():
                             if k != 'decision' and not k.startswith('-m'):
-                                if isinstance(v, list):
-                                    rule.setPredicate(k, v)
-                                else:
-                                    rule.setPredicate(k, [v])
+                                values = v.split(',') if isinstance(v, str) and ',' in v else [v]
+                                rule.setPredicate(k, values)
                         rule.setDecision(current_rule.get('decision'))
                         current_chain.addRule(rule)
                         rule_id += 1

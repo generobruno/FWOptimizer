@@ -117,7 +117,7 @@ def print_fdd():
     else:
         print(f"FDD for {table}/{chain} not found.")
 
-if __name__ == '__main__':
+if __name__ == '__main2__':
     commands = {
         "parse": parse_file,
         "display": display_rules,
@@ -138,3 +138,52 @@ if __name__ == '__main__':
             commands[command]()
         else:
             print("Invalid command, type \"help\" for more information.")
+
+if __name__ == '__main__':
+
+    iptables_strat = parser.IpTablesParser()
+    parser = parser.Parser(iptables_strat)
+    rules_parsed = parser.parse("./example_set_A.txt")
+
+    chain1 = rules_parsed['filter']['INPUT']
+    print("Chain1:")
+    for rule in chain1:
+        print(rule)
+
+    fieldList = FieldList()
+    fieldList.loadConfig("fwoptimizer/configs/fdd_config.toml")
+
+    rules_parsed = parser.parse("./example_set_B.txt")
+
+    chain2 = rules_parsed['filter']['INPUT']
+    print("Chain2:")
+    for rule in chain2:
+        print(rule)
+
+    fdd = FDD(fieldList)
+    fdd.genFDD(chain1)
+    #fdd.printFDD("FDD", 'svg')
+
+    fdd.reduction()
+    #fdd.printFDD("reducedFDD")
+    
+    fdd.marking()
+    #fdd.printFDD("MarkedFDD", 'svg')
+    
+    firewall_chain = fdd.firewallGen()
+    firewall_chain.setDefaultDecision("DROP") 
+
+    #print(firewall_chain)
+    
+
+    comparator = ChainComparator(fieldList)
+    comparator.setChain1FromChain(chain1)
+    comparator.setChain2FromChain(firewall_chain)
+    print(f"{comparator}")
+    print(f"\nLa comparacion entre chain1 y su salida de firewallgen da: {comparator.areEquivalents()}")
+
+    # comparator = ChainComparator(fieldList)
+    # comparator.setChain1FromChain(chain1)
+    # comparator.setChain2FromChain(chain2)
+    # print(f"{comparator}")
+    # print(f"\nLa comparacion entre chain1 y chain2 da: {comparator.areEquivalents()}")

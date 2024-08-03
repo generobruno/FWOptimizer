@@ -1537,54 +1537,128 @@ class ChainComparator:
             return newChain
 
 
-    def __init__(self, fieldList: FieldList, chain1: Chain, chain2: Chain) -> None:
+    def __init__(self, fieldList: FieldList) -> None:
         
-        self._rawChain1 = self.PseudoChain()
-        self._rawChain1.fillFromChain(chain1, fieldList)
-        self._rawChain2 = self.PseudoChain()
-        self._rawChain2.fillFromChain(chain2, fieldList)
-
-        print("obteniendo eq1")
-        self._effectiveChain1 = self.getEffectiveChain(self._rawChain1, fieldList)
-        print("obteniendo eq2")
-        self._effectiveChain2 = self.getEffectiveChain(self._rawChain2, fieldList)
-
-        self._equivalence = self.isEquivalent(self._effectiveChain1, self._effectiveChain2, fieldList)
+        self._fieldList = fieldList
+        self._chain1 = None
+        self._chain2 = None
+        self._effectiveChain1 = None
+        self._effectiveChain2 = None
     
     def __repr__(self) -> str:
         
-        return f"CHAIN COMPARATOR\n\nORIGINALS\n\n{self._rawChain1}\n\n{self._rawChain2}\
+        return f"CHAIN COMPARATOR\n\nORIGINALS\n\n{self._chain1}\n\n{self._chain2}\
                 \n\nCONVERTED\n\n{self._effectiveChain1}\n\n{self._effectiveChain2}"
+    
+    def setFieldList(self, fieldList: FieldList):
+        self._fieldList = fieldList
+    
+    def setChain1FromChain(self, chain1: Chain):
+        self._chain1 = ChainComparator.PseudoChain()
+        self._chain1.fillFromChain(chain1, self._fieldList)
+        self._effectiveChain1 = self._chain1.getEffectiveChain(self._fieldList)
 
-    def isEquivalent(self, effectiveChain1: PseudoChain, effectiveChain2: PseudoChain, fieldList: FieldList):
+    def setChain2FromChain(self, chain2: Chain):
+        self._chain2 = ChainComparator.PseudoChain()
+        self._chain2.fillFromChain(chain2, self._fieldList)
+        self._effectiveChain2 = self._chain2.getEffectiveChain(self._fieldList)
 
-        # Boolean for equivalence
-        equivalence = True
+    def areEquivalents(self):
 
-        for rule1 in effectiveChain1.getRules():
+        if self._effectiveChain1 and self._effectiveChain2:
 
-            for rule2 in effectiveChain2.getRules():
+            #Comparacion 1 contra 2
 
-                rule1 = rule1.difference(rule2, fieldList)
+            for rule1 in self._effectiveChain1.getRules():
 
-            if not rule1.isNull():
+                residual = [rule1]
 
-                equivalence = False
+                for rule2 in self._effectiveChain2.getRules():
 
-        for rule2 in effectiveChain2.getRules():
+                    accum = []
 
-            for rule1 in effectiveChain1.getRules():
+                    for rule in residual:
 
-                rule2 = rule2.difference(rule1, fieldList)
+                        diff = rule.difference(rule2, self._fieldList)
 
-            if not rule2.isNull():
+                        if diff != None:
 
-                equivalence = False
+                            accum += diff
 
-        return equivalence
+                    i = 0
+                    while i < len(accum)-1:
 
-    def checkEquivalence(self):
-        return self._equivalence
+                        intersection = accum[i].intersection(accum[i+1], fieldList)
+
+                        if intersection != None:
+
+                            if intersection.sameFieldValues(accum[i]):
+                                accum.pop(i)
+                            elif intersection.sameFieldValues(accum[i+1]):
+                                accum.pop(i+1)
+                            else:
+                                i += 1
+
+                        else:
+                            i += 1
+
+                    residual = accum
+
+                for result in residual:
+
+                    if not result.isNull():
+                        return False
+
+            #Comparacion 2 contra 1
+
+            for rule1 in self._effectiveChain2.getRules():
+
+                residual = [rule1]
+
+                for rule2 in self._effectiveChain1.getRules():
+
+                    accum = []
+
+                    for rule in residual:
+
+                        diff = rule.difference(rule2, self._fieldList)
+
+                        if diff != None:
+
+                            accum += diff
+
+                    i = 0
+                    while i < len(accum)-1:
+
+                        intersection = accum[i].intersection(accum[i+1], fieldList)
+
+                        if intersection != None:
+
+                            if intersection.sameFieldValues(accum[i]):
+                                accum.pop(i)
+                            elif intersection.sameFieldValues(accum[i+1]):
+                                accum.pop(i+1)
+                            else:
+                                i += 1
+
+                        else:
+                            i += 1
+
+                    residual = accum
+
+                for result in residual:
+
+                    if not result.isNull():
+                        return False
+                    
+            # Si hasta aqui no retornamos un falso, entonces es True
+
+            return True
+        
+        else:
+
+            raise ValueError("Debe cargar primero dos Chain en ChainComparator")
+
             
                     
 

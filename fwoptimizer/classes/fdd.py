@@ -1588,7 +1588,7 @@ class ChainComparator:
                     i = 0
                     while i < len(accum)-1:
 
-                        intersection = accum[i].intersection(accum[i+1], fieldList)
+                        intersection = accum[i].intersection(accum[i+1], self._fieldList)
 
                         if intersection != None:
 
@@ -1630,7 +1630,7 @@ class ChainComparator:
                     i = 0
                     while i < len(accum)-1:
 
-                        intersection = accum[i].intersection(accum[i+1], fieldList)
+                        intersection = accum[i].intersection(accum[i+1], self._fieldList)
 
                         if intersection != None:
 

@@ -7,28 +7,15 @@ import netaddr as nt
 import portion as p
 
 class ElementSetRegistry(type):
-    """_summary_
-
-    Args:
-        type (_type_): _description_
-
-    Returns:
-        _type_: _description_
+    """
+    A registry of all ElementSet types in the current application.
+    Adds all classes that implement it as a metaclass to the registry.
+    Used to relate the filtering fields of a firewall to their representation in the FDD.
     """
 
     _REGISTRY_ = {}
 
     def __new__(mcs, name, base, attrs):
-        """_summary_
-
-        Args:
-            name (_type_): _description_
-            base (_type_): _description_
-            attrs (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
 
         new_cls = type.__new__(mcs, name, base, attrs)
         mcs._REGISTRY_[new_cls.__name__] = new_cls
@@ -36,28 +23,51 @@ class ElementSetRegistry(type):
     
     @classmethod
     def getRegistry(mcs):
-        """_summary_
+        """
+        Gets the registry of ElementSet classes.
 
         Returns:
-            _type_: _description_
+            dict: A dictionary with class names as keys and class references as values. 
         """
         return mcs._REGISTRY_
     
     @classmethod
-    def getElementSetClass(mcs, field_type):
-        return mcs._REGISTRY_.get(field_type)
+    def getElementSetClass(mcs, className):
+        """
+        Gets a class reference for a given class name.
+
+        Returns:
+            class reference if class name existe, None otherwise
+        """
+        return mcs._REGISTRY_.get(className)
 
 
 class ElementSet(metaclass = ElementSetRegistry):
-    """_summary_
+    """
+    An abstract base class for defining sets of elements.
+
+    The `ElementSet` class serves as a blueprint for other specific sets 
+    of elements, such as IP_address, ports, etc. Subclasses must implement all 
+    abstract methods defined in this class to provide specific behaviors 
+    and attributes.
+
+    This class cannot be instantiated directly and should be subclassed 
+    by concrete implementations.
     """
 
     _domain_ = set()
 
     @classmethod
-    def createElementSet(cls, elementType: str, values: List[str]):
+    def createElementSet(cls, elementType: str, values: List[str]) -> "ElementSet":
         """
-        sumary
+        If elementType is the name of a subclas of ElementSet, call te constructor of this class with 'values' as parameter.
+
+        Args:
+            elemetnType: Name of the class to instantiate.
+            values: List of values for the set.
+
+        Returns:
+            A instance of given ElementSet subclass.
         """
         registry = ElementSetRegistry.getRegistry()
         if elementType in registry:
@@ -68,8 +78,7 @@ class ElementSet(metaclass = ElementSetRegistry):
 
     @abstractmethod
     def __init__(self, values: List[str]) -> None:
-        """_summary_
-        """
+        pass
 
     @abstractmethod
     def __eq__(self, value: object) -> bool:
@@ -81,75 +90,159 @@ class ElementSet(metaclass = ElementSetRegistry):
     
     @classmethod
     @abstractmethod
-    def getDomainList(cls):
-        """_summary_
+    def getDomainList(cls) -> List:
         """
+        Gets the domain of the element set as a list.
+        """
+        pass
 
     @classmethod
     @abstractmethod
     def getDomain(cls):
-        """_summary_
+        """
+        Get a ElementSet object with the domain of the element set.
         """ 
+        pass
 
     @abstractmethod
-    def addSet(self, otherSet: "ElementSet"):
-        """_summary_
+    def add(self, otherSet: "ElementSet") -> None:
         """
+        Add the elements of otherSet to this set.
+        Equivalent to say self = self U otherSet.
+
+        Args:
+            otherSet: The ElementSet to add to this.
+        """
+        pass
 
     @abstractmethod
-    def isOverlapping(self, otherSet: "ElementSet"):
-        """_summary_
+    def isOverlapping(self, otherSet: "ElementSet") -> bool:
         """
+        Check if this ElementSet and otherSet have common elements.
+
+        Args:
+            otherSet: The ElementSet to compare this.
+
+        Returns:
+            True if exist common elements. False otherwise.
+        """
+        pass
 
     @abstractmethod
-    def isEmpty(self):
-        """_summary_
+    def isEmpty(self) -> bool:
         """
+        Check if this ElementSet is Empty.
+
+        Returns:
+            True if the set is empty. False otherwise.
+        """
+        pass
     
     @abstractmethod
-    def isSubset(self, otherSet: "ElementSet"):
-        """_summary_
+    def isSubset(self, otherSet: "ElementSet") -> bool:
         """
+        Check if this ElementSet is a subset of 'otherSet'.
+
+        Args:
+            otherSet: The ElementSet to compare this.
+
+        Returns:
+            True if this ElemtSet if a subset. False otherwise.
+        """
+        pass
         
     @abstractmethod
-    def isDisjoint(self, otherSet: "ElementSet"):
-        """_summary_
+    def isDisjoint(self, otherSet: "ElementSet") -> bool:
         """
+        Check if this ElementSet and otherSet have common elements.
+
+        Args:
+            otherSet: The ElementSet to compare this.
+
+        Returns:
+            True if not exist common elements. False otherwise.
+        """
+        pass
 
     @abstractmethod
-    def intersectionSet(self, otherSet: "ElementSet"):
-        """_summary_
+    def intersectionSet(self, otherSet: "ElementSet") -> "ElementSet":
         """
+        Gets a new ElementSet with the intersection between self and 'otherSet'.
+
+        Args:
+            otherSet: The ElementSet to compare this.
+
+        Returns:
+            ElementSet whit the intersection between self and 'otherSet'. 
+        """
+        pass
         
     @abstractmethod
-    def unionSet(self, otherSet: "ElementSet"):
-        """_summary_
+    def unionSet(self, otherSet: "ElementSet") -> "ElementSet":
         """
+        Gets a new ElementSet with the union between self and 'otherSet'.
+
+        Args:
+            otherSet: The ElementSet to compare this.
+
+        Returns:
+            ElementSet whit the union between self and 'otherSet'. 
+        """
+        pass
 
     @abstractmethod
-    def differenceSet(self, otherSet: "ElementSet"):
-        """_summary_
+    def differenceSet(self, otherSet: "ElementSet") -> "ElementSet":
         """
+        Gets a new ElementSet with the difference between self and 'otherSet'.
+
+        Args:
+            otherSet: The ElementSet to compare this.
+
+        Returns:
+            ElementSet whit the difference between self and 'otherSet'. 
+        """
+        pass
 
     @abstractmethod
-    def remove(self, otherSet: "ElementSet"):
-        """_summary_
+    def remove(self, otherSet: "ElementSet") -> None:
         """
+        Remove the elements of otherSet to this set.
+        Equivalent to say self = self - (self ∩ otherSet).
+
+        Args:
+            otherSet: The ElementSet to remove to this.
+        """
+        pass
 
     @abstractmethod
-    def getElements(self):
-        """_summary_
+    def getElements(self) -> set:
         """
+        Gets the set instance contains in this object.
+
+        Returns:
+            The set of elements contain in this object.
+        """
+        pass
 
     @abstractmethod
-    def getElementsList(self):
-        """_summary_
+    def getElementsList(self) -> list:
         """
+        Gets the elements of this set as a list.
+
+        Returns:
+            A list with elements contains in this set.
+        """
+        pass
 
     @abstractmethod
-    def replicate(self):
-        """_summary_
+    def replicate(self) -> "ElementSet":
         """
+        Gets a replica of this object.
+
+        Returns:
+            A replica of this object.
+        """
+        pass
 
 
 
@@ -205,7 +298,7 @@ class DirectionSet(ElementSet):
         """
         return DirectionSet(cls.getDomainList())
 
-    def addSet(self, otherSet: "DirectionSet") -> None:
+    def add(self, otherSet: "DirectionSet") -> None:
         """_summary_
 
         Args:
@@ -379,7 +472,7 @@ class ProtocolSet(ElementSet):
         """
         return ProtocolSet(cls.getDomainList())
 
-    def addSet(self, otherSet: "ProtocolSet") -> None:
+    def add(self, otherSet: "ProtocolSet") -> None:
         """_summary_
 
         Args:
@@ -581,7 +674,7 @@ class PortSet(ElementSet):
         """summary"""
         self._groupable_ = value
 
-    def addSet(self, otherSet: "PortSet"):
+    def add(self, otherSet: "PortSet"):
         """_summary_
         """
         self._elements = self._elements | otherSet.getElements()

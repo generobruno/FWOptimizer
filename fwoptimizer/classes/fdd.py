@@ -792,7 +792,7 @@ class FDD:
 
                             print(f"Detectada redundancia para:\nNode: {node.getName()}\nEdge1: {edge1.getId()}\nEdge2: {edge2.getId()}")
 
-                            edge1.getElementSet().addSet(edge2.getElementSet())
+                            edge1.getElementSet().add(edge2.getElementSet())
                             edge1.extendId(edge2.getId())
                             edge2.autoDisconnect()
 

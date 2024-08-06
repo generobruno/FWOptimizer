@@ -27,7 +27,7 @@ class ElementSetRegistry(type):
         Gets the registry of ElementSet classes.
 
         Returns:
-            dict: A dictionary with class names as keys and class references as values. 
+            Dict: A dictionary with class names as keys and class references as values. 
         """
         return mcs._REGISTRY_
     
@@ -37,7 +37,7 @@ class ElementSetRegistry(type):
         Gets a class reference for a given class name.
 
         Returns:
-            class reference if class name existe, None otherwise
+            class reference if class name exist. None otherwise.
         """
         return mcs._REGISTRY_.get(className)
 
@@ -78,14 +78,32 @@ class ElementSet(metaclass = ElementSetRegistry):
 
     @abstractmethod
     def __init__(self, values: List[str]) -> None:
+        """
+        ElementSet __init__.
+
+        Args:
+            values (List[str]): A list of strings containing elements for this set.
+        """
         pass
 
     @abstractmethod
-    def __eq__(self, value: object) -> bool:
+    def __eq__(self, other: "ElementSet") -> bool:
+        """
+        DirectionSet __eq__
+
+        Args:
+            other (ElementSet): ElementSet to compare.
+
+        Returns:
+            True if self and 'other' are equals. False otherwise.
+        """
         pass
 
     @abstractmethod
     def __repr__(self):
+        """
+        ElementSet __repr__
+        """
         return str(self.getElementsList())
     
     @classmethod
@@ -93,6 +111,9 @@ class ElementSet(metaclass = ElementSetRegistry):
     def getDomainList(cls) -> List:
         """
         Gets the domain of the element set as a list.
+
+        Returns:
+            A list of elements of this set.
         """
         pass
 
@@ -147,7 +168,7 @@ class ElementSet(metaclass = ElementSetRegistry):
             otherSet: The ElementSet to compare this.
 
         Returns:
-            True if this ElemtSet if a subset. False otherwise.
+            True if this ElementSet if a subset of otherSet. False otherwise.
         """
         pass
         
@@ -225,7 +246,7 @@ class ElementSet(metaclass = ElementSetRegistry):
         pass
 
     @abstractmethod
-    def getElementsList(self) -> list:
+    def getElementsList(self) -> List[str]:
         """
         Gets the elements of this set as a list.
 
@@ -247,166 +268,184 @@ class ElementSet(metaclass = ElementSetRegistry):
 
 
 class DirectionSet(ElementSet):
-    """_summary_
-
-    Args:
-        ElementSet (_type_): _description_
-
-    Returns:
-        _type_: _description_
+    """
+    A subclass of ElementSet used to operate with IP directions.
     """
 
     _domain_ = nt.IPSet(['0.0.0.0/0'])
 
     def __init__(self, values: List[str]) -> None:
-        """_summary_
+        """
+        DirectionSet __init__.
 
         Args:
-            values (List[str]): _description_
+            values (List[str]): A list of strings containing IP directions or IP networks in CIDR notation (0.0.0.0/0).
         """
         self._elements = nt.IPSet(values)
 
     def __eq__(self, other: "DirectionSet") -> bool:
         """
-        DirSet __eq__
+        DirectionSet __eq__
 
         Args:
-            other (DirSet): DirSet to compare
+            other (DirectionSet): DirSet to compare
+
+        Returns:
+            (bool) True if self and 'other' are equals. False otherwise.
         """
         return self._elements == other.getElements()
     
     def __repr__(self):
-        return 'DirSet' + super().__repr__()
+        """
+        DirectionSet __repr__
+        """
+        return 'DirectionSet' + super().__repr__()
     
     @classmethod
-    def getDomainList(cls):
+    def getDomainList(cls) -> List[str]:
         """
-        Get the ElementSet Domain as a list
+        Get the DirectionSet Domain as a list
 
         Returns:
-            Domain: ElementSet Domain
+            List of DirectionSet Domain
         """
         return [str(net) for net in cls._domain_.iter_cidrs()]
     
     @classmethod
-    def getDomain(cls):
+    def getDomain(cls) -> "DirectionSet":
         """
-        Returns the Domain of the ElementSet as an object
+        Gets a DirectionSet object with the Domain of DirectionSet
 
         Returns:
-            DirSet: Domain of the set
+            DirectionSet: Domain of the DirectionSet
         """
         return DirectionSet(cls.getDomainList())
 
     def add(self, otherSet: "DirectionSet") -> None:
-        """_summary_
+        """
+        Add the elements of otherSet to this set.
+        Equivalent to say self = self U otherSet.
 
         Args:
-            otherSet (DirSet): _description_
+            otherSet: The DirectionSet to add to this.
         """
         self._elements = self._elements.union(otherSet.getElements())
 
     def isOverlapping(self, otherSet: "DirectionSet") -> bool:
-        """_summary_
+        """
+        Check if this DirectionSet and otherSet have common elements.
 
         Args:
-            otherSet (DirSet): _description_
+            otherSet: The DirectionSet to compare this.
 
         Returns:
-            bool: _description_
+            (bool) True if exist common elements. False otherwise.
         """
         return not self._elements.isdisjoint(otherSet.getElements())
     
     def isEmpty(self) -> bool:
-        """_summary_
+        """
+        Check if this DirectionSet is Empty.
 
         Returns:
-            bool: _description_
+            (bool) True if the set is empty. False otherwise.
         """
         return len(self._elements) == 0
     
     def isSubset(self, otherSet: "DirectionSet") -> bool:
         """
-        Checks if a DirSet is a subset of the other set.
-        A set is a subset of itself.
+        Check if this DirectionSet is a subset of 'otherSet'.
 
         Args:
-            otherSet (ElementSet): Other DirSet to compare
+            otherSet: The DirectionSet to compare this.
+
+        Returns:
+            (bool) True if this DirectionSet if a subset of otherSet. False otherwise.
         """
         return self._elements.issubset(otherSet.getElements())
     
     def isDisjoint(self, otherSet: "DirectionSet") -> bool:
         """
-        Checks if a DirSet is not a subset of the other set.
+        Check if this DirectionSet and otherSet have common elements.
 
         Args:
-            otherSet (DirSet): Other DirSet to compare
+            otherSet: The DirectionSet to compare this.
+
+        Returns:
+            (bool) True if not exist common elements. False otherwise.
         """
         return self._elements.isdisjoint(otherSet.getElements())
     
     def intersectionSet(self, otherSet: "DirectionSet") -> "DirectionSet":
-        """_summary_
+        """
+        Gets a new DirectionSet with the intersection between self and 'otherSet'.
 
         Args:
-            otherSet (DirSet): _description_
+            otherSet: The DirectionSet to compare this.
 
         Returns:
-            DirSet: _description_
+            DirectionSet whit the intersection between self and 'otherSet'. 
         """
         return DirectionSet([str(x) for x in self._elements.intersection(otherSet.getElements()).iter_cidrs()])
     
     def unionSet(self, otherSet: "DirectionSet") -> "DirectionSet":
-        """_summary_
+        """
+        Gets a new DirectionSet with the union between self and 'otherSet'.
 
         Args:
-            otherSet (ElementSet): _description_
+            otherSet: The DirectionSet to compare this.
 
         Returns:
-            _type_: _description_
+            DirectionSet whit the union between self and 'otherSet'. 
         """
         return DirectionSet([str(x) for x in self._elements.union(otherSet.getElements()).iter_cidrs()]) 
 
     def differenceSet(self, otherSet: "DirectionSet"):
-        """_summary_
+        """
+        Gets a new DirectionSet with the difference between self and 'otherSet'.
 
         Args:
-            otherSet (ElementSet): _description_
+            otherSet: The DirectionSet to compare this.
 
         Returns:
-            _type_: _description_
+            DirectionSet whit the difference between self and 'otherSet'. 
         """
         return DirectionSet([str(x) for x in self._elements.difference(otherSet.getElements()).iter_cidrs()])
     
     def remove(self, otherSet: "DirectionSet") -> None:
-        """_summary_
+        """
+        Remove the elements of otherSet to this set.
+        Equivalent to say self = self - (self ∩ otherSet).
 
         Args:
-            otherSet (DirSet): _description_
+            otherSet: The DirectionSet to remove to this.
         """
         self._elements = self._elements.difference(otherSet.getElements())
 
     def getElements(self) -> nt.IPSet:
-        """_summary_
+        """
+        Gets the set instance contains in this object.
 
         Returns:
-            nt.IPSet: _description_
+            netaddr.IPSet: The set of elements contain in this object.
         """
         return self._elements
     
     def getElementsList(self) -> List[str]:
-        """_summary_
+        """
+        Gets the elements of this set as a list.
 
         Returns:
-            List[str]: _description_
+            A list with elements contains in this set.
         """
         return [str(net) for net in self._elements.iter_cidrs()] 
     
-    def replicate(self):
+    def replicate(self) -> "DirectionSet":
         """
-        Duplicate the DirSet and its info
+        Gets a replica of this object.
 
         Returns:
-            DirSet: Copied DirSet
+            DirectionSet: A replica of this object.
         """
         return DirectionSet(self.getElementsList())
     
@@ -414,24 +453,21 @@ class DirectionSet(ElementSet):
 
 
 class ProtocolSet(ElementSet):
-    """_summary_
-
-    Args:
-        ElementSet (_type_): _description_
-
-    Returns:
-        _type_: _description_
+    """
+    A subclass of ElementSet used to operate with transport layer protocols.
     """
 
     _domain_ = {'tcp', 'udp', 'icmp'}
 
     def __init__(self, values: List[str]) -> None:
-        """_summary_
+        """
+        ProtocolSet __init__.
 
         Args:
-            values (List[str]): _description_
+            values (List[str]): A list of strings containing transport layer protocols.
         """
-        # Chequeamos que los valores esten incluidos en el dominio
+
+        # Check that values are included in the domain
         lowCaseValues = [x.lower() for x in values]
 
         for value in lowCaseValues:
@@ -442,162 +478,193 @@ class ProtocolSet(ElementSet):
 
     def __eq__(self, other: "ProtocolSet") -> bool:
         """
-        ProtSet __eq__
+        ProtocolSet __eq__
 
         Args:
-            other (ProtSet): ProtSet to compare
+            other (ProtocolSet): ProtocolSet to compare
+
+        Returns:
+            (bool) True if self and 'other' are equals. False otherwise.
         """
         return self._elements == other.getElements()
     
     def __repr__(self):
-        return 'ProtSet' + super().__repr__()
+        """
+        ProtocolSet __repr__
+        """
+        return 'ProtocolSet' + super().__repr__()
     
     @classmethod
-    def getDomainList(cls):
+    def getDomainList(cls) -> List[str]:
         """
-        Get the ElementSet Domain
+        Get the ProtocolSet Domain as a list
 
         Returns:
-            Domain: ElementSet Domain
+            List of ProtocolSet Domain
         """
         return list(cls._domain_)
     
     @classmethod
-    def getDomain(cls):
+    def getDomain(cls) -> "ProtocolSet":
         """
-        Returns the Domain of the ElementSet as an object
+        Gets a ProtocolSet object with the Domain of ProtocolSet
 
         Returns:
-            ProtSet: Domain of the set
+            ProtocolSet: Domain of the ProtocolSet
         """
         return ProtocolSet(cls.getDomainList())
 
     def add(self, otherSet: "ProtocolSet") -> None:
-        """_summary_
+        """
+        Add the elements of otherSet to this set.
+        Equivalent to say self = self U otherSet.
 
         Args:
-            otherSet (ProtSet): _description_
+            otherSet: The ProtocolSet to add to this.
         """
         self._elements.update(otherSet.getElements())
 
     def isOverlapping(self, otherSet: "ProtocolSet") -> bool:
-        """_summary_
+        """
+        Check if this ProtocolSet and otherSet have common elements.
 
         Args:
-            otherSet (ProtSet): _description_
+            otherSet: The ProtocolSet to compare this.
 
         Returns:
-            bool: _description_
+            (bool) True if exist common elements. False otherwise.
         """
         return not self._elements.isdisjoint(otherSet.getElements())
     
     def isEmpty(self):
-        """_summary_
+        """
+        Check if this ProtocolSet is Empty.
 
         Returns:
-            _type_: _description_
+            (bool) True if the set is empty. False otherwise.
         """
         return len(self._elements) == 0
     
     def isSubset(self, otherSet: "ProtocolSet") -> bool:
         """
-        Checks if a ProtSet is a subset of the other set.
-        A set is a subset of itself.
+        Check if this ProtocolSet is a subset of 'otherSet'.
 
         Args:
-            otherSet (ProtSet): Other ProtSet to compare
+            otherSet: The ProtocolSet to compare this.
+
+        Returns:
+            (bool) True if this ProtocolSet if a subset of otherSet. False otherwise.
         """
         return self._elements.issubset(otherSet.getElements())
     
     def isDisjoint(self, otherSet: "ProtocolSet") -> bool:
         """
-        Checks if a ProtSet is not a subset of the other set.
+        Check if this ProtocolSet and otherSet have common elements.
 
         Args:
-            otherSet (ProtSet): Other ProtSet to compare
+            otherSet: The ProtocolSet to compare this.
+
+        Returns:
+            (bool) True if not exist common elements. False otherwise.
         """
         return self._elements.isdisjoint(otherSet.getElements())
     
     def intersectionSet(self, otherSet: "ProtocolSet") -> "ProtocolSet":
-        """_summary_
+        """
+        Gets a new ProtocolSet with the intersection between self and 'otherSet'.
 
         Args:
-            otherSet (ProtSet): _description_
+            otherSet: The ProtocolSet to compare this.
 
         Returns:
-            ProtSet: _description_
+            ProtocolSet whit the intersection between self and 'otherSet'. 
         """
         return ProtocolSet([str(x) for x in self._elements & otherSet.getElements()])
     
-    def unionSet(self, otherSet: "ProtocolSet"):
-        """_summary_
+    def unionSet(self, otherSet: "ProtocolSet") -> "ProtocolSet":
+        """
+        Gets a new ProtocolSet with the union between self and 'otherSet'.
 
         Args:
-            otherSet (ProtSet): _description_
+            otherSet: The ProtocolSet to compare this.
 
         Returns:
-            _type_: _description_
+            ProtocolSet whit the union between self and 'otherSet'. 
         """
         return ProtocolSet([str(x) for x in self._elements | otherSet.getElements()])
     
-    def differenceSet(self, otherSet: "ProtocolSet"):
-        """_summary_
+    def differenceSet(self, otherSet: "ProtocolSet") -> "ProtocolSet":
+        """
+        Gets a new ProtocolSet with the difference between self and 'otherSet'.
 
         Args:
-            otherSet (ElementSet): _description_
+            otherSet: The ProtocolSet to compare this.
 
         Returns:
-            _type_: _description_
+            ProtocolSet whit the difference between self and 'otherSet'. 
         """
         return ProtocolSet([str(x) for x in self._elements - otherSet.getElements()])
     
     def remove(self, otherSet: "ProtocolSet") -> None:
-        """_summary_
+        """
+        Remove the elements of otherSet to this set.
+        Equivalent to say self = self - (self ∩ otherSet).
 
         Args:
-            otherSet (ProtSet): _description_
+            otherSet: The ProtocolSet to remove to this.
         """
         self._elements = self._elements.difference(otherSet.getElements())
 
     def getElements(self) -> Set:
-        """_summary_
+        """
+        Gets the set instance contains in this object.
 
         Returns:
-            Set: _description_
+            set: The set of elements contain in this object.
         """
         return self._elements
     
     def getElementsList(self):
-        """_summary_
+        """
+        Gets the elements of this set as a list.
 
         Returns:
-            _type_: _description_
+            A list with elements contains in this set.
         """
         return list(self._elements)
     
     def replicate(self):
         """
-        Duplicate the ProtSet and its info
+        Gets a replica of this object.
 
         Returns:
-           ProtSet: Copied ProtSet
+            ProtocolSet: A replica of this object.
         """
         return ProtocolSet(self.getElementsList())
-    
+
+
+
 class PortSet(ElementSet):
-    """_summary_
+    """
+    A subclass of ElementSet used to operate with transport layer ports.
+    It has a class variable that allows you to indicate whether ports should be grouped by ranges when they are contiguous.
     """
     _domain_ = p.closedopen(0, 65535+1)
     _groupable_ = True
 
     def __init__(self, values: List[str]) -> None:
-        """_summary_
+        """
+        PortSet __init__.
+
+        Args:
+            values (List[str]): A list of strings containing port ranges or single ports of the transport layer.
         """
 
         self._elements = p.empty()
 
         for value in values:
 
+            # try transform string into integer
             try:
 
                 intValue = int(value)
@@ -610,8 +677,10 @@ class PortSet(ElementSet):
 
                     self._elements = self._elements | p.closedopen(intValue, intValue+1)
                 
+            # if an error is raised, the value could be a range 
             except:
 
+                # try split the string into two, using ':' as a divisor
                 ends = value.split(":")
                 if len(ends) == 2:
 
@@ -627,17 +696,40 @@ class PortSet(ElementSet):
                     raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
 
     def __eq__(self, other: "PortSet") -> bool:
-        
+        """
+        PortSet __eq__
+
+        Args:
+            other (PortSet): PortSet to compare
+
+        Returns:
+            (bool) True if self and 'other' are equals. False otherwise.
+        """
         return self._elements == other.getElements()
 
     def __repr__(self):
+        """
+        PortSet __repr__
+        """
         return "PortSet" + super().__repr__()
     
     @classmethod
-    def _formatedList_(cls, inter: p.Interval):
+    def _formatedList_(cls, inter: p.Interval) -> List[str]:
+        """
+        Formats a list of the portion library ranges to be suitable for use with firewall rules.
+
+        Args:
+            inter: A portion.Interval object to transform into its List[str] useful representation.
+
+        Returns:
+            List[str] with a useful representation to this intervals.
+        """
 
         formated = []
 
+        # Because the intervals used by the portion library can be open or closed, we convert to the discrete model.
+        # The .to_data() method returns a list of elements where each element is a 4-tuple representing a range. 
+        # The tuple contains the values ​​of the endpoints and a boolean flag indicating whether the endpoint is open or closed.
         for element in p.to_data(inter):
             if element[1] == element[2]-1 and element[0] and not element[3]:
                 formated.append(str(element[1]))
@@ -658,74 +750,151 @@ class PortSet(ElementSet):
         return formated
 
     @classmethod
-    def getDomainList(cls):
-        """_summary_
+    def getDomainList(cls) -> List[str]:
+        """
+        Get the PortSet Domain as a list
+
+        Returns:
+            List of PortSet Domain
         """
         return cls._formatedList_(cls._domain_)
 
     @classmethod
-    def getDomain(cls):
-        """_summary_
+    def getDomain(cls) -> "PortSet":
+        """
+        Gets a PortSet object with the Domain of PortSet
+
+        Returns:
+            PortSet: Domain of the PortSet
         """
         return PortSet(cls.getDomainList())
     
     @classmethod
-    def setGroupable(self, value: bool):
-        """summary"""
+    def setGroupable(self, value: bool) -> None:
+        """
+        Set the value of 'groupable' to 'value'.
+
+        Args:
+            value: New bool value for 'groupable'.
+        """
         self._groupable_ = value
 
-    def add(self, otherSet: "PortSet"):
-        """_summary_
+    def add(self, otherSet: "PortSet") -> None:
+        """
+        Add the elements of otherSet to this set.
+        Equivalent to say self = self U otherSet.
+
+        Args:
+            otherSet: The PortSet to add to this.
         """
         self._elements = self._elements | otherSet.getElements()
 
-    def isOverlapping(self, otherSet: "PortSet"):
-        """_summary_
+    def isOverlapping(self, otherSet: "PortSet") -> bool:
+        """
+        Check if this PortSet and otherSet have common elements.
+
+        Args:
+            otherSet: The PortSet to compare this.
+
+        Returns:
+            (bool) True if exist common elements. False otherwise.
         """
         return self._elements.overlaps(otherSet.getElements())
 
-    def isEmpty(self):
-        """_summary_
+    def isEmpty(self) -> bool:
+        """
+        Check if this PortSet is Empty.
+
+        Returns:
+            (bool) True if the set is empty. False otherwise.
         """
         return self._elements.empty
     
-    def isSubset(self, otherSet: "PortSet"):
-        """_summary_
+    def isSubset(self, otherSet: "PortSet") -> bool:
+        """
+        Check if this PortSet is a subset of 'otherSet'.
+
+        Args:
+            otherSet: The PortSet to compare this.
+
+        Returns:
+            (bool) True if this PortSet if a subset of otherSet. False otherwise.
         """
         return self._elements in otherSet.getElements() 
         
-    def isDisjoint(self, otherSet: "PortSet"):
-        """_summary_
+    def isDisjoint(self, otherSet: "PortSet") -> bool:
+        """
+        Check if this PortSet and otherSet have common elements.
+
+        Args:
+            otherSet: The PortSet to compare this.
+
+        Returns:
+            (bool) True if not exist common elements. False otherwise.
         """
         return self._elements.intersection(otherSet.getElements()).empty
 
-    def intersectionSet(self, otherSet: "ElementSet"):
-        """_summary_
+    def intersectionSet(self, otherSet: "PortSet") -> "PortSet":
+        """
+        Gets a new PortSet with the intersection between self and 'otherSet'.
+
+        Args:
+            otherSet: The PortSet to compare this.
+
+        Returns:
+            PortSet whit the intersection between self and 'otherSet'. 
         """
         return PortSet(self._formatedList_(list(self._elements.intersection(otherSet.getElements()))))
         
-    def unionSet(self, otherSet: "ElementSet"):
-        """_summary_
+    def unionSet(self, otherSet: "PortSet") -> "PortSet":
+        """
+        Gets a new PortSet with the union between self and 'otherSet'.
+
+        Args:
+            otherSet: The PortSet to compare this.
+
+        Returns:
+            PortSet whit the union between self and 'otherSet'. 
         """
         return PortSet(self._formatedList_(list(self._elements.union(otherSet.getElements()))))
         
-    def differenceSet(self, otherSet: "ElementSet"):
-        """_summary_
+    def differenceSet(self, otherSet: "PortSet") -> "PortSet":
+        """
+        Gets a new PortSet with the difference between self and 'otherSet'.
+
+        Args:
+            otherSet: The PortSet to compare this.
+
+        Returns:
+            PortSet whit the difference between self and 'otherSet'. 
         """
         return PortSet(self._formatedList_(list(self._elements.difference(otherSet.getElements()))))
     
-    def remove(self, otherSet: "ElementSet"):
-        """_summary_
+    def remove(self, otherSet: "ElementSet") -> None:
+        """
+        Remove the elements of otherSet to this set.
+        Equivalent to say self = self - (self ∩ otherSet).
+
+        Args:
+            otherSet: The PortSet to remove to this.
         """
         self._elements = self._elements.difference(otherSet.getElements())
 
     def getElements(self):
-        """_summary_
+        """
+        Gets the set instance contains in this object.
+
+        Returns:
+            set: The set of elements contain in this object.
         """
         return self._elements
 
     def getElementsList(self):
-        """_summary_
+        """
+        Gets the elements of this set as a list.
+
+        Returns:
+            A list with elements contains in this set.
         """
         
         if not self._groupable_:
@@ -747,7 +916,11 @@ class PortSet(ElementSet):
             return self._formatedList_(self._elements)
 
     def replicate(self):
-        """_summary_
+        """
+        Gets a replica of this object.
+
+        Returns:
+            PortSet: A replica of this object.
         """
         return PortSet(self.getElementsList())
     

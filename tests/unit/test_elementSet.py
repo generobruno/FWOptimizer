@@ -100,7 +100,7 @@ def test_PortSet():
 
     new1 = PortSet(['89:91', '100', '110'])
 
-    new1.addSet(ports)
+    new1.add(ports)
 
     assert new1.getElementsList() == ['88:91', '99:100', '110']
 

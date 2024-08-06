@@ -203,7 +203,7 @@ class Edge:
         self._destination: Node = destination
         self._elementSet = elementSet
         self._markedAny = False
-        self._load = 0 #TODO Revisar, quizas no hace falta markedAny, ya que un arco marcado tiene load = 1
+        self._load = 0
         self._attributes = attrs if attrs else {}
 
     def __repr__(self) -> str:
@@ -383,11 +383,14 @@ class FDD:
     def __init__(self, fieldList: FieldList):
         """_summary_
         """
+        # FDD Name
+        self._name = "Unnamed_FDD"
+        # FDD Levels
         self._levels = []
         # Un diccionario de decisiones, deberíamos ver bien como tratarlo en el futuro
         self._decisions = {}
         # FieldList del FDD
-        self._fieldList = fieldList #TODO REVISAR
+        self._fieldList = fieldList
 
         # Primero creamos la lista de niveles del arbol, usando las configuraciones extraidas de la FieldList
         # Lanzamos un Type error si alguno de los tipos especificados para el nivel no es valido (no existe su ElementSet correspondiente)
@@ -420,7 +423,7 @@ class FDD:
         return self._decisions[decision]
 
 
-    def printFDD(self, name: str, img_format='png'):
+    def printFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False):
         """
         Generate a graph image from the data structure
 
@@ -428,13 +431,7 @@ class FDD:
             name (str): Name of the graph
             img_format (str, optional): Output Format. Defaults to 'png'.
         """
-        dot = graphviz.Digraph()
-        
-        # Set graph attribute #TODO VER ranksep
-        dot.attr(ranksep='1.5',nodesep='0.5')
-        
-        # Change layout direction (rotate 90 degrees)
-        #dot.attr(rankdir='LR')
+        dot = graphviz.Digraph(engine='dot')
 
         # Create a dictionary to hold subgraphs for each field level
         field_subgraphs = {}
@@ -452,6 +449,42 @@ class FDD:
         width_factor = 10.0 / total_elements
         height_factor = 5.5 / total_elements
         font_factor = 5.0 / total_elements
+        
+        if total_nodes < 50:
+            ranksep_factor = 2.5
+        elif total_nodes < 100:
+            ranksep_factor = 3.0
+        elif total_nodes < 200:
+            ranksep_factor = 3.5
+        elif total_nodes < 500:
+            ranksep_factor = 4.0
+        else:
+            ranksep_factor = 5.0
+            
+        # Set SVG for large graphs
+        if total_elements >= 1500:
+            print(f'Graph too Large ({total_elements} elements). Rendering to .svg')
+            img_format = 'svg'
+        
+        # Set graph attributes
+        dot.attr(ranksep=str(ranksep_factor),nodesep='0.5')#, overlap='scale', pack='true', sep='+4')
+        
+        # Change layout direction (rotate 90 degrees)
+        dot.attr(rankdir=rank_dir)
+        
+        # Set tail and head ports
+        if rank_dir == 'BT':
+            head_port = 's'
+            tail_port = 'n'
+        elif rank_dir == 'LR':
+            head_port = 'w'
+            tail_port = 'e'
+        elif rank_dir == 'RL':
+            head_port = 'e'
+            tail_port = 'w'
+        else: # TB
+            head_port = 'n'
+            tail_port = 's'
 
         # Iterate through the levels to create subgraphs
         for level in self._levels:
@@ -465,6 +498,15 @@ class FDD:
             # Add nodes to the corresponding subgraph
             for node in level.getNodes():
                 node_name = node.getName()
+                
+                # Skip adding ACCEPT and DROP nodes if unroll_decisions is True
+                if unroll_decisions and node_name in ['ACCEPT', 'DROP']:
+                    dot.node(
+                        node_name, 
+                        style='invis'  # Make the node invisible
+                    )
+                    continue
+                
                 field_subgraphs[field_name].node(
                                             node_name, 
                                             _attributes = node.getAttributes(), 
@@ -490,9 +532,6 @@ class FDD:
                         label = f"{edge.getId()},\n{elements_str}"
 
                     edge_attributes = edge.getAttributes()
-                    
-                    # Create Edge between nodes
-                    #dot.edge(origin_name, destination_name, label=label, tailport='s', headport='n', _attributes=edge_attributes)
 
                     # Add the intermediate node with the label
                     dot.node(
@@ -504,12 +543,28 @@ class FDD:
                         fontsize=str(base_font + font_factor))
 
                     # Connect the origin to the intermediate node and intermediate node to the destination
-                    dot.edge(origin_name, edge_node_name, tailport='s', headport='n', _attributes=edge_attributes)
-                    dot.edge(edge_node_name, destination_name, tailport='s', headport='n', _attributes=edge_attributes)
+                    dot.edge(origin_name, edge_node_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
+
+                    if unroll_decisions and destination_name in ['ACCEPT', 'DROP']:
+                        unique_destination_name = f"{destination_name}_{edge_node_counter}"
+                        dot.node(
+                            unique_destination_name, 
+                            destination_name, 
+                            style='filled',
+                            shape='box' if destination_name == 'ACCEPT' else 'diamond',
+                            fillcolor='greenyellow' if destination_name == 'ACCEPT' else 'crimson',
+                            width=str(base_width + width_factor), 
+                            height=str(base_height + height_factor), 
+                            fontsize=str(base_font + font_factor)
+                        )
+                        dot.edge(edge_node_name, unique_destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
+                    else:
+                        dot.edge(edge_node_name, destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
 
         # Add each subgraph to the main graph
         for subgraph in field_subgraphs.values():
             dot.subgraph(subgraph)
+            
 
         # Render the graph to a file
         dot.render(name, format=img_format, view=False, cleanup=True)
@@ -559,6 +614,8 @@ class FDD:
     def _genPre(self, chain: Chain):
         """sumary
         """
+        # Set FDD Name
+        self._name = chain.getName()
         
         # Recorremos la lista de Rules
         for rule in chain.getRules():
@@ -588,7 +645,7 @@ class FDD:
             for j in range(1, len(nodes)):
 
                 elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
-                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), [elements])
+                elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), elements if elements else [])
                 newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
                 newEdge.autoConnect()
 
@@ -784,7 +841,7 @@ class FDD:
 
             for node in level.getNodes():
 
-                left = ElementSet.createElementSet(level.getField().getType(), [None])
+                left = ElementSet.createElementSet(level.getField().getType(), [])
 
                 for edge in node.getOutgoing():
 
@@ -836,7 +893,7 @@ class FDD:
         to v'.
         """
         changed = False
-        for level in self._levels[1:-1]: # TODO REVISAR DE CAMBIAR [1:-1] para no tomar el root
+        for level in self._levels[1:-1]:
             nodes_to_remove = []
             for node_v in level.getNodes():
                 v_out = node_v.getOutgoing()
@@ -874,7 +931,7 @@ class FDD:
         its outgoing edges, and make all edges that pointed to v' now point to v.
         """
         changed = False
-        for level in self._levels[:-1]: #TODO REVISAR (SI SOLO HACEMOS UN NODO POR DECISION ESTO NO HACE FALTA)
+        for level in self._levels[:-1]: 
             nodes_to_remove = []
             
             # Convert nodes list to a temporary list to avoid modification issues
@@ -970,7 +1027,7 @@ class FDD:
                 # print(f'\t{edge_v}: {edge_v.getElementSet().getElements()}\n'
                     #  f'\t{edge_v_prime}: {edge_v_prime.getElementSet().getElements()}')
                 if (edge_v.getDestination() == edge_v_prime.getDestination() 
-                    and edge_v.getElementSet() == edge_v_prime.getElementSet()): #TODO REVISAR OTRA COSA?
+                    and edge_v.getElementSet() == edge_v_prime.getElementSet()):
                     match = True
                 else:
                     match = False
@@ -1028,7 +1085,7 @@ class FDD:
         """
         if edge.getMarking():
             return 1
-        return len(edge.getElementSet().getElementsList()) #TODO Revisar si esto esta bien o hay que calcularlo de otra forma
+        return len(edge.getElementSet().getElementsList())
         
     def firewallGen(self) -> Chain:
         """
@@ -1079,15 +1136,13 @@ class FDD:
         Returns:
             Chain: Set of Rules equivalent to the FDD
         """
-        #TODO Ver si pasarle el nombre de la chain o setearlo despues? -> Tambien ver si guardar el nombre de la chain original en el fdd para usar este
-        #TODO Setear chain default decision tambn
-        chain = Chain("FirewallGenChain")
+        chain = Chain(f"{self._name}")
     
         # We don't mark visited nodes since we need to traverse all paths (rules)
         # There is no risk of divergence since there are no cycles (DAG) 
         def dfs(node, decision_path):
             if not node.getOutgoing():  # Terminal node
-                rule = Rule(len(chain.getRules())) #TODO REVISAR CUAL DEBERIA SER EL rule_id
+                rule = Rule(len(chain.getRules())) 
                 matching_predicate = {}
                 resolving_predicate = {}
     
@@ -1099,16 +1154,14 @@ class FDD:
                     if not e.getMarking():  # Not marked with "all"
                         matching_predicate[field] = element_set
                     else:
-                        matching_predicate[field] = element_class(element_set.getDomainList()) #TODO se puede reemplazar por element_class.getDomain()?
+                        matching_predicate[field] = element_class.getDomain() 
                         
                     resolving_predicate[field] = element_set 
-
-                #TODO Tambien se deben setear los predicados que no afectan al fdd, como "-m conntrack"
     
                 # Set the predicates and decision for the rule
                 for field, values in matching_predicate.items():
                     if values != ElementSetRegistry.getRegistry()[field.getType()].getDomain():
-                        rule.setPredicate(field.getName(), values)
+                        rule.setPredicate(field.getName(), values.getElementsList())
                         rule.setMatchingPredicate(field.getName(), values)
                 
                 for field, values in resolving_predicate.items():
@@ -1134,7 +1187,7 @@ class FDD:
         dfs(self._levels[0].getNodes()[0], []) 
         
         #return chain
-        print(f'NOT COMPACTED CHAIN:\n{chain}\n\nCompacting Rules...')
+        #print(f'NOT COMPACTED CHAIN:\n{chain}\n\nCompacting Rules...')
 
         # Step 2: Compact Rules
         redundant = [False] * len(chain.getRules())
@@ -1143,26 +1196,27 @@ class FDD:
         n = len(chain.getRules())
         for i in range(n - 1, -1, -1):
             for k in range(i + 1, n):
-                print(f'CHECKING RULES {i} and {k}')
+                #print(f'CHECKING RULES {i} and {k}')
                 if (not redundant[k] and
                     self._sameDecision(chain[i], chain[k]) and
                     self._implies(chain[i], chain[k])):
                     # Check if rule i is redundant based on rule k
                     is_redundant = True
                     for j in range(i + 1, k):
-                        print(f'\tIntermediate rule check: {j}')
+                        #print(f'\tIntermediate rule check: {j}')
                         if (not redundant[j] and
                             not self._sameDecision(chain[i], chain[j]) and
                             not self._mutuallyExclusive(chain[i], chain[j])):
-                            print(f'\t\tRule {i} and rule {j} are NOT REDUNDANT.')
+                            #print(f'\t\tRule {i} and rule {j} are NOT REDUNDANT.')
                             is_redundant = False
                             break
                     if is_redundant:
-                        print(f'\t\tMarking rule {i} as REDUNDANT based on rule {k}.')
+                        #print(f'\t\tMarking rule {i} as REDUNDANT based on rule {k}.')
                         redundant[i] = True
                         break
                 else:
-                    print(f'\tRule {i} and rule {k} did not get to the intermediate Rule check.')
+                    pass
+                    #print(f'\tRule {i} and rule {k} did not get to the intermediate Rule check.')
 
         # Remove redundant rules
         new_rules = [rule for i, rule in enumerate(chain.getRules()) if not redundant[i]]
@@ -1187,7 +1241,7 @@ class FDD:
         Returns:
             bool: True if rule1 and rule2 have the same decision, False otherwise.
         """
-        print(f'\tCheck sameDecision: Rule_{rule1.getId()} & Rule_{rule2.getId()} = {rule1.getDecision() == rule2.getDecision()}')
+        #print(f'\tCheck sameDecision: Rule_{rule1.getId()} & Rule_{rule2.getId()} = {rule1.getDecision() == rule2.getDecision()}')
         return rule1.getDecision() == rule2.getDecision()
 
     def _implies(self, rule1: Rule, rule2: Rule) -> bool:
@@ -1213,7 +1267,7 @@ class FDD:
             option1 = rule1.getResolvingPredicate(field_name, field_dom)
             option2 = rule2.getMatchingPredicate(field_name, field_dom)
 
-            print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
+            #print(f'\tChecking predicates ({field.getName()}) {option1} - {option2}: {option1.isSubset(option2)}')
             if not option1.isSubset(option2):
                 return False
         return True
@@ -1238,7 +1292,374 @@ class FDD:
             option1 = rule1.getResolvingPredicate(field_name, field_dom) 
             option2 = rule2.getMatchingPredicate(field_name, field_dom)
             
-            print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
+            #print(f'\tChecking Mutual Exclusion {option1} - {option2}: {option1.isDisjoint(option2)}')
             if option1.isDisjoint(option2):  # Check if they have any common elements
                 return True
         return False
+
+
+class ChainComparator:
+
+    class PseudoRule:
+
+        def __init__(self) -> None:
+
+            self._id = None
+            self._decision = None
+            self._predicates = {}
+
+        def __repr__(self) -> str:
+            """
+            Rule __repr__
+            
+            Returns:
+                str: PseudoRule String representation
+            """
+            return f"PseudoRule {self._id}: {self._predicates} -> {self._decision}"
+
+        def fillFromRule(self, rule: Rule, fieldList: FieldList):
+
+            self._id = rule.getId()
+            self._decision = rule.getDecision()
+            self._predicates = {}
+
+            for field in fieldList.getFields():
+                element_list = rule.getOption(field.getName(), None)
+                self._predicates[field.getName()] = ElementSet.createElementSet(field.getType(), element_list if element_list else [])
+        
+        def setId(self, id):
+            self._id = id
+
+        def getId(self):
+            return self._id
+
+        def setDecision(self, decision):
+            self._decision = decision
+
+        def getDecision(self):
+            return self._decision
+        
+        def setPredicate(self, key, value):
+            self._predicates[key] = value
+
+        def getPredicates(self):
+            return self._predicates
+        
+        def replicate(self):
+            rep = ChainComparator.PseudoRule()
+            rep.setId(self.getId())
+            rep.setDecision(self.getDecision())
+            for key in self.getPredicates():
+                rep.setPredicate(key, self.getPredicates()[key].replicate())
+            return rep
+        
+        def sameFieldValues(self, other: "ChainComparator.PseudoRule"):
+            """summary
+            """
+            for key in self.getPredicates():
+                if self.getPredicates()[key] != other.getPredicates()[key]:
+                    return False
+            return True
+
+        def isNull(self):
+
+            for key in self.getPredicates():
+                if self.getPredicates()[key].isEmpty():
+                    return True
+            return False
+
+        def intersection(self, other: "ChainComparator.PseudoRule", fieldList: FieldList):
+
+            result = ChainComparator.PseudoRule()
+
+            for field in fieldList.getFields():
+                
+                option1 = self.getPredicates().get(field.getName())
+                option2 = other.getPredicates().get(field.getName())
+
+                intersection = option1.intersectionSet(option2)
+
+                result.setPredicate(field.getName(), intersection)
+            
+            if result.isNull():
+                return None
+            return result
+        
+        def difference(self, other: "ChainComparator.PseudoRule", fieldList: FieldList) -> List[Rule]:
+                
+            diff = []
+
+            for field in fieldList.getFields():
+
+                fDiff = self.getPredicates()[field.getName()].differenceSet(other.getPredicates()[field.getName()])
+                if not fDiff.isEmpty():
+                    rule = self.replicate()
+                    rule.setPredicate(field.getName(), fDiff)
+                    diff.append(rule)
+
+            i = 0
+            while i < len(diff)-1:
+
+                intersection = diff[i].intersection(diff[i+1], fieldList)
+
+                if intersection != None:
+
+                    if intersection.sameFieldValues(diff[i]):
+                        diff.pop(i)
+                    elif intersection.sameFieldValues(diff[i+1]):
+                        diff.pop(i+1)
+                    else:
+                        i += 1
+
+                else:
+                    i += 1
+
+            return diff
+    
+    class PseudoChain:
+
+        def __init__(self) -> None:
+            self._name = None
+            self._defaultdecision = None
+            self._rules = []
+
+        def __repr__(self) -> str:
+            """
+            Chain __repr__
+
+            Returns:
+                str: Chain String representation
+            """
+            rules_str = "\n".join([str(rule) for rule in self._rules])
+            return f"{self._name}:\n{rules_str if rules_str else ''}"
+        
+        def fillFromChain(self, chain: Chain, fieldList: FieldList):
+            self._name = chain.getName()
+            self._defaultdecision = chain.getDefaultDecision()
+            self._rules = []
+
+            for rule in chain.getRules():
+                aux = ChainComparator.PseudoRule()
+                aux.fillFromRule(rule, fieldList)
+                self._rules.append(aux)
+
+        def addRule(self, rule):
+            self._rules.append(rule)
+
+        def getRules(self):
+            return self._rules
+
+        def setName(self, name):
+            self._name = name
+        
+        def getName(self):
+            return self._name
+        
+        def setDefaultDecision(self, defaultDecision):
+            self._defaultdecision = defaultDecision
+        
+        def getDefaultDecision(self):
+            return self._defaultdecision
+        
+        def replicate(self):
+
+            rep = ChainComparator.PseudoChain()
+            rep.setName(self.getName())
+            rep.setDefaultDecision(self.getDefaultDecision())
+            for rule in self.getRules():
+                rep.addRule(rule.replicate())
+            return rep
+        
+        def getEffectiveChain(self, fieldList: FieldList) -> "ChainComparator.PseudoChain":
+
+            if self.getDefaultDecision() != "DROP":
+                raise ValueError(f"La cadena tiene Default decision {self.getDefaultDecision()} y por el momento solo se pueden comparar cadenas con default decision DROP")
+
+            newChain = ChainComparator.PseudoChain()
+            newChain.setDefaultDecision(self.getDefaultDecision())
+            newChain.setName(f"effective-{self.getName()}")
+
+            rules = self.getRules()
+
+            for i in range(len(rules)):
+
+                print(f"\ni: {i}")
+                print(rules[i].getDecision())
+
+                if rules[i].getDecision() == "ACCEPT":
+
+                    resRules = [rules[i]]
+
+                    for j in range(i):
+
+                        print(f"\nj: {j}")
+                        print(f"resRules: {resRules}")
+
+                        resRules2 = []
+
+                        for k in range(len(resRules)):
+
+                            print(f"\nk: {k}")
+
+                            diff = resRules[k].difference(rules[j], fieldList)
+
+                            print(f"restando A-B\nA: {resRules[k]}\nB: {rules[j]}")
+                            print(f"diff: {diff}")
+
+                            if diff != None:
+
+                                resRules2 += diff
+
+                        i = 0
+                        while i < len(resRules2)-1:
+
+                            intersection = resRules2[i].intersection(resRules2[i+1], fieldList)
+
+                            if intersection != None:
+
+                                if intersection.sameFieldValues(resRules2[i]):
+                                    resRules2.pop(i)
+                                elif intersection.sameFieldValues(resRules2[i+1]):
+                                    resRules2.pop(i+1)
+                                else:
+                                    i += 1
+
+                            else:
+                                i += 1
+
+                        resRules = resRules2
+
+                    for rule in resRules:
+
+                        print(f"Agregando a newChain: {rule}")
+                        newChain.addRule(rule)
+                
+            return newChain
+
+
+    def __init__(self, fieldList: FieldList) -> None:
+        
+        self._fieldList = fieldList
+        self._chain1 = None
+        self._chain2 = None
+        self._effectiveChain1 = None
+        self._effectiveChain2 = None
+    
+    def __repr__(self) -> str:
+        
+        return f"CHAIN COMPARATOR\n\nORIGINALS\n\n{self._chain1}\n\n{self._chain2}\
+                \n\nCONVERTED\n\n{self._effectiveChain1}\n\n{self._effectiveChain2}"
+    
+    def setFieldList(self, fieldList: FieldList):
+        self._fieldList = fieldList
+    
+    def setChain1FromChain(self, chain1: Chain):
+        self._chain1 = ChainComparator.PseudoChain()
+        self._chain1.fillFromChain(chain1, self._fieldList)
+        self._effectiveChain1 = self._chain1.getEffectiveChain(self._fieldList)
+
+    def setChain2FromChain(self, chain2: Chain):
+        self._chain2 = ChainComparator.PseudoChain()
+        self._chain2.fillFromChain(chain2, self._fieldList)
+        self._effectiveChain2 = self._chain2.getEffectiveChain(self._fieldList)
+
+    def areEquivalents(self):
+
+        if self._effectiveChain1 and self._effectiveChain2:
+
+            #Comparacion 1 contra 2
+
+            for rule1 in self._effectiveChain1.getRules():
+
+                residual = [rule1]
+
+                for rule2 in self._effectiveChain2.getRules():
+
+                    accum = []
+
+                    for rule in residual:
+
+                        diff = rule.difference(rule2, self._fieldList)
+
+                        if diff != None:
+
+                            accum += diff
+
+                    i = 0
+                    while i < len(accum)-1:
+
+                        intersection = accum[i].intersection(accum[i+1], self._fieldList)
+
+                        if intersection != None:
+
+                            if intersection.sameFieldValues(accum[i]):
+                                accum.pop(i)
+                            elif intersection.sameFieldValues(accum[i+1]):
+                                accum.pop(i+1)
+                            else:
+                                i += 1
+
+                        else:
+                            i += 1
+
+                    residual = accum
+
+                for result in residual:
+
+                    if not result.isNull():
+                        return False
+
+            #Comparacion 2 contra 1
+
+            for rule1 in self._effectiveChain2.getRules():
+
+                residual = [rule1]
+
+                for rule2 in self._effectiveChain1.getRules():
+
+                    accum = []
+
+                    for rule in residual:
+
+                        diff = rule.difference(rule2, self._fieldList)
+
+                        if diff != None:
+
+                            accum += diff
+
+                    i = 0
+                    while i < len(accum)-1:
+
+                        intersection = accum[i].intersection(accum[i+1], self._fieldList)
+
+                        if intersection != None:
+
+                            if intersection.sameFieldValues(accum[i]):
+                                accum.pop(i)
+                            elif intersection.sameFieldValues(accum[i+1]):
+                                accum.pop(i+1)
+                            else:
+                                i += 1
+
+                        else:
+                            i += 1
+
+                    residual = accum
+
+                for result in residual:
+
+                    if not result.isNull():
+                        return False
+                    
+            # Si hasta aqui no retornamos un falso, entonces es True
+
+            return True
+        
+        else:
+
+            raise ValueError("Debe cargar primero dos Chain en ChainComparator")
+
+            
+                    
+
+        

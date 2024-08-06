@@ -133,12 +133,12 @@ class IpTablesParser(ParserStrategy):
                 if line.startswith('*'):            # Start of Table
                     current_table = rules.Table(line[1:])
                     self._ruleSet.addTable(current_table)
-                elif line.startswith(':'):          # Define Chain #TODO DEFINE CHAIN packet AND byte COUNTERS
+                elif line.startswith(':'):          # Define Chain 
                     chain_name = line.split()[0][1:]
                     current_chain = rules.Chain(chain_name)
                     current_table.addChain(current_chain)
                     current_chain.setDefaultDecision(line.split()[1])
-                    rule_id = 0 #TODO REVISAR
+                    rule_id = 0
                 elif line == 'COMMIT':              # End of Table
                     current_table = None
                     current_chain = None
@@ -150,7 +150,10 @@ class IpTablesParser(ParserStrategy):
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         # Set rule predicates and filter -m options
-                        [rule.setPredicate(k, v) for k, v in current_rule.items() if k != 'decision' and not k.startswith('-m')] 
+                        for k, v in current_rule.items():
+                            if k != 'decision' and not k.startswith('-m'):
+                                values = v.split(',') if isinstance(v, str) and ',' in v else [v]
+                                rule.setPredicate(k, values)
                         rule.setDecision(current_rule.get('decision'))
                         current_chain.addRule(rule)
                         rule_id += 1
@@ -187,7 +190,7 @@ class IpTablesParser(ParserStrategy):
             for chain in table.getChains().values():
                 # Add chain with default policy if any
                 default_decision = chain.getDefaultDecision()
-                if default_decision: #TODO DEFINE CHAIN packet AND byte COUNTERS
+                if default_decision: 
                     iptables_save_lines.append(f":{chain.getName()} {default_decision} [0:0]")
                 else:
                     iptables_save_lines.append(f":{chain.getName()} - [0:0]")  
@@ -195,13 +198,7 @@ class IpTablesParser(ParserStrategy):
                 # Add rules in the chain
                 for rule in chain.getRules():
                     predicates = rule.getPredicates()
-                    protocols = predicates.get("Protocol", None)
-                    
-                    # Get protocols as a list
-                    if protocols:
-                        protocol_list = protocols.getElementsList()
-                    else:
-                        protocol_list = [None]
+                    protocol_list = predicates.get("Protocol", [None])
 
                     for protocol in protocol_list:
                         rule_parts = [f"-A {chain.getName()}"]
@@ -304,22 +301,16 @@ class IpTablesParser(ParserStrategy):
             if protocol:
                 rule_parts.append(f"{iptables_option[0]} {protocol}")
         elif option.endswith("Port"):
-            elements_list = value.getElementsList()
-            if len(elements_list) > 1:
-                rule_parts.append(f"-m {protocol} -m multiport {iptables_option[2]} {', '.join(map(str, elements_list))}")
+            if len(value) > 1:
+                rule_parts.append(f"-m {protocol} -m multiport {iptables_option[2]} {', '.join(map(str, value))}")
             else:
-                rule_parts.append(f"-m {protocol} {iptables_option[1]} {', '.join(map(str, elements_list))}") #TODO CAMBIAR A SOLO elements_list
+                rule_parts.append(f"-m {protocol} {iptables_option[1]} {', '.join(map(str, value))}") #TODO CAMBIAR A SOLO elements_list
         elif option.endswith("IP"):
-            elements_list = value.getElementsList()
-            rule_parts.append(f"{iptables_option[0]} {', '.join(map(str, elements_list))}")
+            rule_parts.append(f"{iptables_option[0]} {', '.join(map(str, value))}")
         else:
-            if hasattr(value, 'getElementsList'):
-                elements_list = value.getElementsList()
-                rule_parts.append(f"{iptables_option[0]} {', '.join(map(str, elements_list))}")
-            else:
-                rule_parts.append(f"{iptables_option[0]} {value}")
+            rule_parts.append(f"{iptables_option[0]} {value}")
  
-    def _parseOptions(self, line, line_num, current_table):
+    def _parseOptions(self, line, line_num, current_table): #TODO arreglar portset separados por comas
         """Parse options from a line of the iptables configuration
 
         Args:

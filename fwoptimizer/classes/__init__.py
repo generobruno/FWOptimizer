@@ -9,7 +9,7 @@ from .parser import Parser
 from .rules import Rule, RuleSet, Chain, Table
 
 # fdd module
-from .fdd import FDD, Level
+from .fdd import FDD, Level, ChainComparator
 
 # firewall module
 from .firewall import Firewall, FieldList, Field

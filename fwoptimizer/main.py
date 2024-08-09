@@ -3,7 +3,7 @@
 
 import sys
 import os
-import time
+from PyQt6 import QtWidgets
 
 # Add Root Dir to sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -11,6 +11,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fwoptimizer.classes import parser
 from fwoptimizer.classes import *
 from fwoptimizer.utils import *
+from model.fwoManager import FWOManager
+from views.fwoView import FWOView
+from controllers.fwoController import FWOController
 
 ruleset = None
 field_list = None
@@ -117,7 +120,30 @@ def print_fdd():
     else:
         print(f"FDD for {table}/{chain} not found.")
 
+class FWOptimizer:
+    """
+    Main Application
+    """
+    def __init__(self, sys_argv):
+        self.app = QtWidgets.QApplication(sys_argv)
+        
+        self.model = FWOManager()
+        self.view = FWOView()
+        self.controller = FWOController(self.model, self.view)
+        
+        self.view.setUpFunctions()
+        self.view.show()
+
+    def run(self):
+        return self.app.exec()
+
 if __name__ == '__main__':
+    
+    app = FWOptimizer(sys.argv)
+    
+    sys.exit(app.run())
+
+if __name__ == '__main2__':
     commands = {
         "parse": parse_file,
         "display": display_rules,
@@ -139,6 +165,7 @@ if __name__ == '__main__':
         else:
             print("Invalid command, type \"help\" for more information.")
 
+"""
 if __name__ == '__main2__':
 
     iptables_strat = parser.IpTablesParser()
@@ -180,3 +207,4 @@ if __name__ == '__main2__':
     comparator.setChain2FromChain(chain2)
     print(f"{comparator}")
     print(f"\nLa comparacion entre chain1 y chain2 da: {comparator.areEquivalents()}")
+"""

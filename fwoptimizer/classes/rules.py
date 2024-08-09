@@ -278,7 +278,7 @@ class Rule:
                     #    print(f'\t{field.getName()}: {option0}')
                         
                     if len(option0.getElements()) != 0:
-                        result_set.addSet(option0) #TODO REVISAR (addSet (es decir, union)? u algo como append?)
+                        result_set.add(option0) #TODO REVISAR (addSet (es decir, union)? u algo como append?)
                         
                     #print(f'\tResult Set: {result_set}')
                  

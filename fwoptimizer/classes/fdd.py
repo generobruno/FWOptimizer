@@ -380,20 +380,24 @@ class FDD:
     Fdd class
     """
 
-    def __init__(self, fieldList: FieldList):
-        """_summary_
+    def __init__(self, fieldList: FieldList) -> None:
+        """
+        Fdd __init__.
+
+        Args:
+            fieldList: FieldList used by the firewall.
         """
         # FDD Name
         self._name = "Unnamed_FDD"
         # FDD Levels
         self._levels = []
-        # Un diccionario de decisiones, deberíamos ver bien como tratarlo en el futuro
+        # A dict of registered decisions
         self._decisions = {}
-        # FieldList del FDD
+        # FieldList of the FDD
         self._fieldList = fieldList
 
-        # Primero creamos la lista de niveles del arbol, usando las configuraciones extraidas de la FieldList
-        # Lanzamos un Type error si alguno de los tipos especificados para el nivel no es valido (no existe su ElementSet correspondiente)
+        # First create the list of tree levels using the settings extracted from the FieldList.
+        # Throw a TypeError if any of the types specified for the level is invalid (its corresponding ElementSet does not exist)
         for field in fieldList.getFields():
 
             if field.getType() in ElementSetRegistry.getRegistry():
@@ -404,26 +408,31 @@ class FDD:
 
                 raise TypeError()
             
-        # Creamos el ultimo nivel, que corresponde a los nodos hoja y equivalen a las decisiones del FDD
+        # Create the last level, which contains leaf nodes or what is the same, decisions 
         self._levels.append(Level(Field('Decision', 'Decision')))
 
-        # Creamos un unico nodo root en el primer nivel del arbol.
+        # Create the only root node in the first level of the tree.
         root = Node(self._levels[0].getField().getName(), self._levels[0])
         root.autoConnect()
 
 
-    def _getDecisionNode(self, decision: str):
-        """Obtains the node corresponding to this decision if it exists, or adds a new one and returns it
+    def _getDecisionNode(self, decision: str) -> Node:
         """
-        # Revisamos la decision de la regla, si ya existe un nodo en el diccionario de decisiones para dicha decision, lo usamos
-        # Si no existe, creamos el nodo y lo agregamos tanto al arbol como al diccionario de decisiones
+        Obtains the node corresponding to this decision if it exists, or adds a new one and returns it.
+
+        Args:
+            decision: Str with a decision key word.
+
+        Returns:
+            A Node in the last level of the tree with the given decision.
+        """
         if decision  not in self._decisions:
             self._decisions[decision] = Node(decision, self._levels[-1], shape='box', fontsize='35')
             self._decisions[decision].autoConnect()
         return self._decisions[decision]
 
 
-    def printFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False):
+    def printFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False) -> None:
         """
         Generate a graph image from the data structure
 
@@ -569,7 +578,7 @@ class FDD:
         # Render the graph to a file
         dot.render(name, format=img_format, view=False, cleanup=True)
 
-    def highlightPath(self, rule_id, color='blue'):
+    def highlightPath(self, rule_id, color='blue') -> None:
         """
         Highlight the edges of a decision path for a given rule ID in the graph.
 
@@ -589,7 +598,7 @@ class FDD:
         # Call the printFDD function to print the graph with the modified attributes
         self.printFDD(name=f"FilterRule_{rule_id}")
 
-    def highlightDecisions(self):
+    def highlightDecisions(self) -> None:
         """
         Highlight all decision paths that end in 'ACCEPT' in green and those that end in 'DROP' in red.
         
@@ -611,37 +620,42 @@ class FDD:
         self.printFDD("highlighted_FDD")
 
 
-    def _genPre(self, chain: Chain):
-        """sumary
+    def _genPre(self, chain: Chain) -> None:
+        """
+        Generate the preFDD based on the rules of the given chain.
+        A preFDD is a graph that no satisfy the rules to be a FDD still. 
+
+        Args:
+            chain: Chain from which the rules are extracted
         """
         # Set FDD Name
         self._name = chain.getName()
         
-        # Recorremos la lista de Rules
+        # Iterate through the list of Rules.
         for rule in chain.getRules():
 
-            # Revisamos que todos los predicados de la regla esten contemplados en la lista de fields
+            # Check that all predicates in the Rule are in the fieldList. If anyone not are include raise an error.
             fields = [level.getField().getName() for level in self._levels]
             for predicate in rule.getPredicates():
                 if predicate not in fields:
                     raise TypeError(f"Predicate {predicate} isn't include in FieldList")
 
-            # Creamos una lista de Nodos temporal, que usaremos para conectar los edges en un bucle
-            # La lista se inicia con el nodo root
+            # Create a temporal list of Nodes to iterate later and connect the edges.
+            # The first element of the lit is the root node.
             nodes = [self._levels[0].getNodes()[0]]
 
-            # Agregamos un nodo por cada nivel, exptuando el primero y el ultimo
+            # For each Level add a node, except the first and the last.
             for level in self._levels[1:-1]:
 
                 newNode = Node(f"{level.getField().getName()}_{rule.getId()}", level)
                 newNode.autoConnect()
                 nodes.append(newNode)
 
-            # Añadimos el nodo de decision al final
+            # Add the decision Node at the end.
             decisionNode = self._getDecisionNode(rule.getDecision())
             nodes.append(decisionNode)
 
-            # Recorremos la lista temporal de nodos y vamos añadiendo los Edges que los conectan
+            # Iterate through the Nodes and connect it with Edges.
             for j in range(1, len(nodes)):
 
                 elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
@@ -650,75 +664,75 @@ class FDD:
                 newEdge.autoConnect()
 
 
-    def _sanityStep1(self):
-        """ Sanitizes all first-level nodes of the FDD, except the last one, as it requires a different treatment. 
+    def _sanityFirstLevels(self) -> None:
+        """ 
+        Sanitizes all first-level nodes of the FDD, except the last one, as it requires a different treatment. 
         """
 
         newIndex = 0
 
-        # Recorremos los niveles, a excepcion de los ultimos dos.
+        # Iterate the firsts levels, except the last two.
         for h in range(len(self._levels[:-2])):
 
             level = self._levels[h]
 
-            # El bucle i recorre todos los nodos de cada nivel
+            # The i loop goes through all nodes in each level
             i = 0
             while i < len(level.getNodes()):
 
                 node = level.getNodes()[i]
 
-                # El bucle j recorre todos los edges de salida de cada nodo
+                # The j loop goes through all outgoing edges in each node.
                 j = 0
                 while j < len(node.getOutgoing()):
 
                     edge1 = node.getOutgoing()[j]
 
-                    # El bucle k recorre los edges de salida posteriores al edge j para poder compararlos
+                    # The k loop goes through the outgoing edges after j edge to can be compares them.
                     k = j + 1
                     while k < len(node.getOutgoing()):
 
                         edge2 = node.getOutgoing()[k]
 
-                        # Si hay solapamiento
+                        # If are overlapping
                         if edge1.getElementSet().isOverlapping(edge2.getElementSet()):
 
-                            # Obtenemos el elementSet interseccion entre los dos edges
                             intersectionSet = edge1.getElementSet().intersectionSet(edge2.getElementSet())
 
-                            # Creamos un nuevo nodo en el nivel
+                            # Create a new node in the level.
                             newNode = Node(self._levels[h+1].getField().getName() + " new " + str(newIndex), self._levels[h+1])
                             newNode.autoConnect()
                             newIndex = newIndex + 1
 
-                            # Creamos un nuevo edge que irá del nodo origen al nuevo nodo, cuyo set es la interseccion de los comparados
+                            # Create a new edge among origin node and new node. His elementSet is the intersection.
                             newEdge = Edge(edge1.getId() + edge2.getId(), edge1.getOrigin(), newNode, intersectionSet)
                             newEdge.autoConnect()
 
-                            # Replicamos todos los arcos salientes del nodo de destino del edge1 en el nuevo nodo
+                            # Replicate all outgoing edges of destination node of edge1 in the new node.
                             for outEdge in edge1.getDestination().getOutgoing():
 
                                 copiedEdge = outEdge.replicate()
                                 copiedEdge.setOrigin(newNode)
                                 copiedEdge.autoConnect()
 
-                            # Replicamos todos los arcos salientes del nodo de destino del edge2 en el nuevo nodo                            
+                            # Replicate all outgoing edges of destination node of edge1 in the new node.    
                             for outEdge in edge2.getDestination().getOutgoing():
 
                                 copiedEdge = outEdge.replicate()
                                 copiedEdge.setOrigin(newNode)
                                 copiedEdge.autoConnect()
 
-                            # Removemos los elementos de la intesección de ambos arcos
+                            # Remove the intersection set elemnts from edge1 and edge2
                             edge1.getElementSet().remove(intersectionSet)
                             edge2.getElementSet().remove(intersectionSet)
 
-                            # Revisamos si el edge2 quedó vacío y en ese caso lo desconectamos
+                            # Check if edge2 is empty and if so we disconnect it.
                             if edge2.getElementSet().isEmpty():
 
                                 orphanNode = edge2.getDestination()
                                 edge2.autoDisconnect()
 
-                                # Si posterior a la desconexion el nodo no tiene otros arcos de entrada, eliminamos todos sus arcos de salida y lo eliminamos
+                                # If after desconection the node no have any incomming edge, remove all his outgoing edges and delete it.
                                 if len(orphanNode.getIncoming()) == 0:
 
                                     while len(orphanNode.getOutgoing()) != 0:
@@ -731,18 +745,18 @@ class FDD:
 
                                 k = k + 1
 
-                        # Si no hay solapamiento avanzamos un edge en el bucle k
+                        # If there is no overlap we advance one edge in k loop.
                         else: 
 
                             k = k + 1
 
-                    # Revisamos si el edge1 quedó vacío y en ese caso lo desconectamos
+                    # Check if edge1 is empty and if so we disconnect it.
                     if edge1.getElementSet().isEmpty():
 
                         orphanNode = edge1.getDestination()
                         edge1.autoDisconnect()
 
-                        # Si posterior a la desconexion el nodo no tiene otros arcos de entrada, eliminamos todos sus arcos de salida y lo eliminamos
+                        # If after desconection the node no have any incomming edge, remove all his outgoing edges and delete it.
                         if len(orphanNode.getIncoming()) == 0:
 
                             while len(orphanNode.getOutgoing()) != 0:
@@ -758,57 +772,59 @@ class FDD:
                 i = i + 1
                     
 
-    def _sanityStep2(self):
-        """Sanitizes the last-level nodes of the FDD.
+    def _sanityLastLevel(self) -> None:
+        """
+        Sanitizes the last-level nodes of the FDD.
         """
 
         level = self._levels[-2]
         
-        # El bucle i recorre todos los nodos del nivel
+         # The i loop goes through all nodes in last level
         i = 0
         while i < len(level.getNodes()):
 
             node = level.getNodes()[i]
 
-            # El bucle j recorre todos los edges de salida de cada nodo
+            # The j loop goes through all outgoing edges in each node.
             j = 0
             while j < len(node.getOutgoing()):
 
                 edge1 = node.getOutgoing()[j]
 
-                # El bucle k recorre los edges de salida posteriores al edge j para poder compararlos
+                # The k loop goes through the outgoing edges after j edge to can be compares them.
                 k = j + 1
                 while k < len(node.getOutgoing()):
 
                     edge2 = node.getOutgoing()[k]
 
-                    # Si hay solapamiento
+                    # If are overlapping
                     if edge1.getElementSet().isOverlapping(edge2.getElementSet()):
 
-                        ### A CONTINUACION SE DEBERIA PEDIR RESOLUCION AL USUARIO ###
+                        ### IF THE USER SHOULD TAKE DECSIONS, PLACE ITS HERE ###
+                        ### STARTING CURRENT RESOLUTION MODE FOR REDUNDANCY AND INCONSISTENCY ###
 
-                        # Si los arcos tienen el mismo destino existe redundancia
+                        # If the edges have the same destination, so there is redundancy
                         if edge1.getDestination() == edge2.getDestination():
 
                             print(f"Detectada redundancia para:\nNode: {node.getName()}\nEdge1: {edge1.getId()}\nEdge2: {edge2.getId()}")
 
-                            edge1.getElementSet().addSet(edge2.getElementSet())
+                            edge1.getElementSet().add(edge2.getElementSet())
                             edge1.extendId(edge2.getId())
                             edge2.autoDisconnect()
 
-                        #Si los arcos no tienen el mismo destino entonces es una inconsistencia
+                        # If the edges don't have the same destination, so there is inconsistency.
                         else:
 
                             print(f"Detectada inconsitencia, resolviendo mediante prioridad para:\nNode: {node.getName()}\nEdge1: {edge1.getId()}\nEdge2: {edge2.getId()}")
 
                             intersectionSet = edge1.getElementSet().intersectionSet(edge2.getElementSet())
 
-                            # Ordeno las prioridades y selecciono la regla que tiene una prioridad mas alta (valor mas cercano a 0)
+                            # Sort the priorities and select the rule that has a higher priority (value closest to 0)
                             if sorted(edge1.getId())[0] < sorted(edge2.getId())[0]:
 
                                 edge2.getElementSet().remove(intersectionSet)
 
-                                #Si el edge2 quedó vacio, lo elimino
+                                # If edge2 is empty, delete it
                                 if edge2.getElementSet().isEmpty():
 
                                     edge2.autoDisconnect()
@@ -817,7 +833,7 @@ class FDD:
                                 
                                 edge1.getElementSet().remove(intersectionSet)
 
-                                #Si el edge1 quedó vacio, lo elimino
+                                # If edge2 is empty, delete it
                                 if edge1.getElementSet().isEmpty():
 
                                     edge1.autoDisconnect()
@@ -832,9 +848,13 @@ class FDD:
 
             i = i + 1
 
-    
-    def _sanityStep3(self, chain: Chain):
-        """Check and achieve completeness in the nodes
+
+    def _achieveCompleteness(self, defaultDecision: str) -> None:
+        """
+        Check and achieve completeness in the nodes.
+
+        Args:
+            defaultDecision: Default decision for the paths not generated still.
         """
 
         for level in self._levels[:-1]:
@@ -849,20 +869,25 @@ class FDD:
 
                 if not left.isEmpty():
                     
-                    newEdge = Edge([999], node, self._getDecisionNode(chain.getDefaultDecision()), left)
+                    newEdge = Edge([999], node, self._getDecisionNode(defaultDecision), left)
                     newEdge.autoConnect()
 
 
-    def genFDD(self, chain):
-        """Generates the PreFDD and sanitizes it to convert it to FDD.
+    def genFDD(self, chain: Chain) -> None:
+        """
+        Generates the FDD content.
+        First generates the PreFDD, after sanitizes it to convert it to FDD.
+        
+        Args:
+            chain: Chain from which the rules are extracted.
         """
         self._genPre(chain)
-        self._sanityStep1()
-        self._sanityStep2()
-        self._sanityStep3(chain)
+        self._sanityFirstLevels()
+        self._sanityLastLevel()
+        self._achieveCompleteness(chain.getDefaultDecision())
 
 
-    def reduction(self):
+    def reduction(self) -> None:
         """
         Reduce the FDD by applying the 3 reductions:
             1. If there is a node v that has only one outgoing edge e, assuming e points to node
@@ -885,7 +910,7 @@ class FDD:
             changed |= self._removeIsomorphicNodes()
             changed |= self._mergeEdges()
             
-    def _removeSimpleNodes(self):
+    def _removeSimpleNodes(self) -> None:
         """
         Apply the first reduction rule:
         If there is a node v that has only one outgoing edge e, assuming e points to node
@@ -924,7 +949,7 @@ class FDD:
         
         return changed
             
-    def _removeIsomorphicNodes(self):
+    def _removeIsomorphicNodes(self) -> None:
         """
         Apply the second reduction rule:
         If there are two nodes v and v' that are isomorphic, then remove v' along with all 
@@ -970,7 +995,7 @@ class FDD:
         
         return changed
         
-    def _mergeEdges(self):
+    def _mergeEdges(self) -> None:
         """
         Apply the third reduction rule:
         If there are two edges e and e' that both are between the same pair of nodes, then
@@ -1038,7 +1063,7 @@ class FDD:
         return True
     
 
-    def marking(self):
+    def marking(self) -> None:
         """
         Compute the load for each node in the FDD.
             1. Compute the load of each terminal node v in f as follows: load(v) := 1
@@ -1079,9 +1104,15 @@ class FDD:
                         node.setLoad(node_load)
                         changed = True
                         
-    def _edgeLoad(self, edge):
+    def _edgeLoad(self, edge) -> int:
         """
         Compute the load of an edge based on its marking and its element set.
+
+        Args:
+            edge: Edge to calculate the load.
+
+        Return:
+            The load for the given edge.
         """
         if edge.getMarking():
             return 1
@@ -1296,370 +1327,4 @@ class FDD:
             if option1.isDisjoint(option2):  # Check if they have any common elements
                 return True
         return False
-
-
-class ChainComparator:
-
-    class PseudoRule:
-
-        def __init__(self) -> None:
-
-            self._id = None
-            self._decision = None
-            self._predicates = {}
-
-        def __repr__(self) -> str:
-            """
-            Rule __repr__
-            
-            Returns:
-                str: PseudoRule String representation
-            """
-            return f"PseudoRule {self._id}: {self._predicates} -> {self._decision}"
-
-        def fillFromRule(self, rule: Rule, fieldList: FieldList):
-
-            self._id = rule.getId()
-            self._decision = rule.getDecision()
-            self._predicates = {}
-
-            for field in fieldList.getFields():
-                element_list = rule.getOption(field.getName(), None)
-                self._predicates[field.getName()] = ElementSet.createElementSet(field.getType(), element_list if element_list else [])
-        
-        def setId(self, id):
-            self._id = id
-
-        def getId(self):
-            return self._id
-
-        def setDecision(self, decision):
-            self._decision = decision
-
-        def getDecision(self):
-            return self._decision
-        
-        def setPredicate(self, key, value):
-            self._predicates[key] = value
-
-        def getPredicates(self):
-            return self._predicates
-        
-        def replicate(self):
-            rep = ChainComparator.PseudoRule()
-            rep.setId(self.getId())
-            rep.setDecision(self.getDecision())
-            for key in self.getPredicates():
-                rep.setPredicate(key, self.getPredicates()[key].replicate())
-            return rep
-        
-        def sameFieldValues(self, other: "ChainComparator.PseudoRule"):
-            """summary
-            """
-            for key in self.getPredicates():
-                if self.getPredicates()[key] != other.getPredicates()[key]:
-                    return False
-            return True
-
-        def isNull(self):
-
-            for key in self.getPredicates():
-                if self.getPredicates()[key].isEmpty():
-                    return True
-            return False
-
-        def intersection(self, other: "ChainComparator.PseudoRule", fieldList: FieldList):
-
-            result = ChainComparator.PseudoRule()
-
-            for field in fieldList.getFields():
-                
-                option1 = self.getPredicates().get(field.getName())
-                option2 = other.getPredicates().get(field.getName())
-
-                intersection = option1.intersectionSet(option2)
-
-                result.setPredicate(field.getName(), intersection)
-            
-            if result.isNull():
-                return None
-            return result
-        
-        def difference(self, other: "ChainComparator.PseudoRule", fieldList: FieldList) -> List[Rule]:
-                
-            diff = []
-
-            for field in fieldList.getFields():
-
-                fDiff = self.getPredicates()[field.getName()].differenceSet(other.getPredicates()[field.getName()])
-                if not fDiff.isEmpty():
-                    rule = self.replicate()
-                    rule.setPredicate(field.getName(), fDiff)
-                    diff.append(rule)
-
-            i = 0
-            while i < len(diff)-1:
-
-                intersection = diff[i].intersection(diff[i+1], fieldList)
-
-                if intersection != None:
-
-                    if intersection.sameFieldValues(diff[i]):
-                        diff.pop(i)
-                    elif intersection.sameFieldValues(diff[i+1]):
-                        diff.pop(i+1)
-                    else:
-                        i += 1
-
-                else:
-                    i += 1
-
-            return diff
-    
-    class PseudoChain:
-
-        def __init__(self) -> None:
-            self._name = None
-            self._defaultdecision = None
-            self._rules = []
-
-        def __repr__(self) -> str:
-            """
-            Chain __repr__
-
-            Returns:
-                str: Chain String representation
-            """
-            rules_str = "\n".join([str(rule) for rule in self._rules])
-            return f"{self._name}:\n{rules_str if rules_str else ''}"
-        
-        def fillFromChain(self, chain: Chain, fieldList: FieldList):
-            self._name = chain.getName()
-            self._defaultdecision = chain.getDefaultDecision()
-            self._rules = []
-
-            for rule in chain.getRules():
-                aux = ChainComparator.PseudoRule()
-                aux.fillFromRule(rule, fieldList)
-                self._rules.append(aux)
-
-        def addRule(self, rule):
-            self._rules.append(rule)
-
-        def getRules(self):
-            return self._rules
-
-        def setName(self, name):
-            self._name = name
-        
-        def getName(self):
-            return self._name
-        
-        def setDefaultDecision(self, defaultDecision):
-            self._defaultdecision = defaultDecision
-        
-        def getDefaultDecision(self):
-            return self._defaultdecision
-        
-        def replicate(self):
-
-            rep = ChainComparator.PseudoChain()
-            rep.setName(self.getName())
-            rep.setDefaultDecision(self.getDefaultDecision())
-            for rule in self.getRules():
-                rep.addRule(rule.replicate())
-            return rep
-        
-        def getEffectiveChain(self, fieldList: FieldList) -> "ChainComparator.PseudoChain":
-
-            if self.getDefaultDecision() != "DROP":
-                raise ValueError(f"La cadena tiene Default decision {self.getDefaultDecision()} y por el momento solo se pueden comparar cadenas con default decision DROP")
-
-            newChain = ChainComparator.PseudoChain()
-            newChain.setDefaultDecision(self.getDefaultDecision())
-            newChain.setName(f"effective-{self.getName()}")
-
-            rules = self.getRules()
-
-            for i in range(len(rules)):
-
-                print(f"\ni: {i}")
-                print(rules[i].getDecision())
-
-                if rules[i].getDecision() == "ACCEPT":
-
-                    resRules = [rules[i]]
-
-                    for j in range(i):
-
-                        print(f"\nj: {j}")
-                        print(f"resRules: {resRules}")
-
-                        resRules2 = []
-
-                        for k in range(len(resRules)):
-
-                            print(f"\nk: {k}")
-
-                            diff = resRules[k].difference(rules[j], fieldList)
-
-                            print(f"restando A-B\nA: {resRules[k]}\nB: {rules[j]}")
-                            print(f"diff: {diff}")
-
-                            if diff != None:
-
-                                resRules2 += diff
-
-                        i = 0
-                        while i < len(resRules2)-1:
-
-                            intersection = resRules2[i].intersection(resRules2[i+1], fieldList)
-
-                            if intersection != None:
-
-                                if intersection.sameFieldValues(resRules2[i]):
-                                    resRules2.pop(i)
-                                elif intersection.sameFieldValues(resRules2[i+1]):
-                                    resRules2.pop(i+1)
-                                else:
-                                    i += 1
-
-                            else:
-                                i += 1
-
-                        resRules = resRules2
-
-                    for rule in resRules:
-
-                        print(f"Agregando a newChain: {rule}")
-                        newChain.addRule(rule)
-                
-            return newChain
-
-
-    def __init__(self, fieldList: FieldList) -> None:
-        
-        self._fieldList = fieldList
-        self._chain1 = None
-        self._chain2 = None
-        self._effectiveChain1 = None
-        self._effectiveChain2 = None
-    
-    def __repr__(self) -> str:
-        
-        return f"CHAIN COMPARATOR\n\nORIGINALS\n\n{self._chain1}\n\n{self._chain2}\
-                \n\nCONVERTED\n\n{self._effectiveChain1}\n\n{self._effectiveChain2}"
-    
-    def setFieldList(self, fieldList: FieldList):
-        self._fieldList = fieldList
-    
-    def setChain1FromChain(self, chain1: Chain):
-        self._chain1 = ChainComparator.PseudoChain()
-        self._chain1.fillFromChain(chain1, self._fieldList)
-        self._effectiveChain1 = self._chain1.getEffectiveChain(self._fieldList)
-
-    def setChain2FromChain(self, chain2: Chain):
-        self._chain2 = ChainComparator.PseudoChain()
-        self._chain2.fillFromChain(chain2, self._fieldList)
-        self._effectiveChain2 = self._chain2.getEffectiveChain(self._fieldList)
-
-    def areEquivalents(self):
-
-        if self._effectiveChain1 and self._effectiveChain2:
-
-            #Comparacion 1 contra 2
-
-            for rule1 in self._effectiveChain1.getRules():
-
-                residual = [rule1]
-
-                for rule2 in self._effectiveChain2.getRules():
-
-                    accum = []
-
-                    for rule in residual:
-
-                        diff = rule.difference(rule2, self._fieldList)
-
-                        if diff != None:
-
-                            accum += diff
-
-                    i = 0
-                    while i < len(accum)-1:
-
-                        intersection = accum[i].intersection(accum[i+1], self._fieldList)
-
-                        if intersection != None:
-
-                            if intersection.sameFieldValues(accum[i]):
-                                accum.pop(i)
-                            elif intersection.sameFieldValues(accum[i+1]):
-                                accum.pop(i+1)
-                            else:
-                                i += 1
-
-                        else:
-                            i += 1
-
-                    residual = accum
-
-                for result in residual:
-
-                    if not result.isNull():
-                        return False
-
-            #Comparacion 2 contra 1
-
-            for rule1 in self._effectiveChain2.getRules():
-
-                residual = [rule1]
-
-                for rule2 in self._effectiveChain1.getRules():
-
-                    accum = []
-
-                    for rule in residual:
-
-                        diff = rule.difference(rule2, self._fieldList)
-
-                        if diff != None:
-
-                            accum += diff
-
-                    i = 0
-                    while i < len(accum)-1:
-
-                        intersection = accum[i].intersection(accum[i+1], self._fieldList)
-
-                        if intersection != None:
-
-                            if intersection.sameFieldValues(accum[i]):
-                                accum.pop(i)
-                            elif intersection.sameFieldValues(accum[i+1]):
-                                accum.pop(i+1)
-                            else:
-                                i += 1
-
-                        else:
-                            i += 1
-
-                    residual = accum
-
-                for result in residual:
-
-                    if not result.isNull():
-                        return False
-                    
-            # Si hasta aqui no retornamos un falso, entonces es True
-
-            return True
-        
-        else:
-
-            raise ValueError("Debe cargar primero dos Chain en ChainComparator")
-
-            
-                    
-
         

@@ -26,7 +26,7 @@ class Ui_MainWindow(object):
 "#leftMenuSubContainer {\n"
 "    background-color: #16191d;\n"
 "    border-radius: 8px;\n"
-"    border-top-right-radius: 0px;\n"
+#"    border-top-right-radius: 0px;\n"
 "}\n"
 "#leftMenuSubContainer QPushButton {\n"
 "    text-align: left;\n"
@@ -630,36 +630,10 @@ class Ui_MainWindow(object):
             lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl('https://github.com/generobruno/FWOptimizer'))
         )
         
-    def toggleLeftMenu(self, buttons):
-        """
-        Toggle left Menu visibility
-
-        Args:
-            buttons: left Menu buttons
-        """
-        # Determine whether to show or hide the text
-        if buttons[0].text():
-            # Hide text
-            for btn in buttons:
-                btn.setText("")
-            # Set the leftMenuContainer to shrink to minimum size
-            self.leftMenuContainer.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
-        else:
-            # Show text
-            for btn in buttons:
-                btn.setText(btn.originalText)
-            # Set the leftMenuContainer to expand to the required size
-            self.leftMenuContainer.setSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding)
-            #self.leftMenuContainer.setMinimumSize(QtCore.QSize(200, 16777215))
-        
-        # Adjust layout to reflect changes
-        self.leftMenuContainer.updateGeometry()
-        self.leftMenuContainer.adjustSize()
-        
-    def resizeEvent(self, event):
-        # Keep toggle button in the top-left corner
-        self.leftMenuBtn.move(10, 10)
-        super().resizeEvent(event)
+    #def resizeEvent(self, event):
+    ##    # Keep toggle button in the top-left corner
+     #   self.leftMenuBtn.move(10, 10)
+     #   super().resizeEvent(event)
         
 class SlideMenu(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -705,9 +679,27 @@ class SlideMenu(QtWidgets.QWidget):
                 if self.is_expanded:
                     sub_container.setFixedWidth(100)
                     layout.setContentsMargins(0, 5, 0, 5)  # Restore margins when expanded
+                    layout.setSpacing(0)
+                    self.setStyleSheet("""
+                        QWidget {
+                            border-top-left-radius :8px;
+                            border-top-right-radius : 0px;
+                            border-bottom-left-radius : 8px;
+                            border-bottom-right-radius : 8px;
+                        }
+                    """)
                 else:
                     self.setFixedWidth(40)
                     layout.setContentsMargins(0, 5, 0, 5)  # Set margins to 0 when collapsed
+                    layout.setSpacing(6)
+                    self.setStyleSheet("""
+                        QWidget {
+                            border-top-left-radius :8px;
+                            border-top-right-radius : 8px;
+                            border-bottom-left-radius : 8px;
+                            border-bottom-right-radius : 8px;
+                        }
+                    """)
                 
             for button in frame.findChildren(QtWidgets.QPushButton):
                 if self.is_expanded:
@@ -719,17 +711,11 @@ class SlideMenu(QtWidgets.QWidget):
                     if hasattr(button, 'full_text'):
                         button.setText(button.full_text)
                 else:
-                    frame.setStyleSheet("""
-                        QFrame {
-                            border-radius: 8px;
-                        }
-                    """)
                     button.setStyleSheet("""
                         QPushButton {
                             text-align: left;
                             padding-left: 3px;
                             padding-right: 3px;
-                            border-radius: 8px;
                         }
                     """)
                     if not hasattr(button, 'full_text'):

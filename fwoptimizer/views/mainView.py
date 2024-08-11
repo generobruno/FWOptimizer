@@ -66,7 +66,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout.setSpacing(0)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.leftMenuContainer = QtWidgets.QWidget(parent=self.centralWidget)
+        #self.leftMenuContainer = QtWidgets.QWidget(parent=self.centralWidget)
+        self.leftMenuContainer = SlideMenu(parent=self.centralWidget)
         self.leftMenuContainer.setMaximumSize(QtCore.QSize(200, 16777215))
         self.leftMenuContainer.setObjectName("leftMenuContainer")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.leftMenuContainer)
@@ -566,6 +567,7 @@ class Ui_MainWindow(object):
         # TODO Display projects window
         
         # Hide side Menues
+        self.leftMenuContainer.collapse()
         self.centerMenuContainer.hide()
         self.rightMenuContainer.hide()
         self.consoleContainer.hide()
@@ -595,9 +597,9 @@ class Ui_MainWindow(object):
         )
         
         # Toggle left Menu
-        leftMenuButtons = [self.homeBtn, self.rulesBtn, self.reportsBtn, self.settingsBtn, self.consoleBtn, self.helpBtn]
+        #leftMenuButtons = [self.homeBtn, self.rulesBtn, self.reportsBtn, self.settingsBtn, self.consoleBtn, self.helpBtn]
         self.leftMenuBtn.clicked.connect(
-            lambda: self.toggleLeftMenu(leftMenuButtons)
+            lambda: self.leftMenuContainer.toggle()
         )
         
         # Expand Center Menu Widget
@@ -653,3 +655,83 @@ class Ui_MainWindow(object):
         # Adjust layout to reflect changes
         self.leftMenuContainer.updateGeometry()
         self.leftMenuContainer.adjustSize()
+        
+    def resizeEvent(self, event):
+        # Keep toggle button in the top-left corner
+        self.leftMenuBtn.move(10, 10)
+        super().resizeEvent(event)
+        
+class SlideMenu(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("leftMenuContainer")
+        
+        # Set initial size
+        self.collapsed_width = 50
+        self.expanded_width = 100
+        self.setFixedWidth(self.collapsed_width)
+        
+        self.is_expanded = False
+
+    def toggle(self):
+        if self.is_expanded:
+            self.collapse()
+        else:
+            self.expand()
+
+    def expand(self):
+        self.setFixedWidth(self.expanded_width)
+        self.is_expanded = True
+        self.updateButtonStyle()
+
+    def collapse(self):
+        self.setFixedWidth(self.collapsed_width)
+        self.is_expanded = False
+        self.updateButtonStyle()
+        
+    def updateButtonStyle(self):
+        # Find the leftMenuSubContainer
+        sub_container = self.findChild(QtWidgets.QWidget, "leftMenuSubContainer")
+        if not sub_container:
+            return
+
+        # Find all frames in the sub_container
+        frames = sub_container.findChildren(QtWidgets.QFrame)
+        
+        for frame in frames:
+            
+            layout = frame.layout()
+            if layout:
+                if self.is_expanded:
+                    sub_container.setFixedWidth(100)
+                    layout.setContentsMargins(0, 5, 0, 5)  # Restore margins when expanded
+                else:
+                    self.setFixedWidth(40)
+                    layout.setContentsMargins(0, 5, 0, 5)  # Set margins to 0 when collapsed
+                
+            for button in frame.findChildren(QtWidgets.QPushButton):
+                if self.is_expanded:
+                    button.setStyleSheet("""
+                        QPushButton {
+                            border-radius: 8px;
+                        }
+                    """)
+                    if hasattr(button, 'full_text'):
+                        button.setText(button.full_text)
+                else:
+                    frame.setStyleSheet("""
+                        QFrame {
+                            border-radius: 8px;
+                        }
+                    """)
+                    button.setStyleSheet("""
+                        QPushButton {
+                            text-align: left;
+                            padding-left: 3px;
+                            padding-right: 3px;
+                            border-radius: 8px;
+                        }
+                    """)
+                    if not hasattr(button, 'full_text'):
+                        button.full_text = button.text()
+                    button.setText("")

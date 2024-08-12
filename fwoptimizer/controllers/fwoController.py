@@ -30,10 +30,12 @@ class FWOController:
         model.setGraphicsView(view.graphicsView)
         view.viewBtn.clicked.connect(self.viewFDD)
         
+        # Optimize a FDD
         view.optimizeBtn.clicked.connect(self.optimizeFDD)
         
-        view.exportBtn.clicked.connect(model.exportRules)
-        view.actionExport_Policy.triggered.connect(model.exportRules)
+        # Generate and Export Rules optimized
+        view.exportBtn.clicked.connect(self.exportRules)
+        view.actionExport_Policy.triggered.connect(self.exportRules)
         
         # Connect the action to load parser syntax
         view.actionSet_parser.triggered.connect(self.setParserStrat)
@@ -127,7 +129,7 @@ class FWOController:
         # User selects option to generate
         option = self.view.selectFddDialog(tables)
         
-        # Generate FDD given user selection
+        # Optimize FDD given user selection
         if option == "all":  
             self.model.optimizeFDD()
         elif isinstance(option, tuple):
@@ -135,3 +137,33 @@ class FWOController:
             self.model.optimizeFDD(tableName, chainName)
         else:
             self.view.displayErrorMessage("No valid option selected for FDD generation.")
+            
+    def exportRules(self):
+        """
+        Generate Rules and Export them to a file
+        """
+        if not self.model.currentFirewall or len(self.model.currentFirewall.getFDDs()) == 0:
+            self.view.displayErrorMessage("No FDD Generated.\nPlease generate an FDD for the firewall.")
+            return
+        
+        # Get all tables
+        tables = self.model.currentFirewall.inputRules.getTables()
+
+        # User selects option to generate
+        option = self.view.selectFddDialog(tables)
+        
+        # Generate rules given user selection
+        if option == "all":  
+            exportedRules = self.model.exportRules()
+        elif isinstance(option, tuple):
+            tableName, chainName = option
+            exportedRules = self.model.exportRules(tableName, chainName)
+        else:
+            self.view.displayErrorMessage("No valid option selected for FDD generation.")
+        
+        # Generate export File from RuleSet, given the Parser Strategy
+        fileContent = self.model.getParserStrategy().compose(exportedRules)
+        
+        # Save exported rules to right menu 
+        if fileContent:
+            self.view.displayExportedRules(fileContent)

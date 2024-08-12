@@ -12,7 +12,7 @@ class FWOView(QtWidgets.QMainWindow):
 
     def displayImportedRules(self, content, rulesParsed):
         """
-        Display the parsed rules in the QTreeView.
+        Display the parsed rules in the QTreeView and right menu.
         
         Args:
             content: Rules as text to display in right menu
@@ -65,6 +65,18 @@ class FWOView(QtWidgets.QMainWindow):
         # Set imported rules right menu
         self.ui.importedRules.setText(content)
         self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
+        
+    def displayExportedRules(self, content):
+        """
+        Display the parsed rules in the right menu.
+        
+        Args:
+            content: Rules as text to display in right menu
+        """
+        #TODO Also display on centerMenu as RuleSet?
+        # Set exported rules right menu
+        self.ui.exportedRules.setText(str(content))
+        self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage)
         
     def displayErrorMessage(self, message: str):
         """

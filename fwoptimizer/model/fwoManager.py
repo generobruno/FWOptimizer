@@ -7,7 +7,7 @@ class FWOManager:
         # List of Firewalls Managed
         self.firewalls = []
         # Current Firewall
-        self.currentFirewall = Firewall() #TODO CHANGE
+        self.currentFirewall = Firewall() #TODO CHANGE -> Guardar instancia de esto
         # Current Parser Strategy (Default to IpTables)
         self.parserStrategy = parser.IpTablesParser()
         # Graphics Viewer
@@ -43,6 +43,15 @@ class FWOManager:
             strategy: Parser strategy to be used
         """
         self.parserStrategy = strategy
+    
+    def getParserStrategy(self):
+        """
+        Get the parser strategy
+
+        Returns:
+            strategy: Parser Strategy
+        """
+        return self.parserStrategy
     
     def importRules(self):
         """
@@ -115,7 +124,11 @@ class FWOManager:
 
     def generateFDD(self, table=None, chain=None):
         """
-        Show dialog to ask user for generating FDDs for all chains or a specific chain.
+        Ask user for a FDD to generate from a chain
+
+        Args:
+            table (str, optional): Table Name. Defaults to None.
+            chain (str, optional): Chain Name. Defaults to None.
         """
         print("Generating FDD...")
         if table is None and chain is None:
@@ -175,7 +188,11 @@ class FWOManager:
         
     def optimizeFDD(self, table=None, chain=None):
         """
-        Show dialog to ask user for generating FDDs for all chains or a specific chain.
+        Ask user for a FDD to optimize
+
+        Args:
+            table (str, optional): Table Name. Defaults to None.
+            chain (str, optional): Chain Name. Defaults to None.
         """
         print("Optimizing FDD...")
         if table is None and chain is None:
@@ -183,10 +200,24 @@ class FWOManager:
         else:
             self.currentFirewall.optimizeFdd(table, chain)
             print(f'Printing out FDD')
-            self.viewFDD(table, chain)
+            self.viewFDD(table, chain) #TODO Cambiar nombre para tener las 2 imagenes?
     
-    def exportRules(self):
+    def exportRules(self, table=None, chain=None):
+        """
+        Export RuleSet generated from an FDD.
+
+        Args:
+            table (str, optional): Table Name. Defaults to None.
+            chain (str, optional): Chain Name. Defaults to None.
+
+        Returns:
+            RuleSet: Generated RuleSet
+        """
         print("Exporting Rules...")
+        if table is None and chain is None:
+            return self.currentFirewall.genOutputRules()
+        else:
+            return self.currentFirewall.genOutputRules(table, chain)
         
 
         

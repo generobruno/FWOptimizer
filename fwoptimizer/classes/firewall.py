@@ -2,7 +2,7 @@
 """
 
 from fwoptimizer.classes.fdd import FDD, FieldList
-from fwoptimizer.classes.rules import RuleSet
+from fwoptimizer.classes.rules import RuleSet, Table, Chain
 
 
 class Firewall:
@@ -102,7 +102,7 @@ class Firewall:
         if table is None and chain is None:
             for tableName , table in self.inputRules.getTables().items():
                 for chainName, _ in table.getChains().items():
-                    fdd = self.getFDD(chain)
+                    fdd = self.getFDD(chainName)
                     print(f'Optimizing {tableName} - {chainName} FDD')
                     fdd.reduction()
                     fdd.marking()
@@ -113,6 +113,47 @@ class Firewall:
             fdd.reduction()
             fdd.marking()
             print(f'{table} - {chain} optimization Done.')
+    
+    def genOutputRules(self, table=None, chain=None):
+        """
+        Generate and export output RuleSet from FDD.
+
+        Args:
+            table (str, optional): Table Name. Defaults to None.
+            chain (str, optional): Chain Name. Defaults to None.
+
+        Returns:
+            RuleSet: Generated RuleSet
+        """
+        # Output RuleSet
+        exportRuleSet = RuleSet()
+        
+        if table is None and chain is None:
+            for tableName , table in self.inputRules.getTables().items():
+                # Add new table
+                exportRuleSet.addTable(Table(tableName))
+                for chainName, _ in table.getChains().items():
+                    fdd = self.getFDD(chainName)
+                    # Generate new chain
+                    outputChain = fdd.firewallGen()
+                    outputChain.setDefaultDecision("DROP") #TODO VER
+                    # Add new chain
+                    exportRuleSet[tableName].addChain(outputChain)
+                    print(f'Exporting {tableName} - {chainName} FDD')
+        else:  
+            print(f'Exporting {table} - {chain} FDD')
+            # Add new table
+            exportRuleSet.addTable(Table(table))
+            # Get specific FDD
+            fdd = self.getFDD(chain)
+            # Generate new chain
+            outputChain = fdd.firewallGen()
+            outputChain.setDefaultDecision("DROP") #TODO VER
+            # Add new chain
+            exportRuleSet[table].addChain(outputChain)
+        
+        print(f'Generated RuleSet:\n{exportRuleSet}')
+        return exportRuleSet
     
     def addFdd(self, fdd: FDD):
         """

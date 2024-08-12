@@ -8,6 +8,9 @@ class FWOController:
         self.connectSignals()
         
     def connectSignals(self):
+        """
+        Connect the view's signals with the model functions
+        """
         view = self.view.ui
         model = self.model
         
@@ -25,10 +28,23 @@ class FWOController:
         model.setGraphicsView(view.graphicsView)
         view.viewBtn.clicked.connect(model.viewFDD)
         
+        # Connect the action to load parser syntax
+        view.actionSet_parser.triggered.connect(self.setParserStrat)
+    
+    def setParserStrat(self):
+        """
+        Select the parser Strategy
+        """
+        # TODO ask the user to choose a parser strategy, e.g., via a dialog
+        #iptables_strat = parser.IpTablesParser()
+        #parser_instance = parser.Parser(iptables_strat)
+        #self.model.setParserStrategy(parser_instance)
+        print("TODO: Parser strategy set.")
+    
     def importRules(self):
         """
         Import Rules and save them in the Right Menu
         """
-        file_content = self.model.importRules()
-        if file_content:
-            self.view.displayImportedRules(file_content)
+        fileContent, rules = self.model.importRules()
+        if fileContent and rules:
+            self.view.displayImportedRules(fileContent, rules)

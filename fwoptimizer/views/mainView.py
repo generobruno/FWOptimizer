@@ -66,7 +66,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout.setSpacing(0)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        #self.leftMenuContainer = QtWidgets.QWidget(parent=self.centralWidget)
         self.leftMenuContainer = SlideMenu(parent=self.centralWidget)
         self.leftMenuContainer.setMaximumSize(QtCore.QSize(200, 16777215))
         self.leftMenuContainer.setObjectName("leftMenuContainer")
@@ -168,8 +167,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addWidget(self.leftMenuContainer)
         self.centerMenuContainer = QtWidgets.QWidget(parent=self.centralWidget)
         self.centerMenuContainer.setMinimumSize(QtCore.QSize(0, 0))
-        self.centerMenuContainer.setMaximumSize(QtCore.QSize(250, 16777215))
-        self.centerMenuContainer.setObjectName("centerMenuContainer")
+        self.centerMenuContainer.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self.centerMenuContainer.setObjectName("centerMenuContainer")        
         self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.centerMenuContainer)
         self.verticalLayout_6.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_6.setSpacing(0)
@@ -484,6 +483,8 @@ class Ui_MainWindow(object):
         self.actionExit.setObjectName("actionExit")
         self.actionLoad_syntax = QtGui.QAction(parent=MainWindow)
         self.actionLoad_syntax.setObjectName("actionLoad_syntax")
+        self.actionSet_parser = QtGui.QAction(parent=MainWindow)
+        self.actionSet_parser.setObjectName("Set_Parser")
         self.actionMore_Help = QtGui.QAction(parent=MainWindow)
         self.actionMore_Help.setObjectName("actionMore_Help")
         self.menuFile.addAction(self.actionImport_Policy)
@@ -494,6 +495,7 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionView_Imported_Rules)
         self.menuView.addAction(self.actionView_Exported_Rules)
         self.menuSettings.addAction(self.actionLoad_syntax)
+        self.menuSettings.addAction(self.actionSet_parser)
         self.menuHelp.addAction(self.actionMore_Help)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
@@ -558,8 +560,9 @@ class Ui_MainWindow(object):
         self.actionLoad_Project.setText(_translate("MainWindow", "Load Project"))
         self.actionExit.setText(_translate("MainWindow", "Exit"))
         self.actionLoad_syntax.setText(_translate("MainWindow", "Load syntax"))
+        self.actionSet_parser.setText(_translate("MainWindow", "Set Parser"))
         self.actionMore_Help.setText(_translate("MainWindow", "More Help"))
-        
+
     def startUpState(self):
         """
         Set up GUI Initial State
@@ -571,13 +574,11 @@ class Ui_MainWindow(object):
         self.centerMenuContainer.hide()
         self.rightMenuContainer.hide()
         self.consoleContainer.hide()
-    
+        
     def setUpFunctions(self):
         """
         Set up the GUI Buttons Functions
         """
-        self.startUpState()
-        
         # Exit action
         self.actionExit.triggered.connect(QtWidgets.QApplication.quit)
         
@@ -597,7 +598,6 @@ class Ui_MainWindow(object):
         )
         
         # Toggle left Menu
-        #leftMenuButtons = [self.homeBtn, self.rulesBtn, self.reportsBtn, self.settingsBtn, self.consoleBtn, self.helpBtn]
         self.leftMenuBtn.clicked.connect(
             lambda: self.leftMenuContainer.toggle()
         )
@@ -629,12 +629,7 @@ class Ui_MainWindow(object):
         self.helpBtn.clicked.connect(
             lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl('https://github.com/generobruno/FWOptimizer'))
         )
-        
-    #def resizeEvent(self, event):
-    ##    # Keep toggle button in the top-left corner
-     #   self.leftMenuBtn.move(10, 10)
-     #   super().resizeEvent(event)
-        
+
 class SlideMenu(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)

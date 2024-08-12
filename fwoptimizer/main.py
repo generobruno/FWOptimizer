@@ -131,7 +131,6 @@ class FWOptimizer:
         self.view = FWOView()
         self.controller = FWOController(self.model, self.view)
         
-        self.view.setUpFunctions()
         self.view.show()
 
     def run(self):

@@ -1,14 +1,62 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from fwoptimizer.classes.firewall import Firewall
+from fwoptimizer.classes import parser
 
 class FWOManager:
     def __init__(self):
+        # List of Firewalls Managed
+        self.firewalls = []
+        # Current Firewall
+        self.currentFirewall = Firewall() #TODO CHANGE
+        # Current Parser Strategy (Default to IpTables)
+        self.parserStrategy = parser.IpTablesParser()
+        # Graphics Viewer
         self.graphicsView = None
+        
+    def addFirewall(self, firewall: Firewall):
+        """
+        Add a new Firewall to the manager.
+        """
+        self.firewalls.append(firewall)
+        self.setActiveFirewall(len(self.firewalls) - 1)
+
+    def setActiveFirewall(self, index: int):
+        """
+        Set the active firewall by its index in the firewalls list.
+        """
+        if 0 <= index < len(self.firewalls):
+            self.current_firewall = self.firewalls[index]
+        else:
+            raise IndexError("Firewall index out of range.")
+
+    def getActiveFirewall(self) -> Firewall:
+        """
+        Return the currently active firewall.
+        """
+        return self.current_firewall
+    
+    def setParserStrategy(self, strategy):
+        """
+        Set the parser strategy.
+        
+        Args:
+            strategy: Parser strategy to be used
+        """
+        self.parserStrategy = strategy
     
     def importRules(self):
         """
-        Import a file with rules
+        Import Rules from a file
+
+        Returns:
+            str: Rules in file as text
+            RuleSet: RuleSet extracted from file
         """
-        print("Importing Rules.")
+        if self.parserStrategy is None:
+            print("No parser strategy set.")
+            return None, None
+        
+        print("Importing Rules...")
         options = QtWidgets.QFileDialog.Option.ReadOnly
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
             parent=None,
@@ -20,18 +68,29 @@ class FWOManager:
 
         if file_path:
             print(f"Importing Rules from: {file_path}")
-            return self._processFile(file_path)
+            rulesParsed = self.parserStrategy.parse(file_path)
+            if self.currentFirewall:
+                self.currentFirewall.inputRules = rulesParsed
+                print("Rules parsed and saved to the current firewall.")
+                return self._copyFile(file_path), rulesParsed
+            else:
+                print("No firewall selected to save the parsed rules.")
+                return None, None
         else:
             print("No file selected.")
-            return None
-        
-    def _processFile(self, file_path):
-        # Implement your file processing logic here
+            return None, None
+    
+    def _copyFile(self, file_path):
+        """
+        Copy file text
+
+        Args:
+            file_path (str): Path to file
+        """
         with open(file_path, 'r') as file:
             data = file.read()
-            print(f"File content: {data}")
             return data
-        
+
     def generateFDD(self):
         print("Generating FDD...")
         

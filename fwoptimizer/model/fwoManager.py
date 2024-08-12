@@ -25,7 +25,7 @@ class FWOManager:
         Set the active firewall by its index in the firewalls list.
         """
         if 0 <= index < len(self.firewalls):
-            self.current_firewall = self.firewalls[index]
+            self.currentFirewall = self.firewalls[index]
         else:
             raise IndexError("Firewall index out of range.")
 
@@ -33,7 +33,7 @@ class FWOManager:
         """
         Return the currently active firewall.
         """
-        return self.current_firewall
+        return self.currentFirewall
     
     def setParserStrategy(self, strategy):
         """
@@ -80,29 +80,84 @@ class FWOManager:
             print("No file selected.")
             return None, None
     
-    def _copyFile(self, file_path):
+    def _copyFile(self, filePath):
         """
         Copy file text
 
         Args:
             file_path (str): Path to file
         """
-        with open(file_path, 'r') as file:
+        with open(filePath, 'r') as file:
             data = file.read()
             return data
 
-    def generateFDD(self):
+    def setFieldList(self):
+        """
+        Set the current Firewall's Field List
+        """
+        print("Setting Field List...")
+        options = QtWidgets.QFileDialog.Option.ReadOnly
+        filePath, _ = QtWidgets.QFileDialog.getOpenFileName(
+            parent=None,
+            caption="Import Rules File",
+            directory="",
+            filter="Text Files (*.toml);;All Files (*)",
+            options=options
+        )
+
+        if filePath:
+            print(f"Setting FieldList from: {filePath}")
+            self.currentFirewall.setFieldList(f'{filePath}')
+            print("Field List set.")
+            self.currentFirewall.getFieldList().printConfig()
+        else:
+            print("No file selected.")
+
+    def generateFDD(self, table=None, chain=None):
+        """
+        Show dialog to ask user for generating FDDs for all chains or a specific chain.
+        """
         print("Generating FDD...")
+        if table is None and chain is None:
+            self.currentFirewall.genFdd()
+        else:
+            self.currentFirewall.genFdd(table, chain)
+            print(f'Printing out FDD')
+            self.viewFDD(table, chain)
+    
+    def setGraphicsView(self, graphicsView):
+        """
+        Set the Graphics View
+
+        Args:
+            graphicsView (GraphicsView): Graphics View
+        """
+        self.graphicsView = graphicsView
+    
+    def viewFDD(self, table, chain, imgFormat='svg', graphDir='TB', unrollDecisions=False):
+        """
+        Display the FDD Graph in the graphicsView
+
+        Args:
+            table (str): Table Name
+            chain (str): Chain Name
+            imgFormat (str, optional): Output image format. Defaults to 'svg'.
+            graphDir (str, optional): Graph Orientation. Defaults to 'TB'.
+            unrollDecisions (bool, optional): Show explicit decisions. Defaults to False.
+        """
+        print(f"Displaying FDD for {table} - {chain}")
         
-    def viewFDD(self):
-        print("Displaying FDD...")
+        # Generate graph
+        fdd = self.currentFirewall.getFDD(chain)
+        pathName = f'output/graphs/gen_{chain}'
+        fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
 
         if self.graphicsView:
             # Create a QGraphicsScene
             scene = QtWidgets.QGraphicsScene()
 
             # Load the image as QPixmap
-            pixmap = QtGui.QPixmap("resources\images\deku_tree_sprout.png")  # Replace with your image path
+            pixmap = QtGui.QPixmap(pathName)
 
             if not pixmap.isNull():
                 # Add the QPixmap to the scene as a QGraphicsPixmapItem
@@ -118,11 +173,20 @@ class FWOManager:
         else:
             print("Graphics view is not set.")
         
-    def optimizeFDD(self):
-        print("Optimizing...")
+    def optimizeFDD(self, table=None, chain=None):
+        """
+        Show dialog to ask user for generating FDDs for all chains or a specific chain.
+        """
+        print("Optimizing FDD...")
+        if table is None and chain is None:
+            self.currentFirewall.optimizeFdd()
+        else:
+            self.currentFirewall.optimizeFdd(table, chain)
+            print(f'Printing out FDD')
+            self.viewFDD(table, chain)
     
     def exportRules(self):
         print("Exporting Rules...")
         
-    def setGraphicsView(self, graphics_view):
-        self.graphicsView = graphics_view
+
+        

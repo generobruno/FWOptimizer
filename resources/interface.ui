@@ -1062,6 +1062,8 @@ QMenuBar, QStatusBar {
      <string>Settings</string>
     </property>
     <addaction name="actionLoad_syntax"/>
+    <addaction name="actionSet_Parser"/>
+    <addaction name="actionSet_Field_List"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1118,6 +1120,16 @@ QMenuBar, QStatusBar {
   <action name="actionMore_Help">
    <property name="text">
     <string>More Help</string>
+   </property>
+  </action>
+  <action name="actionSet_Parser">
+   <property name="text">
+    <string>Set Parser</string>
+   </property>
+  </action>
+  <action name="actionSet_Field_List">
+   <property name="text">
+    <string>Set Field List</string>
    </property>
   </action>
  </widget>

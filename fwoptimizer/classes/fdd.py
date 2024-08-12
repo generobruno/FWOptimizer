@@ -70,7 +70,7 @@ class FieldList:
         """
         return self._fields_
 
-    def printCofig(self):
+    def printConfig(self):
         """_summary_
         """
         for i, field in enumerate(self._fields_):
@@ -482,6 +482,14 @@ class FDD:
         root = Node(self._levels[0].getField().getName(), self._levels[0])
         root.autoConnect()
 
+    def getName(self):
+        """
+        Get FDD's Name
+
+        Returns:
+            str: FDD Name
+        """
+        return self._name
 
     def _getDecisionNode(self, decision: str) -> Node:
         """

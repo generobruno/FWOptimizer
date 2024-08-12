@@ -485,6 +485,8 @@ class Ui_MainWindow(object):
         self.actionLoad_syntax.setObjectName("actionLoad_syntax")
         self.actionSet_parser = QtGui.QAction(parent=MainWindow)
         self.actionSet_parser.setObjectName("Set_Parser")
+        self.actionSet_fieldList = QtGui.QAction(parent=MainWindow)
+        self.actionSet_fieldList.setObjectName("Set_fieldList")
         self.actionMore_Help = QtGui.QAction(parent=MainWindow)
         self.actionMore_Help.setObjectName("actionMore_Help")
         self.menuFile.addAction(self.actionImport_Policy)
@@ -496,6 +498,7 @@ class Ui_MainWindow(object):
         self.menuView.addAction(self.actionView_Exported_Rules)
         self.menuSettings.addAction(self.actionLoad_syntax)
         self.menuSettings.addAction(self.actionSet_parser)
+        self.menuSettings.addAction(self.actionSet_fieldList)
         self.menuHelp.addAction(self.actionMore_Help)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuView.menuAction())
@@ -561,6 +564,7 @@ class Ui_MainWindow(object):
         self.actionExit.setText(_translate("MainWindow", "Exit"))
         self.actionLoad_syntax.setText(_translate("MainWindow", "Load syntax"))
         self.actionSet_parser.setText(_translate("MainWindow", "Set Parser"))
+        self.actionSet_fieldList.setText(_translate("MainWindow", "Set Field List"))
         self.actionMore_Help.setText(_translate("MainWindow", "More Help"))
 
     def startUpState(self):

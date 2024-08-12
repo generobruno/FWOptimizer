@@ -1,5 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from views.mainView import Ui_MainWindow
+from views.dialogs import SelectFDDDialog, ViewFDDDialog
 
 class FWOView(QtWidgets.QMainWindow):
     def __init__(self):
@@ -64,3 +65,48 @@ class FWOView(QtWidgets.QMainWindow):
         # Set imported rules right menu
         self.ui.importedRules.setText(content)
         self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
+        
+    def displayErrorMessage(self, message: str):
+        """
+        Display custom error message
+
+        Args:
+            message (str): Message to display
+        """
+        QtWidgets.QMessageBox.warning(self, "Error", message)
+        return
+    
+    def selectFddDialog(self, tables):
+        """
+        Show Dialog to select the chain to generate, or all the firewall.
+
+        Args:
+            chains (_type_): _description_
+
+        Returns:
+            str: Option selected
+        """
+        dialog = SelectFDDDialog(tables=tables, parent=self)
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            option = dialog.getSelectedOption()
+            if option == "all":
+                return option
+            elif option[0] == "specific":
+                return option[1]
+                #TODO Manejar erro NoneType cuando selecciono la tabla sin querer
+    
+    def selectViewFddDialog(self, tables):
+        """
+        Show Dialog to select the chain and options to view the FDD.
+
+        Args:
+            tables (dict): Dictionary of tables and their chains.
+
+        Returns:
+            tuple: Option selected (table_name, chain_name), image_format, graph_orientation, unroll_decisions
+        """
+        dialog = ViewFDDDialog(tables=tables, parent=self)
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            return dialog.getSelectedOptions()
+        return None
+    

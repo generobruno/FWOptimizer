@@ -1,3 +1,12 @@
+"""_summary_
+
+Raises:
+    IndexError: _description_
+
+Returns:
+    _type_: _description_
+"""
+
 from PyQt6 import QtGui, QtWidgets
 from views.mainView import Ui_MainWindow
 import views.dialogs as Dialogs
@@ -87,6 +96,24 @@ class FWOView(QtWidgets.QMainWindow):
         """
         QtWidgets.QMessageBox.warning(self, "Error", message)
         return
+    
+    def selectFileDialog(self):
+        """
+        User selects a file path
+
+        Returns:
+            str: File path
+        """
+        options = QtWidgets.QFileDialog.Option.ReadOnly
+        filePath, _ = QtWidgets.QFileDialog.getOpenFileName(
+            parent=None,
+            caption="Import Rules File",
+            directory="",
+            filter="All Files (*);;Text Files (*.toml)",
+            options=options
+        )
+        
+        return filePath
     
     def selectFddDialog(self, tables):
         """

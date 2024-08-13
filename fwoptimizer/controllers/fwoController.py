@@ -1,3 +1,12 @@
+"""_summary_
+
+Raises:
+    IndexError: _description_
+
+Returns:
+    _type_: _description_
+"""
+
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
 
@@ -52,15 +61,26 @@ class FWOController:
         """
         Set the model's Field List
         """
-        self.model.setFieldList()
+        print("Setting Field List...")
+        filePath = self.view.selectFileDialog()
+        
+        if filePath:
+            self.model.setFieldList(filePath)
+        else:
+            print("No file Selected.")
     
     def importRules(self):
         """
         Import Rules and save them in the Right Menu
         """
-        fileContent, rules = self.model.importRules()
-        if fileContent and rules:
-            self.view.displayImportedRules(fileContent, rules)
+        filePath = self.view.selectFileDialog()
+        
+        if filePath:
+            fileContent, rules = self.model.importRules(filePath)
+            if fileContent and rules:
+                self.view.displayImportedRules(fileContent, rules)
+        else:
+            print("No file Selected.")
             
     def generateFDD(self):
         """

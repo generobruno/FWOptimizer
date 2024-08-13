@@ -39,3 +39,22 @@ class ImageViewer(QtWidgets.QGraphicsView):
                 self.zoomOut()
         else:
             super().keyPressEvent(event)
+            
+    def displayImage(self, pathName):
+        # Create a QGraphicsScene
+        scene = QtWidgets.QGraphicsScene()
+
+        # Load the image as QPixmap
+        pixmap = QtGui.QPixmap(pathName)
+
+        if not pixmap.isNull():
+            # Add the QPixmap to the scene as a QGraphicsPixmapItem
+            scene.addPixmap(pixmap)
+
+            # Set the scene to the graphicsView
+            self.setScene(scene)
+
+            # Center the image in the view
+            self.fitInView(scene.itemsBoundingRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+        else:
+            print("Failed to load the image.")

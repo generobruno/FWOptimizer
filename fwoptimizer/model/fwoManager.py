@@ -1,4 +1,12 @@
-from PyQt6 import QtCore, QtGui, QtWidgets
+"""_summary_
+
+Raises:
+    IndexError: _description_
+
+Returns:
+    _type_: _description_
+"""
+
 from fwoptimizer.classes.firewall import Firewall
 from fwoptimizer.classes import parser
 
@@ -53,7 +61,7 @@ class FWOManager:
         """
         return self.parserStrategy
     
-    def importRules(self):
+    def importRules(self, filePath):
         """
         Import Rules from a file
 
@@ -64,29 +72,15 @@ class FWOManager:
         if self.parserStrategy is None:
             print("No parser strategy set.")
             return None, None
-        
-        print("Importing Rules...")
-        options = QtWidgets.QFileDialog.Option.ReadOnly
-        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
-            parent=None,
-            caption="Import Rules File",
-            directory="",
-            filter="All Files (*);;Text Files (*.txt);;XML Files (*.xml)",
-            options=options
-        )
 
-        if file_path:
-            print(f"Importing Rules from: {file_path}")
-            rulesParsed = self.parserStrategy.parse(file_path)
-            if self.currentFirewall:
-                self.currentFirewall.inputRules = rulesParsed
-                print("Rules parsed and saved to the current firewall.")
-                return self._copyFile(file_path), rulesParsed
-            else:
-                print("No firewall selected to save the parsed rules.")
-                return None, None
+        print(f"Importing Rules from: {filePath}")
+        rulesParsed = self.parserStrategy.parse(filePath)
+        if self.currentFirewall:
+            self.currentFirewall.inputRules = rulesParsed
+            print("Rules parsed and saved to the current firewall.")
+            return self._copyFile(filePath), rulesParsed
         else:
-            print("No file selected.")
+            print("No firewall selected to save the parsed rules.")
             return None, None
     
     def _copyFile(self, filePath):
@@ -100,27 +94,14 @@ class FWOManager:
             data = file.read()
             return data
 
-    def setFieldList(self):
+    def setFieldList(self, filePath):
         """
         Set the current Firewall's Field List
         """
-        print("Setting Field List...")
-        options = QtWidgets.QFileDialog.Option.ReadOnly
-        filePath, _ = QtWidgets.QFileDialog.getOpenFileName(
-            parent=None,
-            caption="Import Rules File",
-            directory="",
-            filter="Text Files (*.toml);;All Files (*)",
-            options=options
-        )
-
-        if filePath:
-            print(f"Setting FieldList from: {filePath}")
-            self.currentFirewall.setFieldList(f'{filePath}')
-            print("Field List set.")
-            self.currentFirewall.getFieldList().printConfig()
-        else:
-            print("No file selected.")
+        print(f"Setting FieldList from: {filePath}")
+        self.currentFirewall.setFieldList(f'{filePath}')
+        print("Field List set.")
+        self.currentFirewall.getFieldList().printConfig()
 
     def generateFDD(self, table=None, chain=None):
         """
@@ -166,23 +147,7 @@ class FWOManager:
         fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
 
         if self.graphicsView:
-            # Create a QGraphicsScene
-            scene = QtWidgets.QGraphicsScene()
-
-            # Load the image as QPixmap
-            pixmap = QtGui.QPixmap(pathName)
-
-            if not pixmap.isNull():
-                # Add the QPixmap to the scene as a QGraphicsPixmapItem
-                scene.addPixmap(pixmap)
-
-                # Set the scene to the graphicsView
-                self.graphicsView.setScene(scene)
-
-                # Center the image in the view
-                self.graphicsView.fitInView(scene.itemsBoundingRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
-            else:
-                print("Failed to load the image.")
+            self.graphicsView.displayImage(pathName)
         else:
             print("Graphics view is not set.")
         

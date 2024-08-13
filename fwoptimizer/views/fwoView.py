@@ -1,6 +1,6 @@
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets
 from views.mainView import Ui_MainWindow
-from views.dialogs import SelectFDDDialog, ViewFDDDialog
+import views.dialogs as Dialogs
 
 class FWOView(QtWidgets.QMainWindow):
     def __init__(self):
@@ -98,7 +98,7 @@ class FWOView(QtWidgets.QMainWindow):
         Returns:
             str: Option selected
         """
-        dialog = SelectFDDDialog(tables=tables, parent=self)
+        dialog = Dialogs.SelectFDDDialog(tables=tables, parent=self)
         if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             option = dialog.getSelectedOption()
             if option == "all":
@@ -117,8 +117,40 @@ class FWOView(QtWidgets.QMainWindow):
         Returns:
             tuple: Option selected (table_name, chain_name), image_format, graph_orientation, unroll_decisions
         """
-        dialog = ViewFDDDialog(tables=tables, parent=self)
+        dialog = Dialogs.ViewFDDDialog(tables=tables, parent=self)
         if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             return dialog.getSelectedOptions()
         return None
+    
+    def exportRulesDialog(self, tables):
+        """
+        Show Dialog to select the chain to generate, or all the firewall.
+        Also allow the user to specify the file name and folder to store the generated file.
+
+        Args:
+            tables (dict): A dictionary containing tables and chains.
+
+        Returns:
+            tuple: (option, file_path) where option can be "all" or (table_name, chain_name),
+                and file_path is the directory and file name specified by the user.
+        """
+        dialog = Dialogs.ExportRulesDialog(tables=tables, parent=self)
+        
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            option = dialog.getSelectedOption()
+
+            if option:
+                # Ask the user to specify the file name and select a directory to save the file
+                file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+                    parent=None,
+                    caption="Save Exported Rules",
+                    directory="",
+                    filter="Text Files (*.txt);;All Files (*)"
+                )
+
+                if file_path:
+                    return option, file_path
+        
+        return None, None
+                
     

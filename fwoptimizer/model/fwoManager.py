@@ -219,5 +219,6 @@ class FWOManager:
         else:
             return self.currentFirewall.genOutputRules(table, chain)
         
+        
 
         

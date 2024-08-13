@@ -2,8 +2,7 @@
 """
 
 from fwoptimizer.classes.fdd import FDD, FieldList
-from fwoptimizer.classes.rules import RuleSet, Table, Chain
-
+from fwoptimizer.classes.rules import RuleSet, Table
 
 class Firewall:
     """_summary_
@@ -134,24 +133,30 @@ class Firewall:
                 exportRuleSet.addTable(Table(tableName))
                 for chainName, _ in table.getChains().items():
                     fdd = self.getFDD(chainName)
-                    # Generate new chain
-                    outputChain = fdd.firewallGen()
-                    outputChain.setDefaultDecision("DROP") #TODO VER
-                    # Add new chain
-                    exportRuleSet[tableName].addChain(outputChain)
-                    print(f'Exporting {tableName} - {chainName} FDD')
+                    if fdd:
+                        # Generate new chain
+                        outputChain = fdd.firewallGen()
+                        outputChain.setDefaultDecision("DROP") #TODO VER
+                        # Add new chain
+                        exportRuleSet[tableName].addChain(outputChain)
+                        print(f'Exporting {tableName} - {chainName} Rules')
+                    else:
+                        print(f'FDD not found for chain: {chain} in table: {table}')
         else:  
-            print(f'Exporting {table} - {chain} FDD')
+            print(f'Exporting {table} - {chain} Rules')
             # Add new table
             exportRuleSet.addTable(Table(table))
             # Get specific FDD
             fdd = self.getFDD(chain)
-            # Generate new chain
-            outputChain = fdd.firewallGen()
-            outputChain.setDefaultDecision("DROP") #TODO VER
-            # Add new chain
-            exportRuleSet[table].addChain(outputChain)
-        
+            if fdd:
+                # Generate new chain
+                outputChain = fdd.firewallGen()
+                outputChain.setDefaultDecision("DROP") #TODO VER
+                # Add new chain
+                exportRuleSet[table].addChain(outputChain)
+            else:
+                print(f'FDD not found for chain: {chain} in table: {table}')
+                        
         print(f'Generated RuleSet:\n{exportRuleSet}')
         return exportRuleSet
     

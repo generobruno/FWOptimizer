@@ -1,8 +1,6 @@
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-
 class FWOController:
     def __init__(self, model: FWOManager, view: FWOView):
         self.model = model
@@ -149,21 +147,32 @@ class FWOController:
         # Get all tables
         tables = self.model.currentFirewall.inputRules.getTables()
 
-        # User selects option to generate
-        option = self.view.selectFddDialog(tables)
+        # User selects option and file path
+        option, file_path = self.view.exportRulesDialog(tables)
         
-        # Generate rules given user selection
-        if option == "all":  
-            exportedRules = self.model.exportRules()
-        elif isinstance(option, tuple):
-            tableName, chainName = option
-            exportedRules = self.model.exportRules(tableName, chainName)
+        if option and file_path:
+            # Generate rules given user selection
+            if option == "all":
+                exportedRules = self.model.exportRules()
+            elif isinstance(option, tuple):
+                tableName, chainName = option
+                print(f'Exporting specific - Table: {tableName}, Chain: {chainName}')
+                exportedRules = self.model.exportRules(tableName, chainName)
+            else:
+                self.view.displayErrorMessage("No valid option selected for FDD generation.")
+                return
+            
+            # Generate export File from RuleSet, given the Parser Strategy
+            fileContent = self.model.getParserStrategy().compose(exportedRules)
+            
+            # Save exported rules to right menu 
+            if fileContent:
+                self.view.displayExportedRules(fileContent)
+                
+                # Write the file content to the specified file path
+                with open(file_path, 'w') as file:
+                    file.write(fileContent)
+                
+                print(f'Exported file to: {file_path}')
         else:
-            self.view.displayErrorMessage("No valid option selected for FDD generation.")
-        
-        # Generate export File from RuleSet, given the Parser Strategy
-        fileContent = self.model.getParserStrategy().compose(exportedRules)
-        
-        # Save exported rules to right menu 
-        if fileContent:
-            self.view.displayExportedRules(fileContent)
+            self.view.displayErrorMessage("No valid option or file path selected for export.")

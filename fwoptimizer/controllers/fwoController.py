@@ -12,8 +12,8 @@ from views.fwoView import FWOView
 
 class FWOController:
     def __init__(self, model: FWOManager, view: FWOView):
-        self.model = model
-        self.view = view
+        self.model: FWOManager = model
+        self.view: FWOView = view
         self.connectSignals()
         
     def connectSignals(self):

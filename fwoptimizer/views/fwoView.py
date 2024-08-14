@@ -7,7 +7,7 @@ Returns:
     _type_: _description_
 """
 
-from PyQt6 import QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from views.mainView import Ui_MainWindow
 import views.dialogs as Dialogs
 
@@ -16,8 +16,75 @@ class FWOView(QtWidgets.QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.startUpState()
-        self.ui.setUpFunctions()
+        self.startUpState()
+        self.setUpFunctions()
+
+    def startUpState(self):
+        """
+        Set up GUI Initial State
+        """
+        # TODO Display projects window
+        
+        # Hide side Menues
+        self.ui.leftMenuContainer.collapse()
+        self.ui.centerMenuContainer.hide()
+        self.ui.rightMenuContainer.hide()
+        self.ui.consoleContainer.hide()
+
+    def setUpFunctions(self):
+        """
+        Set up the GUI Buttons Functions
+        """
+        # Exit action
+        self.ui.actionExit.triggered.connect(QtWidgets.QApplication.quit)
+        
+        # Connect actions to show the right menu and display the appropriate page
+        self.ui.actionView_Imported_Rules.triggered.connect(
+            lambda: self.ui.rightMenuContainer.setVisible(not self.ui.rightMenuContainer.isVisible()) or self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
+        )
+        self.ui.actionView_Exported_Rules.triggered.connect(
+            lambda: self.ui.rightMenuContainer.setVisible(not self.ui.rightMenuContainer.isVisible()) or self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage)
+        )
+        # Create a shortcut for "Ctrl+I" or "Ctrl+E" to toggle the right menu visibility
+        self.ui.actionView_Imported_Rules.setShortcut(QtGui.QKeySequence("Ctrl+I"))
+        self.ui.actionView_Exported_Rules.setShortcut(QtGui.QKeySequence("Ctrl+E"))
+        # Close right Menu
+        self.ui.closeRightMenuBtn.clicked.connect(
+            lambda: self.ui.rightMenuContainer.setVisible(False)
+        )
+        
+        # Toggle left Menu
+        self.ui.leftMenuBtn.clicked.connect(
+            lambda: self.ui.leftMenuContainer.toggle()
+        )
+        
+        # Expand Center Menu Widget
+        self.ui.homeBtn.clicked.connect(
+            lambda: self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
+        )
+        self.ui.rulesBtn.clicked.connect(
+            lambda: self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
+        )
+        self.ui.reportsBtn.clicked.connect(
+            lambda: self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
+        )
+        self.ui.settingsBtn.clicked.connect(
+            lambda: self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
+        )
+        # Close Center Menu Widget
+        self.ui.closeCenterMenuBtn.clicked.connect(
+            lambda: self.ui.centerMenuContainer.setVisible(False)
+        )
+        
+        # Expand Bottom Menu Widget
+        self.ui.consoleBtn.clicked.connect(
+            lambda: self.ui.consoleContainer.setVisible(not self.ui.consoleContainer.isVisible())
+        )
+        
+        # Help Button
+        self.ui.helpBtn.clicked.connect(
+            lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl('https://github.com/generobruno/FWOptimizer'))
+        )
 
     def displayImportedRules(self, content, rulesParsed):
         """

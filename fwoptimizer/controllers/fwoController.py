@@ -46,6 +46,9 @@ class FWOController:
         
         # Connect the action to load parser syntax
         view.actionSet_parser.triggered.connect(self.setParserStrat)
+        
+        # Connect console commands
+        view.console.commandEntered.connect(self.processCommand)
     
     def setParserStrat(self):
         """
@@ -196,3 +199,31 @@ class FWOController:
                 print(f'Exported file to: {file_path}')
         else:
             self.view.displayErrorMessage("No valid option or file path selected for export.")
+            
+    def processCommand(self, command):
+        """
+        Process a command entered in the console.
+
+        Args:
+            command (str): Command entered by the user
+        """
+        commands = {
+            #"parse": self.model.parse_file,
+            #"display": self.model.display_rules,
+            #"addfields": self.model.add_field_list,
+            #"generate": self.model.generate_fdds,
+            #"compile": self.model.compile_fdd,
+            #"optimize": self.model.generate_optimized_ruleset,
+            #"print": self.model.print_fdd
+        }
+        
+        command = command.strip().lower()
+        if command in commands:
+            #commands[command]()
+            self.view.ui.console.appendToConsole(f"Executed command: {command}")
+        elif command == "help":
+            self.view.ui.console.appendToConsole("Available commands are: " + ", ".join(commands.keys()))
+        elif command == "exit":
+            self.view.ui.console.appendToConsole("Exiting console...")
+        else:
+            self.view.ui.console.appendToConsole("Invalid command, type 'help' for more information.")

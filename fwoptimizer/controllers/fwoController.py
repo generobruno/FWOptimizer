@@ -32,6 +32,11 @@ class FWOController:
         
         # Generate FDD Button
         view.generateBtn.clicked.connect(self.generateFDD)
+
+        # Save Button
+        view.actionSave_Project.triggered.connect(self.saveProyect)
+        # Load Button
+        view.actionLoad_Project.triggered.connect(self.loadProyect)
         
         # Pass the QGraphicsView reference to the model
         model.setGraphicsView(view.graphicsView)
@@ -196,3 +201,11 @@ class FWOController:
                 print(f'Exported file to: {file_path}')
         else:
             self.view.displayErrorMessage("No valid option or file path selected for export.")
+
+    def saveProyect(self):
+
+        self.model.serializeFirewall()
+
+    def loadProyect(self):
+
+        self.model.deserializeFirewall()

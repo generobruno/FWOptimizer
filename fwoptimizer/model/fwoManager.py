@@ -7,6 +7,7 @@ Returns:
     _type_: _description_
 """
 
+import pickle
 from fwoptimizer.classes.firewall import Firewall
 from fwoptimizer.classes import parser
 
@@ -184,6 +185,15 @@ class FWOManager:
         else:
             return self.currentFirewall.genOutputRules(table, chain)
         
+    def serializeFirewall(self):
+
+        with open('output/firewall.pkl', 'wb') as file:
+            pickle.dump(self.currentFirewall, file)
+
+    def deserializeFirewall(self):
+
+        with open('output/firewall.pkl', 'rb') as file:
+            self.currentFirewall = pickle.load(file)
         
 
         

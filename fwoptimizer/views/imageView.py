@@ -1,4 +1,4 @@
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets, QtSvg, QtSvgWidgets
 
 class ImageViewer(QtWidgets.QGraphicsView):
     """
@@ -43,18 +43,29 @@ class ImageViewer(QtWidgets.QGraphicsView):
     def displayImage(self, pathName):
         # Create a QGraphicsScene
         scene = QtWidgets.QGraphicsScene()
-
-        # Load the image as QPixmap
-        pixmap = QtGui.QPixmap(pathName)
-
-        if not pixmap.isNull():
-            # Add the QPixmap to the scene as a QGraphicsPixmapItem
-            scene.addPixmap(pixmap)
-
-            # Set the scene to the graphicsView
-            self.setScene(scene)
-
-            # Center the image in the view
-            self.fitInView(scene.itemsBoundingRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+        
+        if pathName.lower().endswith('.svg'):
+            # For SVG files, use QGraphicsSvgItem
+            svg_renderer = QtSvg.QSvgRenderer(pathName)
+            svg_item = QtSvgWidgets.QGraphicsSvgItem()
+            svg_item.setSharedRenderer(svg_renderer)
+            scene.addItem(svg_item)
         else:
-            print("Failed to load the image.")
+            # For raster images, use QPixmap
+            pixmap = QtGui.QPixmap(pathName)
+            if not pixmap.isNull():
+                scene.addPixmap(pixmap)
+            else:
+                print("Failed to load the image.")
+                return
+            
+        self.setStyleSheet(
+        """
+        #graphicsView, #graphFrame {
+                background-color: white;
+            }
+        """
+        )
+
+        self.setScene(scene)
+        self.fitInView(scene.itemsBoundingRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)

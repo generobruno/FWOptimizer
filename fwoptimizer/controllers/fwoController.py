@@ -70,7 +70,7 @@ class FWOController:
         Set the model's Field List
         """
         print("Setting Field List...")
-        filePath = self.view.selectFileDialog()
+        filePath = self.view.selectFileDialog("TOML Files (*.toml);;All Files (*)")
         
         if filePath:
             self.model.setFieldList(filePath)

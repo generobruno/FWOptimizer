@@ -150,7 +150,7 @@ class FWOManager:
         fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
 
         if self.graphicsView:
-            self.graphicsView.displayImage(pathName)
+            self.graphicsView.displayImage(f'{pathName}.{imgFormat}')
         else:
             print("Graphics view is not set.")
         

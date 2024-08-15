@@ -135,15 +135,25 @@ class FWOView(QtWidgets.QMainWindow):
         # Create a QStandardItemModel
         treeView = QtGui.QStandardItemModel()
         treeView.setHorizontalHeaderLabels(["Policy", "Details"])
+        self.ui.treePoliciesView.setStyleSheet("""
+            QHeaderView::section {
+                background-color: #2c313c;
+                color: white;
+                font-weight: bold;
+                padding: 5px;
+                border: none;
+                border-radius: 8px;
+            }
+        """)
 
         # Iterate over the tables in the RuleSet
         for tableName, table in rulesParsed.getTables().items():
-            tableItem = QtGui.QStandardItem(f"Table:\t {tableName}")
+            tableItem = QtGui.QStandardItem(f"Table: {tableName}")
             tableItem.setEditable(False)
 
             # Iterate over the chains in the table
             for chainName, chain in table.getChains().items():
-                chainItem = QtGui.QStandardItem(f"Chain:\t {chainName}")
+                chainItem = QtGui.QStandardItem(f"Chain: {chainName}")
                 chainItem.setEditable(False)
 
                 # Iterate over the rules in the chain
@@ -176,6 +186,10 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.treePoliciesView.setModel(treeView)
         self.ui.treePoliciesView.expandAll()
         
+        # Resize columns to fit contents
+        for column in range(treeView.columnCount()):
+            self.ui.treePoliciesView.resizeColumnToContents(column)
+        
         # Set imported rules right menu
         self.ui.importedRules.setText(content)
         self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
@@ -202,9 +216,13 @@ class FWOView(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.warning(self, "Error", message)
         return
     
-    def selectFileDialog(self):
+    def selectFileDialog(self, filterFiles="All Files (*)"):
         """
         User selects a file path
+
+        Args:
+            filterFiles (str, optional): Files to filter (separate with ";;"). 
+            Defaults to "All Files (*)".
 
         Returns:
             str: File path
@@ -214,7 +232,7 @@ class FWOView(QtWidgets.QMainWindow):
             parent=None,
             caption="Import Rules File",
             directory="",
-            filter="All Files (*);;Text Files (*.toml)",
+            filter=filterFiles,
             options=options
         )
         

@@ -435,7 +435,7 @@ QMenuBar, QStatusBar {
              <property name="leftMargin">
               <number>9</number>
              </property>
-             <item>
+             <item alignment="Qt::AlignLeft">
               <widget class="QLabel" name="label">
                <property name="text">
                 <string>More Menu</string>

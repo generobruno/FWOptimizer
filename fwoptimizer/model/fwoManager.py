@@ -11,6 +11,9 @@ from fwoptimizer.classes.firewall import Firewall
 from fwoptimizer.classes import parser
 
 class FWOManager:
+    """
+    Top Module of the App Model
+    """
     def __init__(self):
         # List of Firewalls Managed
         self.firewalls = []
@@ -183,7 +186,3 @@ class FWOManager:
             return self.currentFirewall.genOutputRules()
         else:
             return self.currentFirewall.genOutputRules(table, chain)
-        
-        
-
-        

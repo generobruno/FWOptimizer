@@ -1,8 +1,17 @@
+"""_summary_
+"""
+
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 class ConsoleWidget(QtWidgets.QTextEdit):
-    # Signal to emit the command text
-    commandEntered = QtCore.pyqtSignal(str) 
+    """
+    Custom Console Widget 
+    Emulates a console that interacts with the model
+
+    Args:
+        QtWidgets (QTextEdit): Text for the console
+    """
+    commandEntered = QtCore.pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -13,11 +22,21 @@ class ConsoleWidget(QtWidgets.QTextEdit):
         self.command_history = []
         self.history_index = -1
 
+        # Ensure the cursor is always at the end when starting
+        self.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextEditorInteraction)
+        self.moveCursor(QtGui.QTextCursor.MoveOperation.End)
+
     def keyPressEvent(self, event):
+        # Ensure user can only type at the last line
+        if self.textCursor().blockNumber() < self.document().blockCount() - 1:
+            self.moveCursor(QtGui.QTextCursor.MoveOperation.End)
+
         if event.key() == QtCore.Qt.Key.Key_Return or event.key() == QtCore.Qt.Key.Key_Enter:
-            command = self.toPlainText().splitlines()[-1]
+            command = self.toPlainText().splitlines()[-1].strip()
             self.commandEntered.emit(command)
             self.append("\n")  # Move to the next line after a command is entered
+            self.command_history.append(command)
+            self.history_index = len(self.command_history)
         elif event.key() == QtCore.Qt.Key.Key_Up:
             self.navigateCommandHistory(-1)
         elif event.key() == QtCore.Qt.Key.Key_Down:
@@ -25,20 +44,33 @@ class ConsoleWidget(QtWidgets.QTextEdit):
         else:
             super().keyPressEvent(event)
 
+    def mousePressEvent(self, event):
+        # Ensure the cursor is always at the end when clicking
+        self.moveCursor(QtGui.QTextCursor.MoveOperation.End)
+        super().mousePressEvent(event)
+
     def navigateCommandHistory(self, direction):
         if not self.command_history:
             return
 
         self.history_index += direction
         self.history_index = max(0, min(self.history_index, len(self.command_history) - 1))
-        self.textCursor().select(QtGui.QTextCursor.SelectionType.LineUnderCursor)
-        self.textCursor().removeSelectedText()
-        self.append(self.command_history[self.history_index])
+        cursor = self.textCursor()
+        cursor.select(QtGui.QTextCursor.SelectionType.LineUnderCursor)
+        cursor.removeSelectedText()
+        cursor.insertText(self.command_history[self.history_index])
 
     def appendToConsole(self, text):
         self.append(text)
+        self.moveCursor(QtGui.QTextCursor.MoveOperation.End)
 
 class SlideMenu(QtWidgets.QWidget):
+    """
+    Custom SlideMenu Widget
+
+    Args:
+        QtWidgets (QWidget): Slide Menu
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("leftMenuContainer")

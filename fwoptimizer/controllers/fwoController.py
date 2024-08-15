@@ -9,11 +9,16 @@ Returns:
 
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
+from model.consoleCommands import ConsoleCommands
 
 class FWOController:
+    """
+    App Controller for user interaction
+    """
     def __init__(self, model: FWOManager, view: FWOView):
         self.model: FWOManager = model
         self.view: FWOView = view
+        self.console = ConsoleCommands(self.model, self.view.ui.console)
         self.connectSignals()
         
     def connectSignals(self):
@@ -207,23 +212,8 @@ class FWOController:
         Args:
             command (str): Command entered by the user
         """
-        commands = {
-            #"parse": self.model.parse_file,
-            #"display": self.model.display_rules,
-            #"addfields": self.model.add_field_list,
-            #"generate": self.model.generate_fdds,
-            #"compile": self.model.compile_fdd,
-            #"optimize": self.model.generate_optimized_ruleset,
-            #"print": self.model.print_fdd
-        }
-        
-        command = command.strip().lower()
-        if command in commands:
-            #commands[command]()
-            self.view.ui.console.appendToConsole(f"Executed command: {command}")
-        elif command == "help":
-            self.view.ui.console.appendToConsole("Available commands are: " + ", ".join(commands.keys()))
-        elif command == "exit":
-            self.view.ui.console.appendToConsole("Exiting console...")
+        if command == 'exit':
+            self.view.ui.consoleContainer.hide()
+            self.view.ui.console.clear()
         else:
-            self.view.ui.console.appendToConsole("Invalid command, type 'help' for more information.")
+            self.console.executeCommand(command)

@@ -12,6 +12,12 @@ from views.mainView import Ui_MainWindow
 import views.dialogs as Dialogs
 
 class FWOView(QtWidgets.QMainWindow):
+    """
+    Top Module of the App View
+
+    Args:
+        QtWidgets (QtMainWindow): Main Window
+    """
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
@@ -40,10 +46,16 @@ class FWOView(QtWidgets.QMainWindow):
         
         # Connect actions to show the right menu and display the appropriate page
         self.ui.actionView_Imported_Rules.triggered.connect(
-            lambda: self.ui.rightMenuContainer.setVisible(not self.ui.rightMenuContainer.isVisible()) or self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
+            lambda: (
+                self.ui.rightMenuContainer.setVisible(not self.ui.rightMenuContainer.isVisible()) or self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage),
+                self.ui.label_5.setText("Imported Rules")
+            )
         )
         self.ui.actionView_Exported_Rules.triggered.connect(
-            lambda: self.ui.rightMenuContainer.setVisible(not self.ui.rightMenuContainer.isVisible()) or self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage)
+            lambda: (
+                self.ui.rightMenuContainer.setVisible(not self.ui.rightMenuContainer.isVisible()) or self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage),
+                self.ui.label_5.setText("Exported Rules")
+            )
         )
         # Create a shortcut for "Ctrl+I" or "Ctrl+E" to toggle the right menu visibility
         self.ui.actionView_Imported_Rules.setShortcut(QtGui.QKeySequence("Ctrl+I"))
@@ -60,16 +72,28 @@ class FWOView(QtWidgets.QMainWindow):
         
         # Expand Center Menu Widget
         self.ui.homeBtn.clicked.connect(
-            lambda: self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
-        )
-        self.ui.rulesBtn.clicked.connect(
-            lambda: self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
-        )
-        self.ui.reportsBtn.clicked.connect(
-            lambda: self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
+            lambda: (
+                self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible()), #TODO Open projects window?
+                self.ui.label.setText("Home")
+            )
         )
         self.ui.settingsBtn.clicked.connect(
-            lambda: self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
+            lambda: (
+                self._togglePage(0),
+                self.ui.label.setText("Settings")
+            )
+        )
+        self.ui.rulesBtn.clicked.connect(
+            lambda: (
+                self._togglePage(1),
+                self.ui.label.setText("Imported Rules")
+            )
+        )
+        self.ui.reportsBtn.clicked.connect(
+            lambda: (
+                self._togglePage(2),
+                self.ui.label.setText("Reports")
+            )
         )
         # Close Center Menu Widget
         self.ui.closeCenterMenuBtn.clicked.connect(
@@ -80,11 +104,25 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.consoleBtn.clicked.connect(
             lambda: self.ui.consoleContainer.setVisible(not self.ui.consoleContainer.isVisible())
         )
+        self.ui.consoleBtn.setShortcut(QtGui.QKeySequence("Ctrl+J"))
         
         # Help Button
         self.ui.helpBtn.clicked.connect(
             lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl('https://github.com/generobruno/FWOptimizer'))
         )
+
+    def _togglePage(self, pageIndex):
+        """
+        Toggle the center Menu page index
+
+        Args:
+            pageIndex (int): Index of the Page
+        """
+        if self.ui.centerMenuStack.currentIndex() == pageIndex:
+            self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
+        else:
+            self.ui.centerMenuContainer.setVisible(True)
+            self.ui.centerMenuStack.setCurrentIndex(pageIndex)
 
     def displayImportedRules(self, content, rulesParsed):
         """

@@ -190,7 +190,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.setContentsMargins(9, -1, -1, -1)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.label = QtWidgets.QLabel(parent=self.centerMenuFrame)
-        self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         self.label.setObjectName("label")
         self.horizontalLayout_2.addWidget(self.label)
         self.closeCenterMenuBtn = QtWidgets.QPushButton(parent=self.centerMenuFrame)

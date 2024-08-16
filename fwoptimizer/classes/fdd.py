@@ -859,16 +859,11 @@ class FDD:
             reportPath: Path to the report file. If None, the report will be output to stdout.
         """
 
-        if reportsPath == None:
-            writer = sys.stdout
-        else:
-            try:
-                writer = open(reportsPath, 'w')
-            except:
-                print(f"No se pudo abrir el archivo {reportsPath}, se escribirá en stdout")
-                writer = sys.stdout
-
         level = self._levels[-2]
+
+        # variables to record redundancies and inconsistencies
+        redundancies = set()
+        inconsistencies = set()
         
         # The i loop goes through all nodes in last level
         i = 0
@@ -897,7 +892,7 @@ class FDD:
                         # If the edges have the same destination, so there is redundancy
                         if edge1.getDestination() == edge2.getDestination():
 
-                            writer.write(f"\nDetectada redundancia entre:\n{chain.getRuleForId(edge1.getId()[0])}\n{chain.getRuleForId(edge2.getId()[0])}\nRedundancia resuelta\n" )
+                            redundancies.add((min(edge1.getId()[0], edge2.getId()[0]), max(edge1.getId()[0], edge2.getId()[0])))
 
                             edge1.getElementSet().add(edge2.getElementSet())
                             edge1.extendId(edge2.getId())
@@ -906,14 +901,12 @@ class FDD:
                         # If the edges don't have the same destination, so there is inconsistency.
                         else:
 
-                            writer.write(f"\nDetectada inconsitencia entre:\n{chain.getRuleForId(edge1.getId()[0])}\n{chain.getRuleForId(edge2.getId()[0])}\n")
+                            inconsistencies.add((min(edge1.getId()[0], edge2.getId()[0]), max(edge1.getId()[0], edge2.getId()[0])))
 
                             intersectionSet = edge1.getElementSet().intersectionSet(edge2.getElementSet())
 
                             # Sort the priorities and select the rule that has a higher priority (value closest to 0)
                             if sorted(edge1.getId())[0] < sorted(edge2.getId())[0]:
-
-                                writer.write(f"Por tener mayor prioridad la regla ID:{edge1.getId()[0]}, se conserva la decision {chain.getRuleForId(edge1.getId()[0]).getDecision()} para la interseccion entre ambas\n")
 
                                 edge2.getElementSet().remove(intersectionSet)
 
@@ -924,8 +917,6 @@ class FDD:
 
                             else:
 
-                                writer.write(f"Por tener mayor prioridad la regla ID:{edge2.getId()[0]}, se conserva la decision {chain.getRuleForId(edge2.getId()[0]).getDecision()} para la interseccion entre ambas\n")
-                                
                                 edge1.getElementSet().remove(intersectionSet)
 
                                 # If edge2 is empty, delete it
@@ -942,6 +933,26 @@ class FDD:
                 j = j + 1
 
             i = i + 1
+
+        # Generate report
+        if reportsPath == None:
+            writer = sys.stdout
+        else:
+            try:
+                writer = open(reportsPath, 'w')
+            except:
+                print(f"No se pudo abrir el archivo {reportsPath}, se escribirá en stdout")
+                writer = sys.stdout
+
+        writer.write(f"Se encontraron las siguientes redundacias en el set de reglas:\n")
+        for a in sorted(list(redundancies)):
+
+            writer.write(f"\n{chain.getRuleForId(a[0])}\n{chain.getRuleForId(a[1])}\nRedundancia resuelta\n")
+
+        writer.write(f"Se encontraron las siguientes inconsistencias en el set de reglas:\n")
+        for b in sorted(list(inconsistencies)):
+            writer.write(f"\n{chain.getRuleForId(b[0])}\n{chain.getRuleForId(b[1])}\n")
+            writer.write(f"Por tener mayor prioridad la regla ID:{b[0]}, se conserva la decision {chain.getRuleForId(b[0]).getDecision()} para la interseccion entre ambas\n")
 
         if writer != sys.stdout:
             writer.close()

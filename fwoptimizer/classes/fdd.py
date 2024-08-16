@@ -5,6 +5,7 @@ Firewall Decision Diagram (FDD) module
 from typing import List
 import graphviz
 import toml
+import sys
 
 from fwoptimizer.classes.rules import Chain, Rule
 from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
@@ -265,6 +266,7 @@ class Edge:
             attrs: Edge optional attributes
         """
         self._id: List[int] = [] + edgeId
+        self._id.sort()
         self._origin: Node = origin
         self._destination: Node = destination
         self._elementSet = elementSet
@@ -362,6 +364,7 @@ class Edge:
             ids (List[int]): List of new ids
         """
         self._id.extend(ids)
+        self._id.sort()
 
     def getOrigin(self):
         """
@@ -847,14 +850,27 @@ class FDD:
                 i = i + 1
                     
 
-    def _sanityLastLevel(self) -> None:
+    def _sanityLastLevel(self, chain: Chain, reportsPath: str = None) -> None:
         """
         Sanitizes the last-level nodes of the FDD.
+
+        Args:
+            chain: Chain used to get the rules and include them in the report.
+            reportPath: Path to the report file. If None, the report will be output to stdout.
         """
+
+        if reportsPath == None:
+            writer = sys.stdout
+        else:
+            try:
+                writer = open(reportsPath, 'w')
+            except:
+                print(f"No se pudo abrir el archivo {reportsPath}, se escribirá en stdout")
+                writer = sys.stdout
 
         level = self._levels[-2]
         
-         # The i loop goes through all nodes in last level
+        # The i loop goes through all nodes in last level
         i = 0
         while i < len(level.getNodes()):
 
@@ -881,7 +897,7 @@ class FDD:
                         # If the edges have the same destination, so there is redundancy
                         if edge1.getDestination() == edge2.getDestination():
 
-                            print(f"Detectada redundancia para:\nNode: {node.getName()}\nEdge1: {edge1.getId()}\nEdge2: {edge2.getId()}")
+                            writer.write(f"\nDetectada redundancia entre:\n{chain.getRuleForId(edge1.getId()[0])}\n{chain.getRuleForId(edge2.getId()[0])}\nRedundancia resuelta\n" )
 
                             edge1.getElementSet().add(edge2.getElementSet())
                             edge1.extendId(edge2.getId())
@@ -890,12 +906,14 @@ class FDD:
                         # If the edges don't have the same destination, so there is inconsistency.
                         else:
 
-                            print(f"Detectada inconsitencia, resolviendo mediante prioridad para:\nNode: {node.getName()}\nEdge1: {edge1.getId()}\nEdge2: {edge2.getId()}")
+                            writer.write(f"\nDetectada inconsitencia entre:\n{chain.getRuleForId(edge1.getId()[0])}\n{chain.getRuleForId(edge2.getId()[0])}\n")
 
                             intersectionSet = edge1.getElementSet().intersectionSet(edge2.getElementSet())
 
                             # Sort the priorities and select the rule that has a higher priority (value closest to 0)
                             if sorted(edge1.getId())[0] < sorted(edge2.getId())[0]:
+
+                                writer.write(f"Por tener mayor prioridad la regla ID:{edge1.getId()[0]}, se conserva la decision {chain.getRuleForId(edge1.getId()[0]).getDecision()} para la interseccion entre ambas\n")
 
                                 edge2.getElementSet().remove(intersectionSet)
 
@@ -905,6 +923,8 @@ class FDD:
                                     edge2.autoDisconnect()
 
                             else:
+
+                                writer.write(f"Por tener mayor prioridad la regla ID:{edge2.getId()[0]}, se conserva la decision {chain.getRuleForId(edge2.getId()[0]).getDecision()} para la interseccion entre ambas\n")
                                 
                                 edge1.getElementSet().remove(intersectionSet)
 
@@ -922,6 +942,9 @@ class FDD:
                 j = j + 1
 
             i = i + 1
+
+        if writer != sys.stdout:
+            writer.close()
 
 
     def _achieveCompleteness(self, defaultDecision: str) -> None:
@@ -948,17 +971,18 @@ class FDD:
                     newEdge.autoConnect()
 
 
-    def genFDD(self, chain: Chain) -> None:
+    def genFDD(self, chain: Chain, reportsPath: str = None) -> None:
         """
         Generates the FDD content.
         First generates the PreFDD, after sanitizes it to convert it to FDD.
         
         Args:
             chain: Chain from which the rules are extracted.
+            reportsPath: Path to save sanity logs.
         """
         self._genPre(chain)
         self._sanityFirstLevels()
-        self._sanityLastLevel()
+        self._sanityLastLevel(chain, reportsPath)
         self._achieveCompleteness(chain.getDefaultDecision())
 
 

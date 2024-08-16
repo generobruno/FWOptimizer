@@ -79,13 +79,13 @@ class Firewall:
                     fdd = FDD(self.fieldList)
                     self.addFdd(fdd)
                     print(f'Generating {tableName} - {chainName} FDD')
-                    fdd.genFDD(self.inputRules[tableName][chainName])
+                    fdd.genFDD(self.inputRules[tableName][chainName], 'output/report.txt')
                     print(f'{tableName} - {chainName} FDD Done.')
         else:   # Generate Specific FDD
             print(f'Generating {table} - {chain} FDD')
             fdd = FDD(self.fieldList)
             self.addFdd(fdd)
-            fdd.genFDD(self.inputRules[table][chain])
+            fdd.genFDD(self.inputRules[table][chain], 'output/report.txt')
             print(f'{table} - {chain} FDD Done.')
                 
     def optimizeFdd(self, table=None, chain=None):

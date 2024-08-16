@@ -7,17 +7,122 @@ Returns:
     _type_: _description_
 """
 
-from PyQt6 import QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from views.mainView import Ui_MainWindow
 import views.dialogs as Dialogs
 
 class FWOView(QtWidgets.QMainWindow):
+    """
+    Top Module of the App View
+
+    Args:
+        QtWidgets (QtMainWindow): Main Window
+    """
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.startUpState()
-        self.ui.setUpFunctions()
+        self.startUpState()
+        self.setUpFunctions()
+
+    def startUpState(self):
+        """
+        Set up GUI Initial State
+        """
+        # TODO Display projects window
+        
+        # Hide side Menues
+        self.ui.leftMenuContainer.collapse()
+        self.ui.centerMenuContainer.hide()
+        self.ui.rightMenuContainer.hide()
+        self.ui.consoleContainer.hide()
+
+    def setUpFunctions(self):
+        """
+        Set up the GUI Buttons Functions
+        """
+        # Exit action
+        self.ui.actionExit.triggered.connect(QtWidgets.QApplication.quit)
+        
+        # Connect actions to show the right menu and display the appropriate page
+        self.ui.actionView_Imported_Rules.triggered.connect(
+            lambda: (
+                self.ui.rightMenuContainer.setVisible(not self.ui.rightMenuContainer.isVisible()) or self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage),
+                self.ui.label_5.setText("Imported Rules")
+            )
+        )
+        self.ui.actionView_Exported_Rules.triggered.connect(
+            lambda: (
+                self.ui.rightMenuContainer.setVisible(not self.ui.rightMenuContainer.isVisible()) or self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage),
+                self.ui.label_5.setText("Exported Rules")
+            )
+        )
+        # Create a shortcut for "Ctrl+I" or "Ctrl+E" to toggle the right menu visibility
+        self.ui.actionView_Imported_Rules.setShortcut(QtGui.QKeySequence("Ctrl+I"))
+        self.ui.actionView_Exported_Rules.setShortcut(QtGui.QKeySequence("Ctrl+E"))
+        # Close right Menu
+        self.ui.closeRightMenuBtn.clicked.connect(
+            lambda: self.ui.rightMenuContainer.setVisible(False)
+        )
+        
+        # Toggle left Menu
+        self.ui.leftMenuBtn.clicked.connect(
+            lambda: self.ui.leftMenuContainer.toggle()
+        )
+        
+        # Expand Center Menu Widget
+        self.ui.homeBtn.clicked.connect(
+            lambda: (
+                self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible()), #TODO Open projects window?
+                self.ui.label.setText("Home")
+            )
+        )
+        self.ui.settingsBtn.clicked.connect(
+            lambda: (
+                self._togglePage(0),
+                self.ui.label.setText("Settings")
+            )
+        )
+        self.ui.rulesBtn.clicked.connect(
+            lambda: (
+                self._togglePage(1),
+                self.ui.label.setText("Imported Rules")
+            )
+        )
+        self.ui.reportsBtn.clicked.connect(
+            lambda: (
+                self._togglePage(2),
+                self.ui.label.setText("Reports")
+            )
+        )
+        # Close Center Menu Widget
+        self.ui.closeCenterMenuBtn.clicked.connect(
+            lambda: self.ui.centerMenuContainer.setVisible(False)
+        )
+        
+        # Expand Bottom Menu Widget
+        self.ui.consoleBtn.clicked.connect(
+            lambda: self.ui.consoleContainer.setVisible(not self.ui.consoleContainer.isVisible())
+        )
+        self.ui.consoleBtn.setShortcut(QtGui.QKeySequence("Ctrl+J"))
+        
+        # Help Button
+        self.ui.helpBtn.clicked.connect(
+            lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl('https://github.com/generobruno/FWOptimizer'))
+        )
+
+    def _togglePage(self, pageIndex):
+        """
+        Toggle the center Menu page index
+
+        Args:
+            pageIndex (int): Index of the Page
+        """
+        if self.ui.centerMenuStack.currentIndex() == pageIndex:
+            self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible())
+        else:
+            self.ui.centerMenuContainer.setVisible(True)
+            self.ui.centerMenuStack.setCurrentIndex(pageIndex)
 
     def displayImportedRules(self, content, rulesParsed):
         """
@@ -30,15 +135,25 @@ class FWOView(QtWidgets.QMainWindow):
         # Create a QStandardItemModel
         treeView = QtGui.QStandardItemModel()
         treeView.setHorizontalHeaderLabels(["Policy", "Details"])
+        self.ui.treePoliciesView.setStyleSheet("""
+            QHeaderView::section {
+                background-color: #2c313c;
+                color: white;
+                font-weight: bold;
+                padding: 5px;
+                border: none;
+                border-radius: 8px;
+            }
+        """)
 
         # Iterate over the tables in the RuleSet
         for tableName, table in rulesParsed.getTables().items():
-            tableItem = QtGui.QStandardItem(f"Table:\t {tableName}")
+            tableItem = QtGui.QStandardItem(f"Table: {tableName}")
             tableItem.setEditable(False)
 
             # Iterate over the chains in the table
             for chainName, chain in table.getChains().items():
-                chainItem = QtGui.QStandardItem(f"Chain:\t {chainName}")
+                chainItem = QtGui.QStandardItem(f"Chain: {chainName}")
                 chainItem.setEditable(False)
 
                 # Iterate over the rules in the chain
@@ -71,6 +186,10 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.treePoliciesView.setModel(treeView)
         self.ui.treePoliciesView.expandAll()
         
+        # Resize columns to fit contents
+        for column in range(treeView.columnCount()):
+            self.ui.treePoliciesView.resizeColumnToContents(column)
+        
         # Set imported rules right menu
         self.ui.importedRules.setText(content)
         self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
@@ -97,9 +216,13 @@ class FWOView(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.warning(self, "Error", message)
         return
     
-    def selectFileDialog(self):
+    def selectFileDialog(self, filterFiles="All Files (*)"):
         """
         User selects a file path
+
+        Args:
+            filterFiles (str, optional): Files to filter (separate with ";;"). 
+            Defaults to "All Files (*)".
 
         Returns:
             str: File path
@@ -109,7 +232,7 @@ class FWOView(QtWidgets.QMainWindow):
             parent=None,
             caption="Import Rules File",
             directory="",
-            filter="All Files (*);;Text Files (*.toml)",
+            filter=filterFiles,
             options=options
         )
         

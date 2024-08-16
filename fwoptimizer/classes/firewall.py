@@ -179,7 +179,12 @@ class Firewall:
         Args:
             fdd (FDD): FDD to remove
         """
-        pass
+        removeFdd = self.getFDD(fdd)
+        
+        if removeFdd:
+            self.fddList.remove(fdd)
+        else:
+            print(f"Can't remove FDD.")
     
     def getFDD(self, chainName: str):#TODO REVISAR
         """

@@ -9,11 +9,16 @@ Returns:
 
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
+from model.consoleCommands import ConsoleCommands
 
 class FWOController:
+    """
+    App Controller for user interaction
+    """
     def __init__(self, model: FWOManager, view: FWOView):
         self.model: FWOManager = model
         self.view: FWOView = view
+        self.console = ConsoleCommands(self.model, self.view.ui.console)
         self.connectSignals()
         
     def connectSignals(self):
@@ -51,6 +56,9 @@ class FWOController:
         
         # Connect the action to load parser syntax
         view.actionSet_parser.triggered.connect(self.setParserStrat)
+        
+        # Connect console commands
+        view.console.commandEntered.connect(self.processCommand)
     
     def setParserStrat(self):
         """
@@ -67,7 +75,7 @@ class FWOController:
         Set the model's Field List
         """
         print("Setting Field List...")
-        filePath = self.view.selectFileDialog()
+        filePath = self.view.selectFileDialog("TOML Files (*.toml);;All Files (*)")
         
         if filePath:
             self.model.setFieldList(filePath)
@@ -209,3 +217,16 @@ class FWOController:
     def loadProyect(self):
 
         self.model.deserializeFirewall()
+            
+    def processCommand(self, command):
+        """
+        Process a command entered in the console.
+
+        Args:
+            command (str): Command entered by the user
+        """
+        if command == 'exit':
+            self.view.ui.consoleContainer.hide()
+            self.view.ui.console.clear()
+        else:
+            self.console.executeCommand(command)

@@ -26,7 +26,7 @@
 	margin:0;
 	color: #fff;
 }
-QMenuBar, QStatusBar {
+QMenuBar, QStatusBar, QAction {
 	background-color: #1f232a;
 }
 #centralWidget {
@@ -88,7 +88,7 @@ QMenuBar, QStatusBar {
      <number>0</number>
     </property>
     <item>
-     <widget class="QWidget" name="leftMenuContainer" native="true">
+     <widget class="SlideMenu" name="leftMenuContainer" native="true">
       <property name="maximumSize">
        <size>
         <width>200</width>
@@ -435,7 +435,7 @@ QMenuBar, QStatusBar {
              <property name="leftMargin">
               <number>9</number>
              </property>
-             <item>
+             <item alignment="Qt::AlignLeft">
               <widget class="QLabel" name="label">
                <property name="text">
                 <string>More Menu</string>
@@ -795,7 +795,7 @@ QMenuBar, QStatusBar {
                  <number>0</number>
                 </property>
                 <item>
-                 <widget class="QGraphicsView" name="graphicsView">
+                 <widget class="ImageViewer" name="graphicsView">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                     <horstretch>0</horstretch>
@@ -1009,7 +1009,7 @@ QMenuBar, QStatusBar {
                     <number>5</number>
                    </property>
                    <item>
-                    <widget class="QTextEdit" name="consoleText"/>
+                    <widget class="ConsoleWidget" name="console"/>
                    </item>
                   </layout>
                  </widget>
@@ -1133,6 +1133,24 @@ QMenuBar, QStatusBar {
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ConsoleWidget</class>
+   <extends>QTextEdit</extends>
+   <header>views.customWidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ImageViewer</class>
+   <extends>QGraphicsView</extends>
+   <header>views.imageView</header>
+  </customwidget>
+  <customwidget>
+   <class>SlideMenu</class>
+   <extends>QWidget</extends>
+   <header>views.customWidgets</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources.qrc"/>
   <include location="resources.qrc"/>

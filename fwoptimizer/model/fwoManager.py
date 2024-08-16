@@ -12,6 +12,9 @@ from fwoptimizer.classes.firewall import Firewall
 from fwoptimizer.classes import parser
 
 class FWOManager:
+    """
+    Top Module of the App Model
+    """
     def __init__(self):
         # List of Firewalls Managed
         self.firewalls = []
@@ -148,7 +151,7 @@ class FWOManager:
         fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
 
         if self.graphicsView:
-            self.graphicsView.displayImage(pathName)
+            self.graphicsView.displayImage(f'{pathName}.{imgFormat}')
         else:
             print("Graphics view is not set.")
         
@@ -194,6 +197,4 @@ class FWOManager:
 
         with open('output/firewall.pkl', 'rb') as file:
             self.currentFirewall = pickle.load(file)
-        
-
         

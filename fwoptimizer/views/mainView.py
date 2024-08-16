@@ -1,5 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from views.imageView import ImageViewer
+from views.customWidgets import SlideMenu, ConsoleWidget
 import fwoptimizer.views.resources_rc
 
 class Ui_MainWindow(object):
@@ -17,7 +18,7 @@ class Ui_MainWindow(object):
 "    margin:0;\n"
 "    color: #fff;\n"
 "}\n"
-"QMenuBar, QStatusBar {\n"
+"QMenuBar, QStatusBar, QAction {\n"
 "    background-color: #1f232a;\n"
 "}\n"
 "#centralWidget {\n"
@@ -26,7 +27,7 @@ class Ui_MainWindow(object):
 "#leftMenuSubContainer {\n"
 "    background-color: #16191d;\n"
 "    border-radius: 8px;\n"
-#"    border-top-right-radius: 0px;\n"
+"    border-top-right-radius: 0px;\n"
 "}\n"
 "#leftMenuSubContainer QPushButton {\n"
 "    text-align: left;\n"
@@ -66,6 +67,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout.setSpacing(0)
         self.horizontalLayout.setObjectName("horizontalLayout")
+        # Custom SlideMenu Widget
         self.leftMenuContainer = SlideMenu(parent=self.centralWidget)
         self.leftMenuContainer.setMaximumSize(QtCore.QSize(200, 16777215))
         self.leftMenuContainer.setObjectName("leftMenuContainer")
@@ -188,7 +190,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.setContentsMargins(9, -1, -1, -1)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.label = QtWidgets.QLabel(parent=self.centerMenuFrame)
-        self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         self.label.setObjectName("label")
         self.horizontalLayout_2.addWidget(self.label)
         self.closeCenterMenuBtn = QtWidgets.QPushButton(parent=self.centerMenuFrame)
@@ -442,9 +444,10 @@ class Ui_MainWindow(object):
         self.verticalLayout_17.setContentsMargins(5, 5, 5, 5)
         self.verticalLayout_17.setSpacing(5)
         self.verticalLayout_17.setObjectName("verticalLayout_17")
-        self.consoleText = QtWidgets.QTextEdit(parent=self.consoleWidget)
-        self.consoleText.setObjectName("consoleText")
-        self.verticalLayout_17.addWidget(self.consoleText)
+        # Custom Console Widget        
+        self.console = ConsoleWidget(parent=self.consoleWidget)
+        self.console.setObjectName("console")
+        self.verticalLayout_17.addWidget(self.console)
         self.horizontalLayout_9.addWidget(self.consoleWidget)
         self.verticalLayout_21.addWidget(self.consoleFrame)
         self.verticalLayout_20.addWidget(self.consoleSubContainer)
@@ -566,157 +569,3 @@ class Ui_MainWindow(object):
         self.actionSet_parser.setText(_translate("MainWindow", "Set Parser"))
         self.actionSet_fieldList.setText(_translate("MainWindow", "Set Field List"))
         self.actionMore_Help.setText(_translate("MainWindow", "More Help"))
-
-    def startUpState(self):
-        """
-        Set up GUI Initial State
-        """
-        # TODO Display projects window
-        
-        # Hide side Menues
-        self.leftMenuContainer.collapse()
-        self.centerMenuContainer.hide()
-        self.rightMenuContainer.hide()
-        self.consoleContainer.hide()
-        
-    def setUpFunctions(self):
-        """
-        Set up the GUI Buttons Functions
-        """
-        # Exit action
-        self.actionExit.triggered.connect(QtWidgets.QApplication.quit)
-        
-        # Connect actions to show the right menu and display the appropriate page
-        self.actionView_Imported_Rules.triggered.connect(
-            lambda: self.rightMenuContainer.setVisible(not self.rightMenuContainer.isVisible()) or self.rightMenuStack.setCurrentWidget(self.importedPage)
-        )
-        self.actionView_Exported_Rules.triggered.connect(
-            lambda: self.rightMenuContainer.setVisible(not self.rightMenuContainer.isVisible()) or self.rightMenuStack.setCurrentWidget(self.exportedPage)
-        )
-        # Create a shortcut for "Ctrl+I" or "Ctrl+E" to toggle the right menu visibility
-        self.actionView_Imported_Rules.setShortcut(QtGui.QKeySequence("Ctrl+I"))
-        self.actionView_Exported_Rules.setShortcut(QtGui.QKeySequence("Ctrl+E"))
-        # Close right Menu
-        self.closeRightMenuBtn.clicked.connect(
-            lambda: self.rightMenuContainer.setVisible(False)
-        )
-        
-        # Toggle left Menu
-        self.leftMenuBtn.clicked.connect(
-            lambda: self.leftMenuContainer.toggle()
-        )
-        
-        # Expand Center Menu Widget
-        self.homeBtn.clicked.connect(
-            lambda: self.centerMenuContainer.setVisible(not self.centerMenuContainer.isVisible())
-        )
-        self.rulesBtn.clicked.connect(
-            lambda: self.centerMenuContainer.setVisible(not self.centerMenuContainer.isVisible())
-        )
-        self.reportsBtn.clicked.connect(
-            lambda: self.centerMenuContainer.setVisible(not self.centerMenuContainer.isVisible())
-        )
-        self.settingsBtn.clicked.connect(
-            lambda: self.centerMenuContainer.setVisible(not self.centerMenuContainer.isVisible())
-        )
-        # Close Center Menu Widget
-        self.closeCenterMenuBtn.clicked.connect(
-            lambda: self.centerMenuContainer.setVisible(False)
-        )
-        
-        # Expand Bottom Menu Widget
-        self.consoleBtn.clicked.connect(
-            lambda: self.consoleContainer.setVisible(not self.consoleContainer.isVisible())
-        )
-        
-        # Help Button
-        self.helpBtn.clicked.connect(
-            lambda: QtGui.QDesktopServices.openUrl(QtCore.QUrl('https://github.com/generobruno/FWOptimizer'))
-        )
-
-class SlideMenu(QtWidgets.QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setObjectName("leftMenuContainer")
-        
-        # Set initial size
-        self.collapsed_width = 50
-        self.expanded_width = 100
-        self.setFixedWidth(self.collapsed_width)
-        
-        self.is_expanded = False
-
-    def toggle(self):
-        if self.is_expanded:
-            self.collapse()
-        else:
-            self.expand()
-
-    def expand(self):
-        self.setFixedWidth(self.expanded_width)
-        self.is_expanded = True
-        self.updateButtonStyle()
-
-    def collapse(self):
-        self.setFixedWidth(self.collapsed_width)
-        self.is_expanded = False
-        self.updateButtonStyle()
-        
-    def updateButtonStyle(self):
-        # Find the leftMenuSubContainer
-        sub_container = self.findChild(QtWidgets.QWidget, "leftMenuSubContainer")
-        if not sub_container:
-            return
-
-        # Find all frames in the sub_container
-        frames = sub_container.findChildren(QtWidgets.QFrame)
-        
-        for frame in frames:
-            
-            layout = frame.layout()
-            if layout:
-                if self.is_expanded:
-                    sub_container.setFixedWidth(100)
-                    layout.setContentsMargins(0, 5, 0, 5)  # Restore margins when expanded
-                    layout.setSpacing(0)
-                    self.setStyleSheet("""
-                        QWidget {
-                            border-top-left-radius :8px;
-                            border-top-right-radius : 0px;
-                            border-bottom-left-radius : 8px;
-                            border-bottom-right-radius : 8px;
-                        }
-                    """)
-                else:
-                    self.setFixedWidth(40)
-                    layout.setContentsMargins(0, 5, 0, 5)  # Set margins to 0 when collapsed
-                    layout.setSpacing(6)
-                    self.setStyleSheet("""
-                        QWidget {
-                            border-top-left-radius :8px;
-                            border-top-right-radius : 8px;
-                            border-bottom-left-radius : 8px;
-                            border-bottom-right-radius : 8px;
-                        }
-                    """)
-                
-            for button in frame.findChildren(QtWidgets.QPushButton):
-                if self.is_expanded:
-                    button.setStyleSheet("""
-                        QPushButton {
-                            border-radius: 8px;
-                        }
-                    """)
-                    if hasattr(button, 'full_text'):
-                        button.setText(button.full_text)
-                else:
-                    button.setStyleSheet("""
-                        QPushButton {
-                            text-align: left;
-                            padding-left: 3px;
-                            padding-right: 3px;
-                        }
-                    """)
-                    if not hasattr(button, 'full_text'):
-                        button.full_text = button.text()
-                    button.setText("")

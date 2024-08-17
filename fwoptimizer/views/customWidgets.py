@@ -63,6 +63,136 @@ class ConsoleWidget(QtWidgets.QTextEdit):
     def appendToConsole(self, text):
         self.append(text)
         self.moveCursor(QtGui.QTextCursor.MoveOperation.End)
+class SideGrip(QtWidgets.QWidget):
+    def __init__(self, parent, edge):
+        super().__init__(parent)
+        self.setParent(parent)
+        if edge == QtCore.Qt.Edge.LeftEdge:
+            self.setCursor(QtCore.Qt.CursorShape.SizeHorCursor)
+            self.resizeFunc = self.resizeLeft
+        elif edge == QtCore.Qt.Edge.TopEdge:
+            self.setCursor(QtCore.Qt.CursorShape.SizeVerCursor)
+            self.resizeFunc = self.resizeTop
+        elif edge == QtCore.Qt.Edge.RightEdge:
+            self.setCursor(QtCore.Qt.CursorShape.SizeHorCursor)
+            self.resizeFunc = self.resizeRight
+        elif edge == QtCore.Qt.Edge.BottomEdge:
+            self.setCursor(QtCore.Qt.CursorShape.SizeVerCursor)
+            self.resizeFunc = self.resizeBottom
+        self.mousePos = None
+
+    def resizeLeft(self, delta):
+        widget = self.parentWidget()
+        width = max(widget.minimumWidth(), widget.width() - delta.x())
+        geo = widget.geometry()
+        geo.setLeft(geo.right() - width)
+        widget.setGeometry(geo)
+
+    def resizeTop(self, delta):
+        widget = self.parentWidget()
+        height = max(widget.minimumHeight(), widget.height() - delta.y())
+        geo = widget.geometry()
+        geo.setTop(geo.bottom() - height)
+        widget.setGeometry(geo)
+
+    def resizeRight(self, delta):
+        widget = self.parentWidget()
+        width = max(widget.minimumWidth(), widget.width() + delta.x())
+        widget.resize(width, widget.height())
+
+    def resizeBottom(self, delta):
+        widget = self.parentWidget()
+        height = max(widget.minimumHeight(), widget.height() + delta.y())
+        widget.resize(widget.width(), height)
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            self.mousePos = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if self.mousePos is not None:
+            delta = event.pos() - self.mousePos
+            self.resizeFunc(delta)
+
+    def mouseReleaseEvent(self, event):
+        self.mousePos = None
+
+
+class ResizableWidget(QtWidgets.QWidget):
+    _gripSize = 8
+    def __init__(self, parent=None, resizable_edges=None):
+        super().__init__(parent)
+
+        # If no edges are specified, make all edges resizable by default
+        if resizable_edges is None:
+            resizable_edges = [
+                QtCore.Qt.Edge.LeftEdge,
+                QtCore.Qt.Edge.TopEdge,
+                QtCore.Qt.Edge.RightEdge,
+                QtCore.Qt.Edge.BottomEdge
+            ]
+
+        # Create side grips based on specified edges
+        self.sideGrips = {}
+        for edge in resizable_edges:
+            self.sideGrips[edge] = SideGrip(self, edge)
+
+        # Create corner grips only if adjacent edges are resizable
+        self.cornerGrips = []
+        if QtCore.Qt.Edge.LeftEdge in resizable_edges and QtCore.Qt.Edge.TopEdge in resizable_edges:
+            self.cornerGrips.append(QtWidgets.QSizeGrip(self))
+        if QtCore.Qt.Edge.TopEdge in resizable_edges and QtCore.Qt.Edge.RightEdge in resizable_edges:
+            self.cornerGrips.append(QtWidgets.QSizeGrip(self))
+        if QtCore.Qt.Edge.RightEdge in resizable_edges and QtCore.Qt.Edge.BottomEdge in resizable_edges:
+            self.cornerGrips.append(QtWidgets.QSizeGrip(self))
+        if QtCore.Qt.Edge.BottomEdge in resizable_edges and QtCore.Qt.Edge.LeftEdge in resizable_edges:
+            self.cornerGrips.append(QtWidgets.QSizeGrip(self))
+
+        self.updateGrips()
+
+    @property
+    def gripSize(self):
+        return self._gripSize
+
+    def setGripSize(self, size):
+        if size == self._gripSize:
+            return
+        self._gripSize = max(2, size)
+        self.updateGrips()
+
+    def updateGrips(self):
+        self.setContentsMargins(*[self.gripSize] * 4)
+        outRect = self.rect()
+        inRect = outRect.adjusted(self.gripSize, self.gripSize,
+                                  -self.gripSize, -self.gripSize)
+
+        # Position the corner grips
+        if len(self.cornerGrips) >= 1:
+            self.cornerGrips[0].setGeometry(QtCore.QRect(outRect.topLeft(), inRect.topLeft()))
+        if len(self.cornerGrips) >= 2:
+            self.cornerGrips[1].setGeometry(QtCore.QRect(outRect.topRight(), inRect.topRight()).normalized())
+        if len(self.cornerGrips) >= 3:
+            self.cornerGrips[2].setGeometry(QtCore.QRect(inRect.bottomRight(), outRect.bottomRight()))
+        if len(self.cornerGrips) >= 4:
+            self.cornerGrips[3].setGeometry(QtCore.QRect(outRect.bottomLeft(), inRect.bottomLeft()).normalized())
+
+        # Position the side grips
+        if QtCore.Qt.Edge.LeftEdge in self.sideGrips:
+            self.sideGrips[QtCore.Qt.Edge.LeftEdge].setGeometry(
+                0, inRect.top(), self.gripSize, inRect.height())
+        if QtCore.Qt.Edge.TopEdge in self.sideGrips:
+            self.sideGrips[QtCore.Qt.Edge.TopEdge].setGeometry(
+                inRect.left(), 0, inRect.width(), self.gripSize)
+        if QtCore.Qt.Edge.RightEdge in self.sideGrips:
+            self.sideGrips[QtCore.Qt.Edge.RightEdge].setGeometry(
+                inRect.left() + inRect.width(), inRect.top(), self.gripSize, inRect.height())
+        if QtCore.Qt.Edge.BottomEdge in self.sideGrips:
+            self.sideGrips[QtCore.Qt.Edge.BottomEdge].setGeometry(
+                self.gripSize, inRect.top() + inRect.height(), inRect.width(), self.gripSize)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.updateGrips()
 
 class SlideMenu(QtWidgets.QWidget):
     """

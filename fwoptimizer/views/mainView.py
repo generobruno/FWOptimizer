@@ -1,6 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from views.imageView import ImageViewer
-from views.customWidgets import SlideMenu, ConsoleWidget
+from views.customWidgets import SlideMenu, ConsoleWidget, ResizableWidget
 import fwoptimizer.views.resources_rc
 
 class Ui_MainWindow(object):
@@ -167,14 +167,16 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addWidget(self.leftMenuBottomFrame, 0, QtCore.Qt.AlignmentFlag.AlignBottom)
         self.verticalLayout.addWidget(self.leftMenuSubContainer)
         self.horizontalLayout.addWidget(self.leftMenuContainer)
-        self.centerMenuContainer = QtWidgets.QWidget(parent=self.centralWidget)
+        self.centerMenuContainer = ResizableWidget(self.centralWidget, resizable_edges=[
+            QtCore.Qt.Edge.RightEdge
+        ])
         self.centerMenuContainer.setMinimumSize(QtCore.QSize(0, 0))
         self.centerMenuContainer.setMaximumSize(QtCore.QSize(16777215, 16777215))
-        self.centerMenuContainer.setObjectName("centerMenuContainer")        
+        self.centerMenuContainer.setObjectName("centerMenuContainer")
         self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.centerMenuContainer)
         self.verticalLayout_6.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_6.setSpacing(0)
-        self.verticalLayout_6.setObjectName("verticalLayout_6")
+        self.verticalLayout_6.setObjectName("verticalLayout_6") 
         self.centerMenuSubContainer = QtWidgets.QWidget(parent=self.centerMenuContainer)
         self.centerMenuSubContainer.setMinimumSize(QtCore.QSize(200, 0))
         self.centerMenuSubContainer.setObjectName("centerMenuSubContainer")
@@ -366,7 +368,10 @@ class Ui_MainWindow(object):
         self.horizontalLayout_5.addWidget(self.graphicsView)
         self.verticalLayout_16.addWidget(self.graphFrame)
         self.horizontalLayout_7.addWidget(self.mainContentsContainer)
-        self.rightMenuContainer = QtWidgets.QWidget(parent=self.mainBodyContent)
+        #self.rightMenuContainer = QtWidgets.QWidget(parent=self.mainBodyContent)
+        self.rightMenuContainer = ResizableWidget(parent=self.mainBodyContent, resizable_edges=[
+            QtCore.Qt.Edge.LeftEdge
+        ])
         self.rightMenuContainer.setMinimumSize(QtCore.QSize(300, 0))
         self.rightMenuContainer.setObjectName("rightMenuContainer")
         self.verticalLayout_12 = QtWidgets.QVBoxLayout(self.rightMenuContainer)
@@ -417,7 +422,10 @@ class Ui_MainWindow(object):
         self.verticalLayout_12.addWidget(self.rightMenuSubContainer)
         self.horizontalLayout_7.addWidget(self.rightMenuContainer, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         self.verticalLayout_11.addWidget(self.mainBodyContent)
-        self.consoleContainer = QtWidgets.QWidget(parent=self.mainBodyContainer)
+        #self.consoleContainer = QtWidgets.QWidget(parent=self.mainBodyContainer)
+        self.consoleContainer = ResizableWidget(self.mainBodyContainer, resizable_edges=[
+            QtCore.Qt.Edge.TopEdge
+        ])
         self.consoleContainer.setObjectName("consoleContainer")
         self.verticalLayout_20 = QtWidgets.QVBoxLayout(self.consoleContainer)
         self.verticalLayout_20.setContentsMargins(0, 0, 0, 0)

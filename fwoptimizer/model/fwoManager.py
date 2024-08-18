@@ -80,7 +80,7 @@ class FWOManager:
         print(f"Importing Rules from: {filePath}")
         rulesParsed = self.parserStrategy.parse(filePath)
         if self.currentFirewall:
-            self.currentFirewall.inputRules = rulesParsed
+            self.currentFirewall.getInputRules() = rulesParsed
             print("Rules parsed and saved to the current firewall.")
             return self._copyFile(filePath), rulesParsed
         else:

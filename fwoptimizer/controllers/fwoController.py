@@ -18,7 +18,7 @@ class FWOController:
     def __init__(self, model: FWOManager, view: FWOView):
         self.model: FWOManager = model
         self.view: FWOView = view
-        self.console = ConsoleCommands(self.model, self.view.ui.console)
+        self.console = ConsoleCommands(self.model, self.view, self.view.ui.console)
         self.connectSignals()
         
     def connectSignals(self):

@@ -2,14 +2,16 @@
 """
 
 import model.fwoManager as fwm
+import views.fwoView as fwv
 import views.customWidgets as cw
 
 class ConsoleCommands:
     """
     Console Emulator for the user interaction with the model.
     """
-    def __init__(self, model: fwm.FWOManager, console: cw.ConsoleWidget):
+    def __init__(self, model: fwm.FWOManager, view: fwv.FWOView, console: cw.ConsoleWidget):
         self.model = model
+        self.view = view
         self.console = console
         # Permited Commands
         self.commands = {
@@ -44,20 +46,70 @@ class ConsoleCommands:
             self.console.appendToConsole("Invalid command, type 'help' for more information.")
 
     def importRules(self, args):
-        """_summary_
+        """
+        Import rules from a file. Warn the user if rules already exist.
 
         Args:
-            args (_type_): _description_
+            args (str): Command arguments, should contain the file path.
         """
-        pass
+        filePath = args.strip()
+
+        if not filePath:
+            self.console.appendToConsole("No file path provided. Use: import <path>")
+            return
+        
+        if self.model.currentFirewall is None:
+            self.console.appendToConsole("No firewall instantiated")
+
+        if self.model.currentFirewall.getInputRules():
+            self.console.appendToConsole("Warning: The current firewall already has input rules. Importing new rules will overwrite them.")
+
+        fileContent, rules = self.model.importRules(filePath)
+        
+        if fileContent and rules:
+            self.view.displayImportedRules(fileContent, rules)
+            self.console.appendToConsole(f"Rules imported from {filePath}.")
+        else:
+            self.console.appendToConsole(f"Failed to import rules from {filePath}. Please check the file path and format.")
 
     def displayRules(self, args):
-        """_summary_
+        """
+        Display rules in the console. The user can filter by table and chain.
 
         Args:
-            args (_type_): _description_
+            args (str): Command arguments, can specify table and chain.
         """
-        pass
+        parts = args.split()
+        rules = self.model.currentFirewall.getInputRules()
+        
+        if rules is None:
+            self.console.appendToConsole("No rules available.")
+            return
+
+        # If no table or chain is specified, display all rules
+        if len(parts) == 0:
+            self.console.appendToConsole("Displaying all rules:\n")
+            self.console.appendToConsole(str(rules))
+            return
+
+        # If table is specified
+        table = parts[0]
+        chain = parts[1] if len(parts) > 1 else None
+
+        if chain:
+            disRules = rules[table][chain]
+            if disRules:
+                self.console.appendToConsole(f"Displaying rules for table '{table}' and chain '{chain}':\n")
+                self.console.appendToConsole(str(disRules))
+            else:
+                self.console.appendToConsole(f"No rules found for table '{table}' and chain '{chain}'.")
+        else:
+            disRules = rules[table]
+            if disRules:
+                self.console.appendToConsole(f"Displaying rules for table '{table}':\n")
+                self.console.appendToConsole(str(disRules))
+            else:
+                self.console.appendToConsole(f"No rules found for table '{table}'.")
     
     def addFieldList(self, args):
         """_summary_
@@ -65,15 +117,46 @@ class ConsoleCommands:
         Args:
             args (_type_): _description_
         """
+        self.console.appendToConsole("TODO")
         pass
     
     def generateFdds(self, args):
-        """_summary_
+        """
+        Generate FDDs for a specific table and chain, or prompt the user to choose.
 
         Args:
-            args (_type_): _description_
+            args (str): Command arguments, can specify table and chain.
         """
-        pass
+        parts = args.split()
+
+        # Ensure a field list is loaded
+        if self.model.currentFirewall.getFieldList() is None:
+            self.console.appendToConsole("No Field List loaded.\nPlease import it first.")
+            return
+
+        # Ensure rules are loaded
+        if not self.model.currentFirewall or not self.model.currentFirewall.getInputRules():
+            self.console.appendToConsole("No rules loaded.\nPlease import rules first.")
+            return
+
+        # Get all tables
+        tables = self.model.currentFirewall.getInputRules().getTables()
+
+        # If table and chain are specified, generate FDD for that specific table/chain
+        if len(parts) == 2:
+            tableName = parts[0]
+            chainName = parts[1]
+            if tableName in tables and chainName in self.model.currentFirewall.getInputRules()[tableName]:
+                self.model.generateFDD(tableName, chainName)
+                self.console.appendToConsole(f"FDD generated for table '{tableName}' and chain '{chainName}'.")
+            else:
+                self.console.appendToConsole(f"Invalid table '{tableName}' or chain '{chainName}' specified.")
+            return
+
+        # Else, generate all
+        self.model.generateFDD()
+        self.console.appendToConsole("FDDs generated for all tables and chains.")
+        return
     
     def optimizeFdds(self, args):
         """_summary_
@@ -81,6 +164,7 @@ class ConsoleCommands:
         Args:
             args (_type_): _description_
         """
+        self.console.appendToConsole("TODO")
         pass
     
     def exportRules(self, args):
@@ -89,6 +173,7 @@ class ConsoleCommands:
         Args:
             args (_type_): _description_
         """
+        self.console.appendToConsole("TODO")
         pass
     
     def printFdd(self, args):

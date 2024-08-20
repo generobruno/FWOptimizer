@@ -302,5 +302,28 @@ class FWOView(QtWidgets.QMainWindow):
                     return option, file_path
         
         return None, None
+    
+    def saveProjectDialog(self):
+        """
+        Allow the user to specify the file name and folder to store the project.
+
+        Returns:
+            Directory and file name specified by the user to save the project. None if an error occurred.
+        """
+
+        filePath, _ = QtWidgets.QFileDialog.getSaveFileName(
+            parent=None,
+            caption="Save Project",
+            directory="",
+            filter="FWO Files (*.fwo);;All Files (*)"
+        )
+
+        if filePath:
+            # Ensure the file has the correct extension
+            if not filePath.endswith(".fwo"):
+                filePath += ".fwo"
+            return filePath
+        
+        return None
                 
     

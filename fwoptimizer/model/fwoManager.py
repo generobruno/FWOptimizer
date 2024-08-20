@@ -8,6 +8,8 @@ Returns:
 """
 
 import pickle
+import zipfile
+import os
 from fwoptimizer.classes.firewall import Firewall
 from fwoptimizer.classes import parser
 
@@ -188,13 +190,60 @@ class FWOManager:
         else:
             return self.currentFirewall.genOutputRules(table, chain)
         
-    def serializeFirewall(self):
+    def saveProject(self, filePath):
+        
+        workDir = "output/"
+        serializedFirewallPath = workDir + "firewall.pkl"
 
-        with open('output/firewall.pkl', 'wb') as file:
+        # Serialize firewall object
+        with open(serializedFirewallPath, 'wb') as file:
             pickle.dump(self.currentFirewall, file)
 
-    def deserializeFirewall(self):
+        # Createa ZIP File in save_path
+        with zipfile.ZipFile(filePath, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Recorrer el directorio output/
+            for root, dirs, files in os.walk(workDir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Agregar el archivo al ZIP, manteniendo la estructura de directorios
+                    zipf.write(file_path, os.path.relpath(file_path, workDir))
 
-        with open('output/firewall.pkl', 'rb') as file:
+        #Remove serialized object
+        if os.path.exists(serializedFirewallPath):
+            os.remove(serializedFirewallPath)
+
+    def loadProject(self, filePath):
+
+        workDir = "output/"
+        serializedFirewallPath = workDir + "firewall.pkl"
+
+        def removeDir(dirPath):
+            for filename in os.listdir(dirPath):
+                path = os.path.join(dirPath, filename)
+                try:
+                    if os.path.isfile(path):
+                        os.remove(path)
+                    elif os.path.isdir(path):
+                        removeDir(path)
+                        os.rmdir(path)
+                except Exception as e:
+                    print(f'Error al eliminar {path}: {e}')
+
+        # Eliminar todo el contenido del directorio de trabajo
+        removeDir(workDir)
+
+        # Extraer el archivo en el directorio de trabajo
+        with zipfile.ZipFile(filePath, 'r') as zip_ref:
+            zip_ref.extractall(workDir)
+
+        # Deserializar el firewall
+        with open(serializedFirewallPath, 'rb') as file:
             self.currentFirewall = pickle.load(file)
+
+        # Borrar el archivo de serializado
+        if os.path.exists(serializedFirewallPath):
+            os.remove(serializedFirewallPath)
+
+
+
         

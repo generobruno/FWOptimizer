@@ -18,7 +18,7 @@ class Ui_MainWindow(object):
 "    margin:0;\n"
 "    color: #fff;\n"
 "}\n"
-"QMenuBar, QStatusBar, QAction {\n"
+"QMenuBar, QMenu, QStatusBar, QAction {\n"
 "    background-color: #1f232a;\n"
 "}\n"
 "#centralWidget {\n"

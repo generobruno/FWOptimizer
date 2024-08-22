@@ -315,7 +315,7 @@ class FWOView(QtWidgets.QMainWindow):
             parent=None,
             caption="Save Project",
             directory="",
-            filter="FWO Files (*.fwo);;All Files (*)"
+            filter="FWO Files (*.fwo)"
         )
 
         if filePath:

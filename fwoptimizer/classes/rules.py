@@ -446,6 +446,21 @@ class Chain:
             List<Rule>: list of rules
         """
         return self._rules
+    
+    def getRuleForId(self, id: int) -> Rule:
+        """
+        Gets the Rule that owns the given id
+        
+        Args:
+            id: Rule id
+            
+        Returns:
+            The searched rule if exist. None otherwise
+        """
+        for rule in self._rules:
+            if rule.getId() == id:
+                return rule
+        return None
 
     def getName(self):
         """

@@ -1,3 +1,6 @@
+[MASTER]
+ignore-paths=fwoptimizer\configs,fwoptimizer\views\mainView.py,fwoptimizer\views\resources_rc.py
+
 [FORMAT]
 method-naming-style=camelCase
 attr-naming-style=camelCase

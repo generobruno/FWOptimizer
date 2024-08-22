@@ -3,7 +3,7 @@ Tests for the Edge, Node, Level and FDD classes
 """
 
 import fwoptimizer.classes.fdd as fdd
-from fwoptimizer.classes.firewall import Field
+from fwoptimizer.classes.fdd import Field
 from fwoptimizer.utils.elementSet import DirectionSet
 
 

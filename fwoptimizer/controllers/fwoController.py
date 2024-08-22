@@ -18,7 +18,7 @@ class FWOController:
     def __init__(self, model: FWOManager, view: FWOView):
         self.model: FWOManager = model
         self.view: FWOView = view
-        self.console = ConsoleCommands(self.model, self.view.ui.console)
+        self.console = ConsoleCommands(self.model, self.view, self.view.ui.console)
         self.connectSignals()
         
     def connectSignals(self):
@@ -103,12 +103,12 @@ class FWOController:
             self.view.displayErrorMessage("No Field List loaded.\nPlease import it first.")
             return
 
-        if not self.model.currentFirewall or not self.model.currentFirewall.inputRules:
+        if not self.model.currentFirewall or not self.model.currentFirewall._inputRules:
             self.view.displayErrorMessage("No rules loaded.\nPlease import rules first.")
             return
         
         # Get all tables
-        tables = self.model.currentFirewall.inputRules.getTables()
+        tables = self.model.currentFirewall._inputRules.getTables()
 
         # User selects option to generate
         option = self.view.selectFddDialog(tables)
@@ -131,19 +131,19 @@ class FWOController:
             return
 
         # Get all tables from the current firewall's RuleSet
-        tables = self.model.currentFirewall.inputRules.getTables()
+        tables = self.model.currentFirewall.getInputRules().getTables()
 
         options = self.view.selectViewFddDialog(tables)
         
         if options:
-            (table_name, chain_name), image_format, graph_orientation, unroll_decisions = options
-            print(f"Viewing FDD for {table_name} -> {chain_name}:\n{image_format} format, {graph_orientation} orientation, Unroll Decisions: {unroll_decisions}")
+            (tableName, chainName), imageFrmt, graphDir, unrollDecisions = options
+            print(f"Viewing FDD for {tableName} -> {chainName}:\n{imageFrmt} format, {graphDir} orientation, Unroll Decisions: {unrollDecisions}")
             self.model.viewFDD(
-                table=table_name, 
-                chain=chain_name, 
-                imgFormat=image_format, 
-                graphDir=graph_orientation, 
-                unrollDecisions=unroll_decisions
+                table=tableName, 
+                chain=chainName, 
+                imgFormat=imageFrmt, 
+                graphDir=graphDir, 
+                unrollDecisions=unrollDecisions
             )
             
     def optimizeFDD(self):
@@ -155,7 +155,7 @@ class FWOController:
             return
         
         # Get all tables
-        tables = self.model.currentFirewall.inputRules.getTables()
+        tables = self.model.currentFirewall.getInputRules().getTables()
 
         # User selects option to generate
         option = self.view.selectFddDialog(tables)
@@ -178,12 +178,12 @@ class FWOController:
             return
         
         # Get all tables
-        tables = self.model.currentFirewall.inputRules.getTables()
+        tables = self.model.currentFirewall.getInputRules().getTables()
 
         # User selects option and file path
-        option, file_path = self.view.exportRulesDialog(tables)
+        option, filePath = self.view.exportRulesDialog(tables)
         
-        if option and file_path:
+        if option and filePath:
             # Generate rules given user selection
             if option == "all":
                 exportedRules = self.model.exportRules()
@@ -203,10 +203,10 @@ class FWOController:
                 self.view.displayExportedRules(fileContent)
                 
                 # Write the file content to the specified file path
-                with open(file_path, 'w') as file:
+                with open(filePath, 'w') as file:
                     file.write(fileContent)
                 
-                print(f'Exported file to: {file_path}')
+                print(f'Exported file to: {filePath}')
         else:
             self.view.displayErrorMessage("No valid option or file path selected for export.")
 

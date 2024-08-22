@@ -17,10 +17,10 @@ class Firewall:
             fdds (list[FDD], optional): Firewall's list of FDDs. Defaults to [].
             inputRules (RuleSet, optional): Firewall's initial rules. Defaults to None.
         """
-        self.fddList: list[FDD] = fdds
-        self.fieldList: FieldList = fieldList
-        self.inputRules: RuleSet = inputRules
-        self.outputRules: RuleSet = None
+        self._fddList: list[FDD] = fdds
+        self._fieldList: FieldList = fieldList
+        self._inputRules: RuleSet = inputRules
+        self._outputRules: RuleSet = None
         
     def setInputRules(self, rules: RuleSet):
         """
@@ -32,7 +32,7 @@ class Firewall:
         if not isinstance(rules, RuleSet):
             raise ValueError("Object is not of type RuleSet.")
         
-        self.inputRules = rules
+        self._inputRules = rules
         
     def getInputRules(self):
         """
@@ -41,7 +41,7 @@ class Firewall:
         Returns:
             RuleSet: Initial RuleSet
         """
-        return self.inputRules
+        return self._inputRules
     
     def setFieldList(self, filePath: str):
         """
@@ -52,7 +52,7 @@ class Firewall:
         """
         fieldList = FieldList()
         fieldList.loadConfig(f"{filePath}")
-        self.fieldList = fieldList
+        self._fieldList = fieldList
     
     def getFieldList(self):
         """
@@ -61,7 +61,7 @@ class Firewall:
         Returns:
             FieldList: Firewall's field list
         """
-        return self.fieldList
+        return self._fieldList
     
     def genFdd(self, table=None, chain=None):
         """
@@ -74,16 +74,16 @@ class Firewall:
         """
         # Generate all
         if table is None and chain is None:
-            for tableName , table in self.inputRules.getTables().items():
+            for tableName , table in self._inputRules.getTables().items():
                 for chainName, _ in table.getChains().items():
-                    fdd = FDD(self.fieldList)
+                    fdd = FDD(self._fieldList)
                     self.addFdd(fdd)
                     print(f'Generating {tableName} - {chainName} FDD')
                     fdd.genFDD(self.inputRules[tableName][chainName], f"output/report-{tableName}-{chainName}.txt")
                     print(f'{tableName} - {chainName} FDD Done.')
         else:   # Generate Specific FDD
             print(f'Generating {table} - {chain} FDD')
-            fdd = FDD(self.fieldList)
+            fdd = FDD(self._fieldList)
             self.addFdd(fdd)
             fdd.genFDD(self.inputRules[table][chain], f"output/report-{table}-{chain}.txt")
             print(f'{table} - {chain} FDD Done.')
@@ -99,7 +99,7 @@ class Firewall:
         """
         # Optimize all
         if table is None and chain is None:
-            for tableName , table in self.inputRules.getTables().items():
+            for tableName , table in self._inputRules.getTables().items():
                 for chainName, _ in table.getChains().items():
                     fdd = self.getFDD(chainName)
                     print(f'Optimizing {tableName} - {chainName} FDD')
@@ -128,7 +128,7 @@ class Firewall:
         exportRuleSet = RuleSet()
         
         if table is None and chain is None:
-            for tableName , table in self.inputRules.getTables().items():
+            for tableName , table in self._inputRules.getTables().items():
                 # Add new table
                 exportRuleSet.addTable(Table(tableName))
                 for chainName, _ in table.getChains().items():
@@ -170,7 +170,7 @@ class Firewall:
         if not isinstance(fdd, FDD):
             raise ValueError("Object is not of type FDD.")
         
-        self.fddList.append(fdd)
+        self._fddList.append(fdd)
     
     def delFDD(self, fdd: FDD):
         """
@@ -182,7 +182,7 @@ class Firewall:
         removeFdd = self.getFDD(fdd)
         
         if removeFdd:
-            self.fddList.remove(fdd)
+            self._fddList.remove(fdd)
         else:
             print(f"Can't remove FDD.")
     
@@ -197,7 +197,7 @@ class Firewall:
         Returns:
             FDD: The corresponding FDD if found, else None.
         """
-        for fdd in self.fddList:
+        for fdd in self._fddList:
             if fdd.getName() == chainName:
                 return fdd
         print(f"FDD not found for chain: {chainName}")
@@ -210,5 +210,5 @@ class Firewall:
         Returns:
             List[FDD]: List of FDDs 
         """
-        return self.fddList
+        return self._fddList
         

@@ -63,6 +63,7 @@ class ConsoleWidget(QtWidgets.QTextEdit):
     def appendToConsole(self, text):
         self.append(text)
         self.moveCursor(QtGui.QTextCursor.MoveOperation.End)
+
 class SideGrip(QtWidgets.QWidget):
     def __init__(self, parent, edge):
         super().__init__(parent)
@@ -116,7 +117,6 @@ class SideGrip(QtWidgets.QWidget):
 
     def mouseReleaseEvent(self, event):
         self.mousePos = None
-
 
 class ResizableWidget(QtWidgets.QWidget):
     _gripSize = 8

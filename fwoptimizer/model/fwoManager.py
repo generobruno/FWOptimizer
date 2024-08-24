@@ -17,11 +17,15 @@ class FWOManager:
     """
     Top Module of the App Model
     """
-    def __init__(self):
+    def __init__(self, workFolder = "workdir/"):
+        # Work folder
+        self.workFolder = workFolder
+        if not os.path.exists(self.workFolder):
+            os.makedirs(self.workFolder)
         # List of Firewalls Managed
         self.firewalls = []
         # Current Firewall
-        self.currentFirewall = Firewall() #TODO CHANGE -> Guardar instancia de esto
+        self.currentFirewall = Firewall(workFolder=self.workFolder)
         # Current Parser Strategy (Default to IpTables)
         self.parserStrategy = parser.IpTablesParser()
         # Graphics Viewer
@@ -149,7 +153,7 @@ class FWOManager:
         
         # Generate graph
         fdd = self.currentFirewall.getFDD(chain)
-        pathName = f'output/graphs/gen_{chain}'
+        pathName = self.workFolder + f'graphs/gen_{chain}'
         fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
 
         if self.graphicsView:
@@ -192,8 +196,7 @@ class FWOManager:
         
     def saveProject(self, filePath):
         
-        workDir = "output/"
-        serializedFirewallPath = workDir + "firewall.pkl"
+        serializedFirewallPath = self.workFolder + "firewall.pkl"
 
         # Serialize firewall object
         with open(serializedFirewallPath, 'wb') as file:
@@ -202,11 +205,11 @@ class FWOManager:
         # Createa ZIP File in save_path
         with zipfile.ZipFile(filePath, 'w', zipfile.ZIP_DEFLATED) as zipf:
             # Recorrer el directorio output/
-            for root, dirs, files in os.walk(workDir):
+            for root, dirs, files in os.walk(self.workFolder):
                 for file in files:
                     file_path = os.path.join(root, file)
                     # Agregar el archivo al ZIP, manteniendo la estructura de directorios
-                    zipf.write(file_path, os.path.relpath(file_path, workDir))
+                    zipf.write(file_path, os.path.relpath(file_path, self.workFolder))
 
         #Remove serialized object
         if os.path.exists(serializedFirewallPath):
@@ -214,8 +217,7 @@ class FWOManager:
 
     def loadProject(self, filePath):
 
-        workDir = "output/"
-        serializedFirewallPath = workDir + "firewall.pkl"
+        serializedFirewallPath = self.workFolder + "firewall.pkl"
 
         def removeDir(dirPath):
             for filename in os.listdir(dirPath):
@@ -230,11 +232,11 @@ class FWOManager:
                     print(f'Error al eliminar {path}: {e}')
 
         # Eliminar todo el contenido del directorio de trabajo
-        removeDir(workDir)
+        removeDir(self.workFolder)
 
         # Extraer el archivo en el directorio de trabajo
         with zipfile.ZipFile(filePath, 'r') as zip_ref:
-            zip_ref.extractall(workDir)
+            zip_ref.extractall(self.workFolder)
 
         # Deserializar el firewall
         with open(serializedFirewallPath, 'rb') as file:

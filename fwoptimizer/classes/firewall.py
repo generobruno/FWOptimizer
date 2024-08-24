@@ -8,7 +8,7 @@ class Firewall:
     """_summary_
     """
     
-    def __init__(self, fieldList: FieldList = None, fdds: list[FDD] = [], inputRules: RuleSet= None):
+    def __init__(self, fieldList: FieldList = None, fdds: list[FDD] = [], inputRules: RuleSet= None, workFolder: str = ""):
         """
         Firewall Constructor
 
@@ -21,6 +21,7 @@ class Firewall:
         self._fieldList: FieldList = fieldList
         self._inputRules: RuleSet = inputRules
         self._outputRules: RuleSet = None
+        self._workFolder: str = workFolder
         
     def setInputRules(self, rules: RuleSet):
         """
@@ -79,13 +80,13 @@ class Firewall:
                     fdd = FDD(self._fieldList)
                     self.addFdd(fdd)
                     print(f'Generating {tableName} - {chainName} FDD')
-                    fdd.genFDD(self._inputRules[tableName][chainName], f"output/report-{tableName}-{chainName}.txt")
+                    fdd.genFDD(self._inputRules[tableName][chainName], self._workFolder + f"report-{tableName}-{chainName}.txt")
                     print(f'{tableName} - {chainName} FDD Done.')
         else:   # Generate Specific FDD
             print(f'Generating {table} - {chain} FDD')
             fdd = FDD(self._fieldList)
             self.addFdd(fdd)
-            fdd.genFDD(self._inputRules[table][chain], f"output/report-{table}-{chain}.txt")
+            fdd.genFDD(self._inputRules[table][chain], self._workFolder + f"report-{table}-{chain}.txt")
             print(f'{table} - {chain} FDD Done.')
                 
     def optimizeFdd(self, table=None, chain=None):

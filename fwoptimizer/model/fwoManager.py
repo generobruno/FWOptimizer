@@ -26,6 +26,8 @@ class FWOManager:
         self.firewalls = []
         # Current Firewall
         self.currentFirewall = Firewall(workFolder=self.workFolder)
+        # Add default field List
+        self.setFieldList('fwoptimizer/configs/fdd_config.toml')
         # Current Parser Strategy (Default to IpTables)
         self.parserStrategy = parser.IpTablesParser()
         # Graphics Viewer

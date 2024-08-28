@@ -11,5 +11,6 @@ pylint_out.json
 __pycache__
 build
 output
+workdir
 
 example_set.txt

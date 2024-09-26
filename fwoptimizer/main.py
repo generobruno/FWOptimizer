@@ -26,7 +26,13 @@ class FWOptimizer:
         self.view.show()
 
     def run(self):
-        return self.app.exec()
+        exit_code = self.app.exec()
+        self.cleanUp()
+        return exit_code
+    
+    def cleanUp(self):
+        if hasattr(self.controller, 'cleanUp'):
+            self.controller.cleanUp()
 
 if __name__ == '__main__':
     

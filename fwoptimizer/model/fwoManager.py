@@ -126,10 +126,10 @@ class FWOManager:
         print("Generating FDD...")
         if table is None and chain is None:
             self.currentFirewall.genFdd()
+            return None, None
         else:
             self.currentFirewall.genFdd(table, chain)
-            print(f'Printing out FDD')
-            self.viewFDD(table, chain)
+            return table, chain
     
     def setGraphicsView(self, graphicsView):
         """
@@ -157,11 +157,8 @@ class FWOManager:
         fdd = self.currentFirewall.getFDD(chain)
         pathName = self.workFolder + f'graphs/gen_{chain}'
         fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
-
-        if self.graphicsView:
-            self.graphicsView.displayImage(f'{pathName}.{imgFormat}')
-        else:
-            print("Graphics view is not set.")
+        
+        return pathName, imgFormat
         
     def optimizeFDD(self, table=None, chain=None):
         """
@@ -174,10 +171,10 @@ class FWOManager:
         print("Optimizing FDD...")
         if table is None and chain is None:
             self.currentFirewall.optimizeFdd()
+            return None, None
         else:
             self.currentFirewall.optimizeFdd(table, chain)
-            print(f'Printing out FDD')
-            self.viewFDD(table, chain) #TODO Cambiar nombre para tener las 2 imagenes?
+            return table, chain
     
     def exportRules(self, table=None, chain=None):
         """

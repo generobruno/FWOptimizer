@@ -289,6 +289,7 @@
     <file>icons/zoom-out.svg</file>
   </qresource>
   <qresource prefix="images">
+    <file>images/loading.gif</file>
     <file>images/deku_tree_sprout.png</file>
   </qresource>
 </RCC>

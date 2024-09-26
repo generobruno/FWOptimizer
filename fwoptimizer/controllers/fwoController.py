@@ -7,9 +7,15 @@ Returns:
     _type_: _description_
 """
 
+import concurrent.futures
+from PyQt6.QtCore import QObject, pyqtSignal
+
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
 from model.consoleCommands import ConsoleCommands
+
+# Maximum Number of workers to run the Model
+MAX_WORKERS = 5
 
 class FWOController:
     """
@@ -19,14 +25,23 @@ class FWOController:
         self.model: FWOManager = model
         self.view: FWOView = view
         self.console = ConsoleCommands(self.model, self.view, self.view.ui.console)
+        
+        self.signals = WorkerSignals()
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
+        self.futures = []
+        
         self.connectSignals()
         
     def connectSignals(self):
         """
-        Connect the view's signals with the model functions
+        Connect the view's and worker's signals with the model functions
         """
         view = self.view.ui
         model = self.model
+        
+        # Connect worker signals
+        self.signals.finished.connect(self.onTaskFinished)
+        self.signals.error.connect(self.onTaskError)
         
         # Connect buttons to model functions
         view.importBtn.clicked.connect(self.importRules)
@@ -89,9 +104,7 @@ class FWOController:
         filePath = self.view.selectFileDialog()
         
         if filePath:
-            fileContent, rules = self.model.importRules(filePath)
-            if fileContent and rules:
-                self.view.displayImportedRules(fileContent, rules)
+            self.runModelTask(self.model.importRules, filePath)
         else:
             print("No file Selected.")
             
@@ -100,11 +113,11 @@ class FWOController:
         Generate an FDD
         """
         if self.model.currentFirewall.getFieldList() is None:
-            self.view.displayErrorMessage("No Field List loaded.\nPlease import it first.")
+            self.view.displayWarningMessage("No Field List loaded.\nPlease import it first.")
             return
 
         if not self.model.currentFirewall or not self.model.currentFirewall._inputRules:
-            self.view.displayErrorMessage("No rules loaded.\nPlease import rules first.")
+            self.view.displayWarningMessage("No rules loaded.\nPlease import rules first.")
             return
         
         # Get all tables
@@ -115,19 +128,19 @@ class FWOController:
         
         # Generate FDD given user selection
         if option == "all":  
-            self.model.generateFDD()
+            self.runModelTask(self.model.generateFDD)
         elif isinstance(option, tuple):
             tableName, chainName = option
-            self.model.generateFDD(tableName, chainName)
+            self.runModelTask(self.model.generateFDD, tableName, chainName)
         else:
-            self.view.displayErrorMessage("No valid option selected for FDD generation.")
+            self.view.displayWarningMessage("No valid option selected for FDD generation.")
             
     def viewFDD(self):
         """
         Display the FDD
         """
         if not self.model.currentFirewall or len(self.model.currentFirewall.getFDDs()) == 0:
-            self.view.displayErrorMessage("No FDD Generated.\nPlease generate an FDD for the firewall.")
+            self.view.displayWarningMessage("No FDD Generated.\nPlease generate an FDD for the firewall.")
             return
 
         # Get all tables from the current firewall's RuleSet
@@ -138,20 +151,20 @@ class FWOController:
         if options:
             (tableName, chainName), imageFrmt, graphDir, unrollDecisions = options
             print(f"Viewing FDD for {tableName} -> {chainName}:\n{imageFrmt} format, {graphDir} orientation, Unroll Decisions: {unrollDecisions}")
-            self.model.viewFDD(
-                table=tableName, 
-                chain=chainName, 
-                imgFormat=imageFrmt, 
-                graphDir=graphDir, 
-                unrollDecisions=unrollDecisions
-            )
+            self.runModelTask(self.model.viewFDD,
+                            tableName,
+                            chainName,
+                            imageFrmt,
+                            graphDir,
+                            unrollDecisions
+                            )
             
     def optimizeFDD(self):
         """
         Optimize the FDD
         """
         if not self.model.currentFirewall or len(self.model.currentFirewall.getFDDs()) == 0:
-            self.view.displayErrorMessage("No FDD Generated.\nPlease generate an FDD for the firewall.")
+            self.view.displayWarningMessage("No FDD Generated.\nPlease generate an FDD for the firewall.")
             return
         
         # Get all tables
@@ -162,19 +175,19 @@ class FWOController:
         
         # Optimize FDD given user selection
         if option == "all":  
-            self.model.optimizeFDD()
+            self.runModelTask(self.model.optimizeFDD)
         elif isinstance(option, tuple):
             tableName, chainName = option
-            self.model.optimizeFDD(tableName, chainName)
+            self.runModelTask(self.model.optimizeFDD, tableName, chainName)
         else:
-            self.view.displayErrorMessage("No valid option selected for FDD generation.")
+            self.view.displayWarningMessage("No valid option selected for FDD generation.")
             
     def exportRules(self):
         """
         Generate Rules and Export them to a file
         """
         if not self.model.currentFirewall or len(self.model.currentFirewall.getFDDs()) == 0:
-            self.view.displayErrorMessage("No FDD Generated.\nPlease generate an FDD for the firewall.")
+            self.view.displayWarningMessage("No FDD Generated.\nPlease generate an FDD for the firewall.")
             return
         
         # Get all tables
@@ -192,7 +205,7 @@ class FWOController:
                 print(f'Exporting specific - Table: {tableName}, Chain: {chainName}')
                 exportedRules = self.model.exportRules(tableName, chainName)
             else:
-                self.view.displayErrorMessage("No valid option selected for FDD generation.")
+                self.view.displayWarningMessage("No valid option selected for FDD generation.")
                 return
             
             # Generate export File from RuleSet, given the Parser Strategy
@@ -208,7 +221,7 @@ class FWOController:
                 
                 print(f'Exported file to: {filePath}')
         else:
-            self.view.displayErrorMessage("No valid option or file path selected for export.")
+            self.view.displayWarningMessage("No valid option or file path selected for export.")
 
     def saveProject(self) -> None:
         """
@@ -246,3 +259,119 @@ class FWOController:
             self.view.ui.console.clear()
         else:
             self.console.executeCommand(command)
+        
+    def taskWrapper(self, func, *args, **kwargs):
+        """
+        Wrap a Model's function to be executed by a worker.
+
+        Args:
+            func (obj): Model's function.
+        """
+        try:
+            result = func(*args, **kwargs)
+            self.signals.finished.emit(func.__name__, result)
+        except Exception as e:
+            self.signals.error.emit(func.__name__, str(e))
+        
+    def runModelTask(self, func, *args, **kwargs):
+        """
+        Run a Model Task in its thread.
+
+        Args:
+            func : Function to run
+        """
+        future = self.executor.submit(self.taskWrapper, func, *args, **kwargs)
+        self.futures.append(future)
+        self.view.showLoadingIndicator()
+        
+        # Get the function name
+        funcName = func.__name__
+        
+        # Disable GUI buttons
+        if funcName in ['importRules', 'generateFDD', 'viewFDD', 'optimizeFDD']:
+            self.view.ui.importBtn.setDisabled(True)
+            self.view.ui.actionImport_Policy.setDisabled(True)
+            self.view.ui.generateBtn.setDisabled(True)
+            self.view.ui.viewBtn.setDisabled(True)
+            self.view.ui.optimizeBtn.setDisabled(True)
+            self.view.ui.exportBtn.setDisabled(True)
+            self.view.ui.actionExport_Policy.setDisabled(True)
+
+    def onTaskFinished(self, task_name, result):
+        """
+        Handle the result on the view after finishing a Model's task
+
+        Args:
+            task_name: Task Executed
+            result: Result obtained
+        """
+        self.view.showLoadingIndicator(False)
+        # Handle the result based on the task name
+        if task_name == 'importRules':
+            self.view.displayImportedRules(result[0], result[1])
+        elif task_name == 'generateFDD':
+            tableName, chainName = result
+            if tableName is not None and chainName is not None:
+                    pathName, imgFormat = self.model.viewFDD(tableName, chainName)
+                    if self.model.graphicsView:
+                        self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                    else:
+                        self.view.displayErrorMessage("Image Display not set.")
+            # Enable Buttons
+            self.view.ui.generateBtn.setEnabled(True)
+        elif task_name == 'viewFDD':
+            pathName, imgFormat = result
+            if self.model.graphicsView:
+                self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+            else:
+                self.view.displayErrorMessage("Image Display not set.")
+        elif task_name == 'optimizeFDD':
+            tableName, chainName = result
+            if tableName is not None and chainName is not None:
+                    pathName, imgFormat = self.model.viewFDD(tableName, chainName)
+                    if self.model.graphicsView:
+                        self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                    else:
+                        self.view.displayErrorMessage("Image Display not set.")
+           
+        # Enable buttons
+        self.view.ui.importBtn.setEnabled(True)
+        self.view.ui.actionImport_Policy.setEnabled(True)             
+        self.view.ui.generateBtn.setEnabled(True)
+        self.view.ui.viewBtn.setEnabled(True)
+        self.view.ui.optimizeBtn.setEnabled(True)
+        self.view.ui.exportBtn.setEnabled(True)
+        self.view.ui.actionExport_Policy.setEnabled(True)
+
+    def onTaskError(self, task_name, error_message):
+        """
+        Handle the error from a task execution
+
+        Args:
+            task_name: Task Executed
+            error_message: Error message to display
+        """
+        self.view.showLoadingIndicator(False)
+        self.view.displayErrorMessage(f"Error in {task_name}: {error_message}")
+        
+    def cleanUp(self):
+        """
+        Gracefully stop the app.
+        """
+        # Shutdown the executor and cancel any pending futures
+        self.executor.shutdown(wait=False, cancel_futures=True)
+
+class WorkerSignals(QObject):
+    '''
+    Defines the signals available from a running worker thread.
+
+    Supported signals are:
+
+    finished
+        No data
+
+    error
+        tuple (exctype, value, traceback.format_exc())
+    '''
+    finished = pyqtSignal(str, object)
+    error = pyqtSignal(str, str)

@@ -206,6 +206,16 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.exportedRules.setText(str(content))
         self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage)
         
+    def displayWarningMessage(self, message: str):
+        """
+        Display custom warning message
+
+        Args:
+            message (str): Message to display
+        """
+        QtWidgets.QMessageBox.warning(self, "Warning", message)
+        return
+    
     def displayErrorMessage(self, message: str):
         """
         Display custom error message
@@ -213,7 +223,7 @@ class FWOView(QtWidgets.QMainWindow):
         Args:
             message (str): Message to display
         """
-        QtWidgets.QMessageBox.warning(self, "Error", message)
+        QtWidgets.QMessageBox.critical(self, "Error", message)
         return
     
     def selectFileDialog(self, filterFiles="All Files (*)"):
@@ -326,4 +336,14 @@ class FWOView(QtWidgets.QMainWindow):
         
         return None
                 
-    
+    def showLoadingIndicator(self, opt: bool=True):
+        """
+        Display the loading spinner,
+
+        Args:
+            opt (bool, optional): Display if True, else Hide. Defaults to True.
+        """
+        if opt:
+            self.ui.loading.start()
+        else:
+            self.ui.loading.stop()

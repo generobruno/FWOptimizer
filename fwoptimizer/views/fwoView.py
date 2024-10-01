@@ -41,9 +41,6 @@ class FWOView(QtWidgets.QMainWindow):
         """
         Set up the GUI Buttons Functions
         """
-        # Exit action
-        self.ui.actionExit.triggered.connect(QtWidgets.QApplication.quit)
-        
         # Connect actions to show the right menu and display the appropriate page
         self.ui.actionView_Imported_Rules.triggered.connect(
             lambda: (
@@ -347,3 +344,23 @@ class FWOView(QtWidgets.QMainWindow):
             self.ui.loading.start()
         else:
             self.ui.loading.stop()
+            
+    def showCloseConfirmationDialog(self):
+        """
+        Display close confirmation dialog
+
+        Returns:
+            bool: True is user selected Yes, False otherwise.
+        """
+        reply = QtWidgets.QMessageBox.warning(
+            self, 'Confirmar Cierre',
+            "Todavía hay tareas corriendo, cerrar la aplicación las cancelará.\nEstas seguro que deseas salir?",
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No
+        )
+        
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            return True
+        else:
+            return False
+                

@@ -7,15 +7,12 @@ Returns:
     _type_: _description_
 """
 
-import concurrent.futures
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QThread
+import ctypes
 
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
 from model.consoleCommands import ConsoleCommands
-
-# Maximum Number of workers to run the Model
-MAX_WORKERS = 5
 
 class FWOController:
     """
@@ -26,9 +23,7 @@ class FWOController:
         self.view: FWOView = view
         self.console = ConsoleCommands(self.model, self.view, self.view.ui.console)
         
-        self.signals = WorkerSignals()
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
-        self.futures = []
+        self.workers = []
         
         self.connectSignals()
         
@@ -39,9 +34,9 @@ class FWOController:
         view = self.view.ui
         model = self.model
         
-        # Connect worker signals
-        self.signals.finished.connect(self.onTaskFinished)
-        self.signals.error.connect(self.onTaskError)
+        # Exit Confirmation
+        view.actionExit.triggered.connect(self.closeConfirmation)
+        self.view.closeEvent = self.closeConfirmation
         
         # Connect buttons to model functions
         view.importBtn.clicked.connect(self.importRules)
@@ -74,6 +69,60 @@ class FWOController:
         
         # Connect console commands
         view.console.commandEntered.connect(self.processCommand)
+    
+    def closeConfirmation(self, event=None):
+        """
+        Ask for user confirmation to cancel tasks when trying to close
+        the app.
+        """
+        if self.areTasksRunning():
+            reply = self.view.showCloseConfirmationDialog()
+            if reply == True:
+                self.cancelAllTasks()
+                if event:
+                    event.accept()
+                else:
+                    self.view.close()
+            else:
+                if event:
+                    event.ignore()
+        else:
+            if event:
+                event.accept()
+            else:
+                self.view.close()
+    
+    def disableButtons(self):
+        """
+        Disable all functional Buttons
+        """
+        buttons = [
+            self.view.ui.importBtn,
+            self.view.ui.actionImport_Policy,
+            self.view.ui.generateBtn,
+            self.view.ui.viewBtn,
+            self.view.ui.optimizeBtn,
+            self.view.ui.exportBtn,
+            self.view.ui.actionExport_Policy
+        ]
+        for button in buttons:
+            button.setDisabled(True)
+
+    def enableButtons(self):
+        """
+        Enable all functional Buttons
+        """
+        buttons = [
+            self.view.ui.importBtn,
+            self.view.ui.actionImport_Policy,
+            self.view.ui.generateBtn,
+            self.view.ui.viewBtn,
+            self.view.ui.optimizeBtn,
+            self.view.ui.exportBtn,
+            self.view.ui.actionExport_Policy
+        ]
+        for button in buttons:
+            button.setEnabled(True)
     
     def setParserStrat(self):
         """
@@ -226,25 +275,19 @@ class FWOController:
     def saveProject(self) -> None:
         """
         Select the file and save directory, then save the project to it.
-        
         """
-
         filePath = self.view.saveProjectDialog()
 
         if filePath:
-
             self.model.saveProject(filePath)
 
     def loadProject(self) -> None:
         """
         Loads the project from the selected file.
-        
         """
-
         filePath = self.view.selectFileDialog()
 
         if filePath:
-
             self.model.loadProject(filePath)
             
     def processCommand(self, command):
@@ -259,20 +302,11 @@ class FWOController:
             self.view.ui.console.clear()
         else:
             self.console.executeCommand(command)
-        
-    def taskWrapper(self, func, *args, **kwargs):
-        """
-        Wrap a Model's function to be executed by a worker.
 
-        Args:
-            func (obj): Model's function.
-        """
-        try:
-            result = func(*args, **kwargs)
-            self.signals.finished.emit(func.__name__, result)
-        except Exception as e:
-            self.signals.error.emit(func.__name__, str(e))
-        
+    """
+                    THREADING
+    """
+
     def runModelTask(self, func, *args, **kwargs):
         """
         Run a Model Task in its thread.
@@ -280,8 +314,11 @@ class FWOController:
         Args:
             func : Function to run
         """
-        future = self.executor.submit(self.taskWrapper, func, *args, **kwargs)
-        self.futures.append(future)
+        worker = Worker(func, *args, **kwargs)
+        worker.finished.connect(self.onTaskFinished)
+        worker.error.connect(self.onTaskError)
+        self.workers.append(worker)
+        worker.start()
         self.view.showLoadingIndicator()
         
         # Get the function name
@@ -289,13 +326,7 @@ class FWOController:
         
         # Disable GUI buttons
         if funcName in ['importRules', 'generateFDD', 'viewFDD', 'optimizeFDD']:
-            self.view.ui.importBtn.setDisabled(True)
-            self.view.ui.actionImport_Policy.setDisabled(True)
-            self.view.ui.generateBtn.setDisabled(True)
-            self.view.ui.viewBtn.setDisabled(True)
-            self.view.ui.optimizeBtn.setDisabled(True)
-            self.view.ui.exportBtn.setDisabled(True)
-            self.view.ui.actionExport_Policy.setDisabled(True)
+            self.disableButtons()
 
     def onTaskFinished(self, task_name, result):
         """
@@ -307,6 +338,35 @@ class FWOController:
         """
         self.view.showLoadingIndicator(False)
         # Handle the result based on the task name
+        self.handleTaskResult(task_name, result)
+        # Enable buttons
+        self.enableButtons()
+        # Clean Up Worker
+        self.cleanupWorker()
+
+    def onTaskError(self, task_name, error_message):
+        """
+        Handle the error from a task execution
+
+        Args:
+            task_name: Task Executed
+            error_message: Error message to display
+        """
+        self.view.showLoadingIndicator(False)
+        self.view.displayErrorMessage(f"Error in {task_name}: {error_message}")
+        # Enable buttons
+        self.enableButtons()
+        # Clean Up Worker
+        self.cleanupWorker()
+        
+    def handleTaskResult(self, task_name, result):
+        """
+        Handle each of the task results
+
+        Args:
+            task_name (function): Task executed
+            result (obj): Result from task
+        """
         if task_name == 'importRules':
             self.view.displayImportedRules(result[0], result[1])
         elif task_name == 'generateFDD':
@@ -333,45 +393,80 @@ class FWOController:
                         self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
                     else:
                         self.view.displayErrorMessage("Image Display not set.")
-           
-        # Enable buttons
-        self.view.ui.importBtn.setEnabled(True)
-        self.view.ui.actionImport_Policy.setEnabled(True)             
-        self.view.ui.generateBtn.setEnabled(True)
-        self.view.ui.viewBtn.setEnabled(True)
-        self.view.ui.optimizeBtn.setEnabled(True)
-        self.view.ui.exportBtn.setEnabled(True)
-        self.view.ui.actionExport_Policy.setEnabled(True)
-
-    def onTaskError(self, task_name, error_message):
+    
+    def cleanupWorker(self):
         """
-        Handle the error from a task execution
+        Clean Up thread after it finishes its execution
+        """
+        if self.workers:
+            worker = self.workers.pop(0)
+            worker.quit()
+            worker.wait()
+            worker.deleteLater()
+            
+    def areTasksRunning(self):
+        """
+        Check wheter there are any tasks running in the background.
+
+        Returns:
+            bool: True if there are tasks running, False otherwise.
+        """
+        return any(worker.isRunning() for worker in self.workers)
+            
+    def cancelAllTasks(self):
+        """
+        Forcibly cancel all tasks running.
+        """
+        for worker in self.workers:
+            if worker.isRunning():
+                self.forceThreadTermination(worker)
+            worker.quit()
+            worker.wait()
+            worker.deleteLater()
+        self.workers.clear()
+        self.view.showLoadingIndicator(False)
+    
+    def forceThreadTermination(self, thread):
+        """
+        Force a thread termination by rising a SystemExit Exception.
 
         Args:
-            task_name: Task Executed
-            error_message: Error message to display
+            thread (QThread): Thread to terminate
         """
-        self.view.showLoadingIndicator(False)
-        self.view.displayErrorMessage(f"Error in {task_name}: {error_message}")
-        
+        thread_id = int(thread.currentThreadId())
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), ctypes.py_object(SystemExit))
+        if res > 1: # If we get more than one Thread, cancel the exception, to avoid instability
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), 0)
+            print('Exception raise failure')
+    
     def cleanUp(self):
         """
-        Gracefully stop the app.
+        Clean Up on close.
         """
-        # Shutdown the executor and cancel any pending futures
-        self.executor.shutdown(wait=False, cancel_futures=True)
+        self.cancelAllTasks()
 
-class WorkerSignals(QObject):
-    '''
-    Defines the signals available from a running worker thread.
+class Worker(QThread):
+    """
+    Worker Thread to execute long running tasks.
 
-    Supported signals are:
-
-    finished
-        No data
-
-    error
-        tuple (exctype, value, traceback.format_exc())
-    '''
+    """
     finished = pyqtSignal(str, object)
     error = pyqtSignal(str, str)
+    
+    def __init__(self, func, *args, **kwargs):
+        super().__init__()
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.result = None
+    
+    def run(self):
+        """
+        Execute the task and pass the result to the main thread.
+        """
+        try:
+            self.result = self.func(*self.args, **self.kwargs)
+        except Exception as e:
+            self.error.emit(self.func.__name__, str(e))
+        else:
+            self.finished.emit(self.func.__name__, self.result)

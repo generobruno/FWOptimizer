@@ -3,7 +3,7 @@
 
 import sys
 import os
-from PyQt6 import QtWidgets
+from PyQt6 import QtWidgets, QtCore
 
 # Add Root Dir to sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,23 +22,32 @@ class FWOptimizer:
         self.model = FWOManager()
         self.view = FWOView()
         self.controller = FWOController(self.model, self.view)
+
+        # Connect the aboutToQuit signal
+        self.app.aboutToQuit.connect(self.cleanUp)
         
         self.view.show()
 
     def run(self):
-        exit_code = self.app.exec()
-        self.cleanUp()
-        return exit_code
+        return self.app.exec()
     
     def cleanUp(self):
         if hasattr(self.controller, 'cleanUp'):
             self.controller.cleanUp()
 
+
 if __name__ == '__main__':
     
     app = FWOptimizer(sys.argv)
     
-    sys.exit(app.run())
+    try:
+        exit_code = app.run()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        exit_code = 1
+    finally:
+        sys.exit(exit_code)
+
 
 """
 if __name__ == '__main2__':

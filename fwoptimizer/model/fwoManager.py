@@ -156,14 +156,14 @@ class FWOManager:
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(chain)
-        fdd_name = fdd.getName() #TODO Check if fdd was modified
+        fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
         
         # Generate a unique hash from the parameters
         hash_input = f"{fdd_name}{table}{chain}{imgFormat}{graphDir}{unrollDecisions}"
         file_hash = hashlib.md5(hash_input.encode()).hexdigest()
 
         # Create the path using the hash
-        pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_{file_hash}.{imgFormat}')
+        pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_{file_hash}')
         
         # Check if the image file already exists
         if not os.path.exists(pathName):

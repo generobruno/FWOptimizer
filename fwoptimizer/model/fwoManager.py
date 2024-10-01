@@ -163,7 +163,7 @@ class FWOManager:
         file_hash = hashlib.md5(hash_input.encode()).hexdigest()
 
         # Create the path using the hash
-        pathName = os.path.join(self.workFolder, f'graphs/fdd_name_{file_hash}.{imgFormat}')
+        pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_{file_hash}.{imgFormat}')
         
         # Check if the image file already exists
         if not os.path.exists(pathName):

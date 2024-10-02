@@ -280,15 +280,19 @@ class FWOController:
 
         if filePath:
             self.model.saveProject(filePath)
+            
+        self.view.displayInfoMessage("Proyecto Guardado", "El proyecto se guardó exitosamente.")
 
     def loadProject(self) -> None:
         """
         Loads the project from the selected file.
         """
-        filePath = self.view.selectFileDialog()
+        filePath = self.view.selectFileDialog("FWO Files (*.fwo)")
 
         if filePath:
             self.model.loadProject(filePath)
+            
+        self.view.displayImportedRules(None, self.model.currentFirewall.getInputRules())
             
     def processCommand(self, command):
         """

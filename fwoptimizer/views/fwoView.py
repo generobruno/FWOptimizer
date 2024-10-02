@@ -121,6 +121,13 @@ class FWOView(QtWidgets.QMainWindow):
             self.ui.centerMenuContainer.setVisible(True)
             self.ui.centerMenuStack.setCurrentIndex(pageIndex)
 
+    def displayImportedRulesTab(self):
+        """
+        Show the imported Rules tab
+        """
+        self._togglePage(1)
+        self.ui.label.setText("Imported Rules")
+
     def displayImportedRules(self, content, rulesParsed):
         """
         Display the parsed rules in the QTreeView and right menu.
@@ -191,6 +198,8 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.importedRules.setText(content)
         self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
         
+        self.displayImportedRulesTab()
+        
     def displayExportedRules(self, content):
         """
         Display the parsed rules in the right menu.
@@ -221,6 +230,16 @@ class FWOView(QtWidgets.QMainWindow):
             message (str): Message to display
         """
         QtWidgets.QMessageBox.critical(self, "Error", message)
+        return
+    
+    def displayInfoMessage(self, title:str, message:str):
+        """
+        Display custom information message
+
+        Args:
+            message (str): Message to display
+        """
+        QtWidgets.QMessageBox.information(self, title, message)
         return
     
     def selectFileDialog(self, filterFiles="All Files (*)"):

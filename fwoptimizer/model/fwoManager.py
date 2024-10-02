@@ -91,6 +91,7 @@ class FWOManager:
         if self.currentFirewall:
             self.currentFirewall.setInputRules(rulesParsed)
             print("Rules parsed and saved to the current firewall.")
+            #TODO Save input file in workdir
             return self._copyFile(filePath), rulesParsed
         else:
             print("No firewall selected to save the parsed rules.")

@@ -1,6 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from views.imageView import ImageViewer
-from views.customWidgets import SlideMenu, ConsoleWidget, ResizableWidget
+from views.customWidgets import SlideMenu, ConsoleWidget, ResizableWidget, Spinner
 import fwoptimizer.views.resources_rc
 
 class Ui_MainWindow(object):
@@ -279,6 +279,10 @@ class Ui_MainWindow(object):
         self.title.setToolTip("")
         self.title.setObjectName("title")
         self.horizontalLayout_6.addWidget(self.title)
+        # Loading Spinner
+        self.loading = Spinner(parent=self.leftHeaderFrame)
+        self.loading.setObjectName("loading")
+        self.horizontalLayout_6.addWidget(self.loading)
         self.horizontalLayout_4.addWidget(self.leftHeaderFrame, 0, QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignVCenter)
         self.rightHeaderFrame = QtWidgets.QFrame(parent=self.headerContainer)
         self.rightHeaderFrame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)

@@ -622,6 +622,9 @@ QMenuBar, QStatusBar, QAction {
                </property>
               </widget>
              </item>
+             <item alignment="Qt::AlignHCenter">
+              <widget class="Spinner" name="loading" native="true"/>
+             </item>
             </layout>
            </widget>
           </item>
@@ -1150,9 +1153,14 @@ QMenuBar, QStatusBar, QAction {
    <header>views.customWidgets</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>Spinner</class>
+   <extends>QWidget</extends>
+   <header>views.customWidgets</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources>
-  <include location="resources.qrc"/>
   <include location="resources.qrc"/>
  </resources>
  <connections/>

@@ -41,9 +41,6 @@ class FWOView(QtWidgets.QMainWindow):
         """
         Set up the GUI Buttons Functions
         """
-        # Exit action
-        self.ui.actionExit.triggered.connect(QtWidgets.QApplication.quit)
-        
         # Connect actions to show the right menu and display the appropriate page
         self.ui.actionView_Imported_Rules.triggered.connect(
             lambda: (
@@ -124,6 +121,13 @@ class FWOView(QtWidgets.QMainWindow):
             self.ui.centerMenuContainer.setVisible(True)
             self.ui.centerMenuStack.setCurrentIndex(pageIndex)
 
+    def displayImportedRulesTab(self):
+        """
+        Show the imported Rules tab
+        """
+        self._togglePage(1)
+        self.ui.label.setText("Imported Rules")
+
     def displayImportedRules(self, content, rulesParsed):
         """
         Display the parsed rules in the QTreeView and right menu.
@@ -194,6 +198,8 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.importedRules.setText(content)
         self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
         
+        self.displayImportedRulesTab()
+        
     def displayExportedRules(self, content):
         """
         Display the parsed rules in the right menu.
@@ -206,6 +212,16 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.exportedRules.setText(str(content))
         self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage)
         
+    def displayWarningMessage(self, message: str):
+        """
+        Display custom warning message
+
+        Args:
+            message (str): Message to display
+        """
+        QtWidgets.QMessageBox.warning(self, "Warning", message)
+        return
+    
     def displayErrorMessage(self, message: str):
         """
         Display custom error message
@@ -213,7 +229,17 @@ class FWOView(QtWidgets.QMainWindow):
         Args:
             message (str): Message to display
         """
-        QtWidgets.QMessageBox.warning(self, "Error", message)
+        QtWidgets.QMessageBox.critical(self, "Error", message)
+        return
+    
+    def displayInfoMessage(self, title:str, message:str):
+        """
+        Display custom information message
+
+        Args:
+            message (str): Message to display
+        """
+        QtWidgets.QMessageBox.information(self, title, message)
         return
     
     def selectFileDialog(self, filterFiles="All Files (*)"):
@@ -326,4 +352,34 @@ class FWOView(QtWidgets.QMainWindow):
         
         return None
                 
-    
+    def showLoadingIndicator(self, opt: bool=True):
+        """
+        Display the loading spinner,
+
+        Args:
+            opt (bool, optional): Display if True, else Hide. Defaults to True.
+        """
+        if opt:
+            self.ui.loading.start()
+        else:
+            self.ui.loading.stop()
+            
+    def showCloseConfirmationDialog(self):
+        """
+        Display close confirmation dialog
+
+        Returns:
+            bool: True is user selected Yes, False otherwise.
+        """
+        reply = QtWidgets.QMessageBox.warning(
+            self, 'Confirmar Cierre',
+            "Todavía hay tareas corriendo, cerrar la aplicación las cancelará.\nEstas seguro que deseas salir?",
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No
+        )
+        
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            return True
+        else:
+            return False
+                

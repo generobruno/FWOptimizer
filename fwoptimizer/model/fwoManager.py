@@ -9,6 +9,7 @@ Returns:
 
 import pickle
 import zipfile
+import hashlib
 import os
 from fwoptimizer.classes.firewall import Firewall
 from fwoptimizer.classes import parser
@@ -90,6 +91,7 @@ class FWOManager:
         if self.currentFirewall:
             self.currentFirewall.setInputRules(rulesParsed)
             print("Rules parsed and saved to the current firewall.")
+            #TODO Save input file in workdir
             return self._copyFile(filePath), rulesParsed
         else:
             print("No firewall selected to save the parsed rules.")
@@ -126,10 +128,10 @@ class FWOManager:
         print("Generating FDD...")
         if table is None and chain is None:
             self.currentFirewall.genFdd()
+            return None, None
         else:
             self.currentFirewall.genFdd(table, chain)
-            print(f'Printing out FDD')
-            self.viewFDD(table, chain)
+            return table, chain
     
     def setGraphicsView(self, graphicsView):
         """
@@ -153,15 +155,23 @@ class FWOManager:
         """
         print(f"Displaying FDD for {table} - {chain}")
         
-        # Generate graph
+        # Get FDD
         fdd = self.currentFirewall.getFDD(chain)
-        pathName = self.workFolder + f'graphs/gen_{chain}'
-        fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
+        fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
+        
+        # Generate a unique hash from the parameters
+        hash_input = f"{fdd_name}{table}{chain}{imgFormat}{graphDir}{unrollDecisions}"
+        file_hash = hashlib.md5(hash_input.encode()).hexdigest()
 
-        if self.graphicsView:
-            self.graphicsView.displayImage(f'{pathName}.{imgFormat}')
-        else:
-            print("Graphics view is not set.")
+        # Create the path using the hash
+        pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_{file_hash}')
+        
+        # Check if the image file already exists
+        if not os.path.exists(pathName):
+            # Generate graph
+            fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
+        
+        return pathName, imgFormat
         
     def optimizeFDD(self, table=None, chain=None):
         """
@@ -174,10 +184,10 @@ class FWOManager:
         print("Optimizing FDD...")
         if table is None and chain is None:
             self.currentFirewall.optimizeFdd()
+            return None, None
         else:
             self.currentFirewall.optimizeFdd(table, chain)
-            print(f'Printing out FDD')
-            self.viewFDD(table, chain) #TODO Cambiar nombre para tener las 2 imagenes?
+            return table, chain
     
     def exportRules(self, table=None, chain=None):
         """
@@ -197,6 +207,12 @@ class FWOManager:
             return self.currentFirewall.genOutputRules(table, chain)
         
     def saveProject(self, filePath):
+        """
+        Save the project
+
+        Args:
+            filePath: Path to store the project
+        """
         
         serializedFirewallPath = self.workFolder + "firewall.pkl"
 
@@ -218,6 +234,12 @@ class FWOManager:
             os.remove(serializedFirewallPath)
 
     def loadProject(self, filePath):
+        """
+        Load the project
+
+        Args:
+            filePath: Path from where to load the project
+        """
 
         serializedFirewallPath = self.workFolder + "firewall.pkl"
 
@@ -247,7 +269,4 @@ class FWOManager:
         # Borrar el archivo de serializado
         if os.path.exists(serializedFirewallPath):
             os.remove(serializedFirewallPath)
-
-
-
         

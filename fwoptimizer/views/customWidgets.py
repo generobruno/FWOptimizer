@@ -286,3 +286,31 @@ class SlideMenu(QtWidgets.QWidget):
                     if not hasattr(button, 'full_text'):
                         button.full_text = button.text()
                     button.setText("")
+                    
+class Spinner(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        # Create the QLabel to display the GIF
+        self.label = QtWidgets.QLabel(self)
+        self.label.setMaximumSize(QtCore.QSize(35, 35))
+        self.label.setScaledContents(True)
+
+        # Set layout for the Spinner widget
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        layout.addWidget(self.label)
+
+        # Create the QMovie object for the GIF
+        self.movie = QtGui.QMovie(":/images/images/loading.gif")
+        self.label.setMovie(self.movie)
+
+    def start(self):
+        """Show the spinner and start the animation."""
+        self.label.setVisible(True)
+        self.movie.start()
+
+    def stop(self):
+        """Hide the spinner and stop the animation."""
+        self.movie.stop()
+        self.label.setVisible(False)

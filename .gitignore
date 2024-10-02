@@ -1,5 +1,6 @@
 *.png
 *.svg
+*.fwo
 
 # Generated .egg file
 *.egg-info

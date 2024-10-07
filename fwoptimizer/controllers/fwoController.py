@@ -76,21 +76,37 @@ class FWOController:
         the app.
         """
         if self.areTasksRunning():
-            reply = self.view.showCloseConfirmationDialog()
-            if reply == True:
+            reply = self.view.showCloseConfirmationDialog('Confirmar Cierre',
+            "Todavía hay tareas corriendo, cerrar la aplicación las cancelará.\nEstas seguro que deseas salir?")
+            
+            if reply is True:  # User clicked Yes
                 self.cancelAllTasks()
                 if event:
                     event.accept()
                 else:
                     self.view.close()
-            else:
+            elif reply is False:  # User clicked No
                 if event:
                     event.ignore()
+            elif reply is None:  # User dismissed the dialog
+                if event:
+                    event.ignore()  # Ignore event and prevent closing
         else:
-            if event:
-                event.accept()
-            else:
-                self.view.close()
+            reply = self.view.showCloseConfirmationDialog('Confirmar Cierre',
+            "¿Quieres guardar antes de salir?")
+            
+            if reply is True:  # User clicked Yes
+                if event:
+                    self.saveProject()
+                    event.accept()
+                else:
+                    self.view.close()
+            elif reply is False:  # User clicked No
+                if event:
+                    self.view.close()
+            elif reply is None:  # User canceled the dialog
+                if event:
+                    event.ignore()  # Ignore event and prevent closing
     
     def disableButtons(self):
         """
@@ -280,8 +296,7 @@ class FWOController:
 
         if filePath:
             self.model.saveProject(filePath)
-            
-        self.view.displayInfoMessage("Proyecto Guardado", "El proyecto se guardó exitosamente.")
+            self.view.displayInfoMessage("Proyecto Guardado", "El proyecto se guardó exitosamente.")
 
     def loadProject(self) -> None:
         """
@@ -291,8 +306,7 @@ class FWOController:
 
         if filePath:
             self.model.loadProject(filePath)
-            
-        self.view.displayImportedRules(None, self.model.currentFirewall.getInputRules())
+            self.view.displayImportedRules(None, self.model.currentFirewall.getInputRules())
             
     def processCommand(self, command):
         """

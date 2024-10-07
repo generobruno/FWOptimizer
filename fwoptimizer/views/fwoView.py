@@ -364,7 +364,7 @@ class FWOView(QtWidgets.QMainWindow):
         else:
             self.ui.loading.stop()
             
-    def showCloseConfirmationDialog(self):
+    def showCloseConfirmationDialog(self, title:str, message:str):
         """
         Display close confirmation dialog
 
@@ -372,14 +372,16 @@ class FWOView(QtWidgets.QMainWindow):
             bool: True is user selected Yes, False otherwise.
         """
         reply = QtWidgets.QMessageBox.warning(
-            self, 'Confirmar Cierre',
-            "Todavía hay tareas corriendo, cerrar la aplicación las cancelará.\nEstas seguro que deseas salir?",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            self, title,
+            message,
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No | QtWidgets.QMessageBox.StandardButton.Cancel,
             QtWidgets.QMessageBox.StandardButton.No
         )
         
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             return True
-        else:
+        elif reply == QtWidgets.QMessageBox.StandardButton.No:
             return False
+        elif reply == QtWidgets.QMessageBox.StandardButton.Cancel:
+            return None
                 

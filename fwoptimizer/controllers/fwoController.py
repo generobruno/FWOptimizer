@@ -38,6 +38,13 @@ class FWOController:
         view.actionExit.triggered.connect(self.closeConfirmation)
         self.view.closeEvent = self.closeConfirmation
         
+        # Home button - Show WorkDir
+        view.homeBtn.clicked.connect(
+            lambda: (
+                self.view.displayWorkingDirectoryTree(model.workFolder)
+            )
+        )
+        
         # Connect buttons to model functions
         view.importBtn.clicked.connect(self.importRules)
         view.actionImport_Policy.triggered.connect(self.importRules)

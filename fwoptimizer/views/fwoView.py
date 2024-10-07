@@ -375,7 +375,7 @@ class FWOView(QtWidgets.QMainWindow):
             self, title,
             message,
             QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No | QtWidgets.QMessageBox.StandardButton.Cancel,
-            QtWidgets.QMessageBox.StandardButton.No
+            QtWidgets.QMessageBox.StandardButton.Cancel
         )
         
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:

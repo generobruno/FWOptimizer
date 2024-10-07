@@ -894,9 +894,28 @@ class FDD:
 
                             redundancies.add((min(edge1.getId()[0], edge2.getId()[0]), max(edge1.getId()[0], edge2.getId()[0])))
 
-                            edge1.getElementSet().add(edge2.getElementSet())
-                            edge1.extendId(edge2.getId())
-                            edge2.autoDisconnect()
+                            intersectionSet = edge1.getElementSet().intersectionSet(edge2.getElementSet())
+
+                            # Sort the priorities and select the rule that has a higher priority (value closest to 0)
+                            if sorted(edge1.getId())[0] <= sorted(edge2.getId())[0]:
+
+                                edge2.getElementSet().remove(intersectionSet)
+
+                                # If edge2 is empty, delete it
+                                if edge2.getElementSet().isEmpty():
+
+                                    edge2.autoDisconnect()
+
+                            else:
+
+                                edge1.getElementSet().remove(intersectionSet)
+
+                                # If edge2 is empty, delete it
+                                if edge1.getElementSet().isEmpty():
+
+                                    edge1.autoDisconnect()
+                                    j = j - 1
+                                    break
 
                         # If the edges don't have the same destination, so there is inconsistency.
                         else:
@@ -906,7 +925,7 @@ class FDD:
                             intersectionSet = edge1.getElementSet().intersectionSet(edge2.getElementSet())
 
                             # Sort the priorities and select the rule that has a higher priority (value closest to 0)
-                            if sorted(edge1.getId())[0] < sorted(edge2.getId())[0]:
+                            if sorted(edge1.getId())[0] <= sorted(edge2.getId())[0]:
 
                                 edge2.getElementSet().remove(intersectionSet)
 
@@ -944,12 +963,12 @@ class FDD:
                 print(f"No se pudo abrir el archivo {reportsPath}, se escribirá en stdout")
                 writer = sys.stdout
 
-        writer.write(f"Se encontraron las siguientes redundacias en el set de reglas:\n")
+        writer.write(f"\nSe encontraron las siguientes redundacias en el set de reglas:\n")
         for a in sorted(list(redundancies)):
 
             writer.write(f"\n{chain.getRuleForId(a[0])}\n{chain.getRuleForId(a[1])}\nRedundancia resuelta\n")
 
-        writer.write(f"Se encontraron las siguientes inconsistencias en el set de reglas:\n")
+        writer.write(f"\nSe encontraron las siguientes inconsistencias en el set de reglas:\n")
         for b in sorted(list(inconsistencies)):
             writer.write(f"\n{chain.getRuleForId(b[0])}\n{chain.getRuleForId(b[1])}\n")
             writer.write(f"Por tener mayor prioridad la regla ID:{b[0]}, se conserva la decision {chain.getRuleForId(b[0]).getDecision()} para la interseccion entre ambas\n")

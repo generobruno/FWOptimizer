@@ -6,6 +6,7 @@ from typing import List
 import graphviz
 import toml
 import sys
+import re
 
 from fwoptimizer.classes.rules import Chain, Rule
 from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
@@ -225,6 +226,15 @@ class Node:
         if attr_name is None:
             return self._attributes
         return self._attributes.get(attr_name, None)
+    
+    def setAttributes(self, **new_attrs):
+        """
+        Update the Node attributes with new values.
+
+        Args:
+            new_attrs: New attributes to update.
+        """
+        self._attributes.update(new_attrs)
         
     def getLoad(self):
         """
@@ -419,7 +429,7 @@ class Edge:
         
     def setAttributes(self, **new_attrs):
         """
-        Update the Node attributes with new values.
+        Update the Edge attributes with new values.
 
         Args:
             new_attrs: New attributes to update.
@@ -696,6 +706,228 @@ class FDD:
 
         # Print the FDD with highlighted edges
         self.printFDD("highlighted_FDD")
+
+    def _setFilterVisibiltyToTop(self, node: Node):
+
+        node.setAttributes(filterVisibility="True")
+        for edge in node.getIncoming():
+            edge.setAttributes(filterVisibility="True")
+            self._setFilterVisibiltyToTop(edge.getOrigin())
+
+    def _setFilterVisibiltyToBot(self, node: Node):
+
+        node.setAttributes(filterVisibility="True")
+        for edge in node.getOutgoing():
+            edge.setAttributes(filterVisibility="True")
+            self._setFilterVisibiltyToBot(edge.getDestination())
+
+    def _setFilterAttr(self, value: str):
+
+        for level in self._levels:
+
+            for node in level.getNodes():
+
+                node.setAttributes(filterVisibility=value)
+
+                for edge in node.getOutgoing():
+
+                    edge.setAttributes(filterVisibility=value)
+
+    def filterFDDForValue(self, fieldFiltered: str, matchExpresion: str):
+
+        self._setFilterAttr("False")
+
+        levelSelected = None
+
+        for level in self._levels:
+            if level.getField().getName() == fieldFiltered:
+                levelSelected = level
+                break
+
+        if levelSelected == None:
+            print(f"El campo {fieldFiltered} no coincide con nigún campo existente")
+            return
+
+        for node in levelSelected.getNodes():
+
+            for outgoing in node.getOutgoing():
+
+                if re.search(matchExpresion, str(outgoing.getElementSet())):
+
+                    print(f"MATCH de {matchExpresion} con {str(outgoing.getElementSet())}")
+                    outgoing.setAttributes(filterVisibility="True")
+                    self._setFilterVisibiltyToTop(outgoing.getOrigin())
+                    self._setFilterVisibiltyToBot(outgoing.getDestination())
+
+    def printFilteredFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False) -> None:
+        """
+        Generate a graph image from the data structure
+
+        Args:
+            name (str): Name of the graph
+            img_format (str, optional): Output Format. Defaults to 'png'.
+        """
+        dot = graphviz.Digraph(engine='dot')
+
+        # Create a dictionary to hold subgraphs for each field level
+        field_subgraphs = {}
+        edge_node_counter = 0 # For intermediate nodes
+        
+        # Calculate total number of nodes and edges
+        total_nodes = 0
+        total_edges = 0
+
+        for level in self._levels:
+
+            for node in level.getNodes():
+
+                if node.getAttributes().get('filterVisibility') == 'True': 
+
+                    total_nodes += 1
+
+                for edge in node.getOutgoing():
+
+                    if edge.getAttributes().get('filterVisibility') == 'True':
+
+                        total_edges += 1
+
+        if total_nodes < 1 or total_edges < 1:
+            print("No hubo resultados para el filtro, imposible imprimir el FDD")
+            return
+
+        # Determine node size based on total number of nodes and edges
+        base_width = 2.0
+        base_height = 0.5
+        base_font = 20.0
+        total_elements = (total_nodes + total_edges)
+        width_factor = 10.0 / total_elements
+        height_factor = 5.5 / total_elements
+        font_factor = 5.0 / total_elements
+        
+        if total_nodes < 50:
+            ranksep_factor = 2.5
+        elif total_nodes < 100:
+            ranksep_factor = 3.0
+        elif total_nodes < 200:
+            ranksep_factor = 3.5
+        elif total_nodes < 500:
+            ranksep_factor = 4.0
+        else:
+            ranksep_factor = 5.0
+            
+        # Set SVG for large graphs
+        if total_elements >= 1500:
+            print(f'Graph too Large ({total_elements} elements). Rendering to .svg')
+            img_format = 'svg'
+        
+        # Set graph attributes
+        dot.attr(ranksep=str(ranksep_factor),nodesep='0.5')#, overlap='scale', pack='true', sep='+4')
+        
+        # Change layout direction (rotate 90 degrees)
+        dot.attr(rankdir=rank_dir)
+        
+        # Set tail and head ports
+        if rank_dir == 'BT':
+            head_port = 's'
+            tail_port = 'n'
+        elif rank_dir == 'LR':
+            head_port = 'w'
+            tail_port = 'e'
+        elif rank_dir == 'RL':
+            head_port = 'e'
+            tail_port = 'w'
+        else: # TB
+            head_port = 'n'
+            tail_port = 's'
+
+        # Iterate through the levels to create subgraphs
+        for level in self._levels:
+            field_name = level.getField().getName()  # Get the field name for the level
+
+            if field_name not in field_subgraphs:
+                # Create a new subgraph for this field level if it doesn't exist
+                field_subgraphs[field_name] = graphviz.Digraph(name=f'cluster_{field_name}')
+                field_subgraphs[field_name].attr(label=f"{field_name} Level", style='invis')
+
+            # Add nodes to the corresponding subgraph
+            for node in level.getNodes():
+
+                if node.getAttributes().get('filterVisibility', 'True') == 'True':
+
+                    node_name = node.getName()
+                    
+                    # Skip adding ACCEPT and DROP nodes if unroll_decisions is True
+                    if unroll_decisions and node_name in ['ACCEPT', 'DROP']:
+                        dot.node(
+                            node_name, 
+                            style='invis'  # Make the node invisible
+                        )
+                        continue
+                    
+                    field_subgraphs[field_name].node(
+                                                node_name, 
+                                                _attributes = node.getAttributes(), 
+                                                width = str(base_width + width_factor), 
+                                                height= str(base_height + height_factor), 
+                                                fontsize= str(base_font + font_factor))
+
+                    # Add edges to the main graph
+                    for edge in node.getOutgoing():
+
+                        if edge.getAttributes().get('filterVisibility', 'True') == 'True':
+
+                            origin_name = edge.getOrigin().getName()
+                            destination_name = edge.getDestination().getName()
+                            edge_node_name = f"edge_node_{edge_node_counter}"
+                            edge_node_counter += 1
+
+                            if edge.getAttributes('label') is not None:
+                                label = f"{edge.getId()},{edge.getAttributes('label')}"
+                            else:
+                                elements = edge.getElementSet().getElementsList()
+                                if len(elements) > 5:
+                                    elements_str = '\n'.join(str(elem) for elem in elements[:5]) + '\n...'
+                                else:
+                                    elements_str = '\n'.join(str(elem) for elem in elements)
+                                label = f"{edge.getId()},\n{elements_str}"
+
+                            edge_attributes = edge.getAttributes()
+
+                            # Add the intermediate node with the label
+                            dot.node(
+                                edge_node_name, 
+                                label, 
+                                shape='plaintext', 
+                                width=str(base_width + width_factor), 
+                                height=str(base_height + height_factor),
+                                fontsize=str(base_font + font_factor))
+
+                            # Connect the origin to the intermediate node and intermediate node to the destination
+                            dot.edge(origin_name, edge_node_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
+
+                            if unroll_decisions and destination_name in ['ACCEPT', 'DROP']:
+                                unique_destination_name = f"{destination_name}_{edge_node_counter}"
+                                dot.node(
+                                    unique_destination_name, 
+                                    destination_name, 
+                                    style='filled',
+                                    shape='box' if destination_name == 'ACCEPT' else 'diamond',
+                                    fillcolor='greenyellow' if destination_name == 'ACCEPT' else 'crimson',
+                                    width=str(base_width + width_factor), 
+                                    height=str(base_height + height_factor), 
+                                    fontsize=str(base_font + font_factor)
+                                )
+                                dot.edge(edge_node_name, unique_destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
+                            else:
+                                dot.edge(edge_node_name, destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
+
+        # Add each subgraph to the main graph
+        for subgraph in field_subgraphs.values():
+            dot.subgraph(subgraph)
+            
+
+        # Render the graph to a file
+        dot.render(name, format=img_format, view=False, cleanup=True)
 
 
     def _genPre(self, chain: Chain) -> None:

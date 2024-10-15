@@ -252,7 +252,7 @@ class FWOView(QtWidgets.QMainWindow):
         # Add the root directory to the tree view
         rootItem = QtGui.QStandardItem(os.path.basename(directory))
         rootItem.setEditable(False)
-        treeView.appendRow([rootItem, QtGui.QStandardItem("Root Folder")])
+        treeView.appendRow([rootItem, QtGui.QStandardItem("Working Directory")])
 
         # Add the contents of the directory
         addTreeItems(rootItem, directory)
@@ -264,7 +264,17 @@ class FWOView(QtWidgets.QMainWindow):
         # Resize columns to fit contents
         for column in range(treeView.columnCount()):
             self.ui.treeWorkdirView.resizeColumnToContents(column) 
-            
+    
+    def displayReportsWindow(self, filePath):
+        """
+        Open a file and display its content in a custom dialog with search functionality.
+        
+        Args:
+            filePath: Full path to the file.
+        """
+        fileViewerDialog = Dialogs.FileViewerDialog(filePath, parent=self)
+        fileViewerDialog.exec()
+    
     def displayWarningMessage(self, message: str):
         """
         Display custom warning message

@@ -594,6 +594,9 @@ class FDD:
 
             # Add nodes to the corresponding subgraph
             for node in level.getNodes():
+                if node.getAttributes('filterVisibility') == 'False':
+                    continue
+                
                 node_name = node.getName()
                 
                 # Skip adding ACCEPT and DROP nodes if unroll_decisions is True
@@ -613,20 +616,22 @@ class FDD:
 
                 # Add edges to the main graph
                 for edge in node.getOutgoing():
+                    if edge.getAttributes('filterVisibility') == 'False':
+                        continue
                     origin_name = edge.getOrigin().getName()
                     destination_name = edge.getDestination().getName()
                     edge_node_name = f"edge_node_{edge_node_counter}"
                     edge_node_counter += 1
 
                     if edge.getAttributes('label') is not None:
-                        label = f"{edge.getId()},{edge.getAttributes('label')}"
+                        label = f"{min(edge.getId())},{edge.getAttributes('label')}"
                     else:
                         elements = edge.getElementSet().getElementsList()
                         if len(elements) > 5:
                             elements_str = '\n'.join(str(elem) for elem in elements[:5]) + '\n...'
                         else:
                             elements_str = '\n'.join(str(elem) for elem in elements)
-                        label = f"{edge.getId()},\n{elements_str}"
+                        label = f"{min(edge.getId())},\n{elements_str}"
 
                     edge_attributes = edge.getAttributes()
 
@@ -732,8 +737,26 @@ class FDD:
                 for edge in node.getOutgoing():
 
                     edge.setAttributes(filterVisibility=value)
+                    
+    def clearFilters(self):
+        """
+        Clear all filters.
+        """
+        for level in self._levels:
+            for node in level.getNodes():
+                node.setAttributes(filterVisibility='True',color='black')
+                for edge in node.getOutgoing():
+                    edge_color = 'blue' if edge.getMarking() else 'black'
+                    edge.setAttributes(filterVisibility='True',color=edge_color)
 
     def filterFDDForValue(self, fieldFiltered: str, matchExpresion: str):
+        """
+        Filter the FDD according to the parameters
+
+        Args:
+            fieldFiltered (str): Field to Filter
+            matchExpresion (str): Value of the Field
+        """
 
         self._setFilterAttr("False")
 
@@ -928,7 +951,6 @@ class FDD:
 
         # Render the graph to a file
         dot.render(name, format=img_format, view=False, cleanup=True)
-
 
     def _genPre(self, chain: Chain) -> None:
         """

@@ -219,11 +219,16 @@ class FWOController:
 
         # Get all tables from the current firewall's RuleSet
         tables = self.model.currentFirewall.getInputRules().getTables()
-
-        options = self.view.selectViewFddDialog(tables)
         
-        if options:
-            (tableName, chainName), imageFrmt, graphDir, unrollDecisions = options
+        # Get current firewall's Fields
+        fields = self.model.currentFirewall.getFieldList().getFields()
+
+        options = self.view.selectViewFddDialog(tables, fields)
+        if options is None:
+            return
+        
+        if options[0] == 'viewFDD':
+            _ , (tableName, chainName), imageFrmt, graphDir, unrollDecisions = options
             print(f"Viewing FDD for {tableName} -> {chainName}:\n{imageFrmt} format, {graphDir} orientation, Unroll Decisions: {unrollDecisions}")
             self.runModelTask(self.model.viewFDD,
                             tableName,
@@ -232,6 +237,15 @@ class FWOController:
                             graphDir,
                             unrollDecisions
                             )
+        elif options[0] == 'filterFDD':
+            _ , tableName, chainName, field, match_expression = options
+            print(f"Filtering FDD for {tableName} -> {chainName}: {field} -> {match_expression}")
+            self.runModelTask(self.model.filterFDD,
+                              tableName,
+                              chainName,
+                              field,
+                              match_expression
+                              )
             
     def optimizeFDD(self):
         """
@@ -449,6 +463,7 @@ class FWOController:
         """
         if task_name == 'importRules':
             self.view.displayImportedRules(result[0], result[1])
+            
         elif task_name == 'generateFDD':
             tableName, chainName = result
             if tableName is not None and chainName is not None:
@@ -459,12 +474,14 @@ class FWOController:
                         self.view.displayErrorMessage("Image Display not set.")
             # Enable Buttons
             self.view.ui.generateBtn.setEnabled(True)
-        elif task_name == 'viewFDD':
+            
+        elif task_name in ['viewFDD', 'filterFDD']:
             pathName, imgFormat = result
             if self.model.graphicsView:
                 self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
             else:
                 self.view.displayErrorMessage("Image Display not set.")
+                
         elif task_name == 'optimizeFDD':
             tableName, chainName = result
             if tableName is not None and chainName is not None:

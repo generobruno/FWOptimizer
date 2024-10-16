@@ -346,7 +346,7 @@ class FWOView(QtWidgets.QMainWindow):
                 return option[1]
                 #TODO Manejar erro NoneType cuando selecciono la tabla sin querer
     
-    def selectViewFddDialog(self, tables):
+    def selectViewFddDialog(self, tables, fields):
         """
         Show Dialog to select the chain and options to view the FDD.
 
@@ -356,7 +356,7 @@ class FWOView(QtWidgets.QMainWindow):
         Returns:
             tuple: Option selected (table_name, chain_name), image_format, graph_orientation, unroll_decisions
         """
-        dialog = Dialogs.ViewFDDDialog(tables=tables, parent=self)
+        dialog = Dialogs.ViewFDDDialog(tables=tables, fields=fields, parent=self)
         if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             return dialog.getSelectedOptions()
         return None

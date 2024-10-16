@@ -7,6 +7,7 @@ import graphviz
 import toml
 import sys
 import re
+import hashlib
 
 from fwoptimizer.classes.rules import Chain, Rule
 from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
@@ -782,6 +783,7 @@ class FDD:
                     self._setFilterVisibiltyToTop(outgoing.getOrigin())
                     self._setFilterVisibiltyToBot(outgoing.getDestination())
 
+    #TODO BORRAR
     def printFilteredFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False) -> None:
         """
         Generate a graph image from the data structure

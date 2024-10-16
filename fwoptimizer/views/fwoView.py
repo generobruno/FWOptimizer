@@ -7,6 +7,7 @@ Returns:
     _type_: _description_
 """
 
+import os
 from PyQt6 import QtCore, QtGui, QtWidgets
 from views.mainView import Ui_MainWindow
 import views.dialogs as Dialogs
@@ -70,7 +71,7 @@ class FWOView(QtWidgets.QMainWindow):
         # Expand Center Menu Widget
         self.ui.homeBtn.clicked.connect(
             lambda: (
-                self.ui.centerMenuContainer.setVisible(not self.ui.centerMenuContainer.isVisible()), #TODO Open projects window?
+                self._togglePage(2),
                 self.ui.label.setText("Home")
             )
         )
@@ -88,7 +89,7 @@ class FWOView(QtWidgets.QMainWindow):
         )
         self.ui.reportsBtn.clicked.connect(
             lambda: (
-                self._togglePage(2),
+                self._togglePage(3),
                 self.ui.label.setText("Reports")
             )
         )
@@ -211,7 +212,69 @@ class FWOView(QtWidgets.QMainWindow):
         # Set exported rules right menu
         self.ui.exportedRules.setText(str(content))
         self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage)
+     
+    def displayWorkingDirectoryTree(self, directory):
+        """
+        Display the working directory's files and folders in the QTreeView.
         
+        Args:
+            directory: Path to the working directory.
+        """
+        # Create a QStandardItemModel for the QTreeView
+        treeView = QtGui.QStandardItemModel()
+        treeView.setHorizontalHeaderLabels(["File/Folder", "Details"])
+        self.ui.treeWorkdirView.setStyleSheet("""
+            QHeaderView::section {
+                background-color: #2c313c;
+                color: white;
+                font-weight: bold;
+                padding: 5px;
+                border: none;
+                border-radius: 8px;
+            }
+        """)
+
+        # Recursive function to add items to the tree view
+        def addTreeItems(parentItem, path):
+            for item in os.listdir(path):
+                itemPath = os.path.join(path, item)
+                itemNode = QtGui.QStandardItem(item)
+                itemNode.setEditable(False)
+                
+                if os.path.isdir(itemPath):
+                    detailsNode = QtGui.QStandardItem("Folder")
+                    addTreeItems(itemNode, itemPath)  # Recursively add folder contents
+                else:
+                    detailsNode = QtGui.QStandardItem(f"File - {os.path.getsize(itemPath)} bytes")
+                
+                parentItem.appendRow([itemNode, detailsNode])
+
+        # Add the root directory to the tree view
+        rootItem = QtGui.QStandardItem(os.path.basename(directory))
+        rootItem.setEditable(False)
+        treeView.appendRow([rootItem, QtGui.QStandardItem("Working Directory")])
+
+        # Add the contents of the directory
+        addTreeItems(rootItem, directory)
+
+        # Set the model to the QTreeView
+        self.ui.treeWorkdirView.setModel(treeView)
+        self.ui.treeWorkdirView.expandAll()
+
+        # Resize columns to fit contents
+        for column in range(treeView.columnCount()):
+            self.ui.treeWorkdirView.resizeColumnToContents(column) 
+    
+    def displayReportsWindow(self, filePath):
+        """
+        Open a file and display its content in a custom dialog with search functionality.
+        
+        Args:
+            filePath: Full path to the file.
+        """
+        fileViewerDialog = Dialogs.FileViewerDialog(filePath, parent=self)
+        fileViewerDialog.exec()
+    
     def displayWarningMessage(self, message: str):
         """
         Display custom warning message
@@ -364,7 +427,7 @@ class FWOView(QtWidgets.QMainWindow):
         else:
             self.ui.loading.stop()
             
-    def showCloseConfirmationDialog(self):
+    def showCloseConfirmationDialog(self, title:str, message:str):
         """
         Display close confirmation dialog
 
@@ -372,14 +435,16 @@ class FWOView(QtWidgets.QMainWindow):
             bool: True is user selected Yes, False otherwise.
         """
         reply = QtWidgets.QMessageBox.warning(
-            self, 'Confirmar Cierre',
-            "Todavía hay tareas corriendo, cerrar la aplicación las cancelará.\nEstas seguro que deseas salir?",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-            QtWidgets.QMessageBox.StandardButton.No
+            self, title,
+            message,
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No | QtWidgets.QMessageBox.StandardButton.Cancel,
+            QtWidgets.QMessageBox.StandardButton.Cancel
         )
         
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             return True
-        else:
+        elif reply == QtWidgets.QMessageBox.StandardButton.No:
             return False
+        elif reply == QtWidgets.QMessageBox.StandardButton.Cancel:
+            return None
                 

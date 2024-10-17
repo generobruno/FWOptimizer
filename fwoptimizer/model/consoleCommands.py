@@ -1,6 +1,8 @@
 """_summary_
 """
 
+import os
+
 import model.fwoManager as fwm
 import views.fwoView as fwv
 import views.customWidgets as cw
@@ -63,6 +65,10 @@ class ConsoleCommands:
 
         if self.model.currentFirewall.getInputRules():
             self.console.appendToConsole("Warning: The current firewall already has input rules. Importing new rules will overwrite them.")
+            
+        if not os.path.exists(filePath):
+            self.console.appendToConsole(f"No such file or directory: {filePath}")
+            return
 
         fileContent, rules = self.model.importRules(filePath)
         
@@ -127,7 +133,7 @@ class ConsoleCommands:
         Args:
             args (str): Command arguments, can specify table and chain.
         """
-        parts = args.split()
+        parts = args.split(',')
 
         # Ensure a field list is loaded
         if self.model.currentFirewall.getFieldList() is None:
@@ -146,11 +152,14 @@ class ConsoleCommands:
         if len(parts) == 2:
             tableName = parts[0]
             chainName = parts[1]
-            if tableName in tables and chainName in self.model.currentFirewall.getInputRules()[tableName]:
+            if tableName in tables and chainName in tables[tableName].getChains().keys():
                 self.model.generateFDD(tableName, chainName)
                 self.console.appendToConsole(f"FDD generated for table '{tableName}' and chain '{chainName}'.")
             else:
                 self.console.appendToConsole(f"Invalid table '{tableName}' or chain '{chainName}' specified.")
+            return
+        elif len(parts) == 1:
+            self.console.appendToConsole(f"Invalid syntax. Use: generate &lt;table&gt;,&lt;chain&gt")
             return
 
         # Else, generate all
@@ -164,8 +173,24 @@ class ConsoleCommands:
         Args:
             args (_type_): _description_
         """
-        self.console.appendToConsole("TODO")
-        pass
+        fdds = self.model.currentFirewall.getFDDs()
+        
+        if not self.model.currentFirewall or len(fdds) == 0:
+            self.console.appendToConsole("No FDDs generated yet. Please generate FDDs first.")
+            return
+
+        # Split arguments by comma and handle optional parameters
+        try:
+            table, chain = args.split(',')
+        except ValueError:
+            self.console.appendToConsole(f"Invalid syntax. Use: optimize &lt;table&gt;,&lt;chain&gt")
+            return
+
+        if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
+            self.model.optimizeFDD(table, chain)
+            self.console.appendToConsole(f"FDD for {table}/{chain} optimized.")
+        else:
+            self.console.appendToConsole(f"FDD for {table}/{chain} not found.")
     
     def exportRules(self, args):
         """_summary_
@@ -199,11 +224,16 @@ class ConsoleCommands:
 
         if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
             # Handle optional parameters
-            outputFrmt      = optional_args[0] if len(optional_args) > 0 else None
-            graphDir        = optional_args[1] if len(optional_args) > 1 else None
-            unroll          = optional_args[2] if len(optional_args) > 2 else None
-
-            self.model.viewFDD(table, chain, outputFrmt, graphDir, unroll)
+            outputFrmt      = optional_args[0] if len(optional_args) > 0 else 'svg'
+            graphDir        = optional_args[1] if len(optional_args) > 1 else 'TB'
+            unroll          = optional_args[2] if len(optional_args) > 2 else False
+            # TODO Check optional params format
+            
+            pathName, imgFormat= self.model.viewFDD(table, chain, outputFrmt, graphDir, unroll)
+            if self.model.graphicsView:
+                self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+            else:
+                self.view.displayErrorMessage("Image Display not set.")
             self.console.appendToConsole(f"FDD for {table}/{chain} printed.")
         else:
             self.console.appendToConsole(f"FDD for {table}/{chain} not found.")

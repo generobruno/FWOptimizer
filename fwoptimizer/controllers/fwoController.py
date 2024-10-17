@@ -395,7 +395,9 @@ class FWOController:
             self.view.ui.consoleContainer.hide()
             self.view.ui.console.clear()
         else:
+            self.disableButtons()
             self.console.executeCommand(command)
+            self.enableButtons()
 
     """
                     THREADING

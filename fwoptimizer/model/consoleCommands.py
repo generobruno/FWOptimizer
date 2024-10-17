@@ -23,7 +23,8 @@ class ConsoleCommands:
             "generate": self.generateFdds,
             "optimize": self.optimizeFdds,
             "export": self.exportRules,
-            "print": self.printFdd
+            "print": self.printFdd,
+            "filter": self.filterFdd
         }
 
     def executeCommand(self, commandLine):
@@ -193,13 +194,45 @@ class ConsoleCommands:
             self.console.appendToConsole(f"FDD for {table}/{chain} not found.")
     
     def exportRules(self, args):
-        """_summary_
+        """
+        Generate Rules from an specific FDD and export them to a file
 
         Args:
-            args (_type_): _description_
+            args (str): parameters
         """
-        self.console.appendToConsole("TODO")
-        pass
+        fdds = self.model.currentFirewall.getFDDs()
+        
+        if not self.model.currentFirewall or len(fdds) == 0:
+            self.console.appendToConsole("No FDDs generated yet. Please generate FDDs first.")
+            return
+
+        # Split arguments by comma and handle optional parameters
+        try:
+            table_chain, filePath = args.split()
+            tableName, chainName = table_chain.split(',')
+        except ValueError:
+            self.console.appendToConsole(f"Invalid syntax. Use: export &lt;table&gt;,&lt;chain&gt; &lt;fileName&gt")
+            return
+
+        if self.model.currentFirewall.getFDD(chainName): #TODO REVISAR
+            # Generate Rules
+            exportedRules = self.model.exportRules(tableName, chainName)
+            self.console.appendToConsole(f"FDD for {tableName}/{chainName} optimized.")
+            
+            # Generate export File from RuleSet, given the Parser Strategy
+            fileContent = self.model.getParserStrategy().compose(exportedRules)
+            
+            # Save exported rules to right menu 
+            if fileContent:
+                self.view.displayExportedRules(fileContent)
+                
+                # Write the file content to the specified file path
+                with open(filePath, 'w') as file:
+                    file.write(fileContent)
+                
+                print(f'Exported file to: {filePath}')
+        else:
+            self.console.appendToConsole(f"FDD for {tableName}/{chainName} not found.")
     
     def printFdd(self, args):
         """
@@ -235,6 +268,43 @@ class ConsoleCommands:
             else:
                 self.view.displayErrorMessage("Image Display not set.")
             self.console.appendToConsole(f"FDD for {table}/{chain} printed.")
+        else:
+            self.console.appendToConsole(f"FDD for {table}/{chain} not found.")
+            
+    def filterFdd(self, args):
+        """
+        Filter a FDD using the console
+        
+        Args:
+            arguments (str): parameters
+        """
+        fdds = self.model.currentFirewall.getFDDs()
+        
+        if not self.model.currentFirewall or len(fdds) == 0:
+            self.console.appendToConsole("No FDDs generated yet. Please generate FDDs first.")
+            return
+
+        # Split arguments by comma and handle optional parameters
+        try:
+            table_chain, field, matchExpr = args.split()
+            table, chain = table_chain.split(',')
+        except ValueError:
+            self.console.appendToConsole(f"Invalid syntax. Use: print &lt;table&gt;,&lt;chain&gt; &lt;field&gt; &lt;MatchExpression&gt")
+            return
+        
+        fields = [f.getName() for f in self.model.currentFirewall.getFieldList().getFields()]
+        if field not in fields:
+            self.console.appendToConsole(f"Invalid Field. This firewall uses:\n{fields}")
+            return
+
+        if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
+            #Filter the FDD Graph
+            pathName, imgFormat= self.model.filterFDD(table, chain, field, matchExpr)
+            if self.model.graphicsView:
+                self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+            else:
+                self.view.displayErrorMessage("Image Display not set.")
+            self.console.appendToConsole(f"Filtered FDD for {table}/{chain} printed.")
         else:
             self.console.appendToConsole(f"FDD for {table}/{chain} not found.")
 

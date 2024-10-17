@@ -192,13 +192,14 @@ class FWOManager:
             str, str: Path of the graph and its format
         """
         print(f"Filtering FDD for {table} - {chain}")
+        #TODO Manage opts formats of printFDD here?
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(chain)
         fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
         
         # Filter the FDD
-        fdd.filterFDDForValue(field, matchExpression)        
+        fdd.filterFDDForValue(field, matchExpression) #TODO Manage not found matchExpr case       
         
         # Create the path using the hash
         pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_f_{field}')

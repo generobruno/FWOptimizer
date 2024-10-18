@@ -167,6 +167,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addWidget(self.leftMenuBottomFrame, 0, QtCore.Qt.AlignmentFlag.AlignBottom)
         self.verticalLayout.addWidget(self.leftMenuSubContainer)
         self.horizontalLayout.addWidget(self.leftMenuContainer)
+        # Resizable Widget
         self.centerMenuContainer = ResizableWidget(self.centralWidget, resizable_edges=[
             QtCore.Qt.Edge.RightEdge
         ])
@@ -227,6 +228,17 @@ class Ui_MainWindow(object):
         self.treePoliciesView.setObjectName("treePoliciesView")
         self.verticalLayout_9.addWidget(self.treePoliciesView)
         self.centerMenuStack.addWidget(self.policiesPage)
+        
+        # Home Page
+        self.HomePage = QtWidgets.QWidget()
+        self.HomePage.setObjectName(u"HomePage")
+        self.verticalLayout_18 = QtWidgets.QVBoxLayout(self.HomePage)
+        self.verticalLayout_18.setObjectName(u"verticalLayout_18")
+        self.treeWorkdirView = QtWidgets.QTreeView(self.HomePage)
+        self.treeWorkdirView.setObjectName(u"treeWorkdirView")
+        self.verticalLayout_18.addWidget(self.treeWorkdirView)
+        self.centerMenuStack.addWidget(self.HomePage)
+        
         self.helpPage = QtWidgets.QWidget()
         self.helpPage.setObjectName("helpPage")
         self.verticalLayout_10 = QtWidgets.QVBoxLayout(self.helpPage)

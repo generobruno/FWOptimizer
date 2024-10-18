@@ -9,6 +9,7 @@ Returns:
 
 from PyQt6.QtCore import pyqtSignal, QThread
 import ctypes
+import os
 
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
@@ -37,6 +38,14 @@ class FWOController:
         # Exit Confirmation
         view.actionExit.triggered.connect(self.closeConfirmation)
         self.view.closeEvent = self.closeConfirmation
+        
+        # Home button - Show WorkDir
+        view.homeBtn.clicked.connect(
+            lambda: (
+                self.view.displayWorkingDirectoryTree(model.workFolder)
+            )
+        )
+        view.treeWorkdirView.doubleClicked.connect(self.onTreeItemClicked)
         
         # Connect buttons to model functions
         view.importBtn.clicked.connect(self.importRules)
@@ -76,21 +85,37 @@ class FWOController:
         the app.
         """
         if self.areTasksRunning():
-            reply = self.view.showCloseConfirmationDialog()
-            if reply == True:
+            reply = self.view.showCloseConfirmationDialog('Confirmar Cierre',
+            "Todavía hay tareas corriendo, cerrar la aplicación las cancelará.\nEstas seguro que deseas salir?")
+            
+            if reply is True:  # User clicked Yes
                 self.cancelAllTasks()
                 if event:
                     event.accept()
                 else:
                     self.view.close()
-            else:
+            elif reply is False:  # User clicked No
                 if event:
                     event.ignore()
+            elif reply is None:  # User dismissed the dialog
+                if event:
+                    event.ignore()  # Ignore event and prevent closing
         else:
-            if event:
-                event.accept()
-            else:
-                self.view.close()
+            reply = self.view.showCloseConfirmationDialog('Confirmar Cierre',
+            "¿Quieres guardar antes de salir?")
+            
+            if reply is True:  # User clicked Yes
+                if event:
+                    self.saveProject()
+                    event.accept()
+                else:
+                    self.view.close()
+            elif reply is False:  # User clicked No
+                if event:
+                    self.view.close()
+            elif reply is None:  # User canceled the dialog
+                if event:
+                    event.ignore()  # Ignore event and prevent closing
     
     def disableButtons(self):
         """
@@ -272,6 +297,59 @@ class FWOController:
         else:
             self.view.displayWarningMessage("No valid option or file path selected for export.")
 
+    def onTreeItemClicked(self, index):
+        """
+        Handle the event when a tree item is clicked.
+        
+        Args:
+            index: The QModelIndex of the clicked item.
+        """
+        # Get the clicked item's data
+        itemNode = self.view.ui.treeWorkdirView.model().itemFromIndex(index)
+
+        # Get the detailsNode (second column), by getting the sibling in column 1
+        detailsIndex = index.sibling(index.row(), 1)
+        detailsNode = self.view.ui.treeWorkdirView.model().itemFromIndex(detailsIndex)
+
+        # Retrieve the text from both the itemNode and the detailsNode
+        itemText = itemNode.text()
+        detailsText = detailsNode.text() if detailsNode else None
+
+        # Define actions for specific file extensions
+        fileActions = {
+            '.txt': lambda path: self.view.displayReportsWindow(path),
+            '.svg': lambda path: self.model.graphicsView.displayImage(f'{path}'),
+            '.png': lambda path: self.model.graphicsView.displayImage(f'{path}'),
+            '.jpg': lambda path: self.model.graphicsView.displayImage(f'{path}'),
+        }
+
+        # Or perform a more specific action, such as opening a file
+        if "File" in detailsText:
+            filePath = self.getFilePathFromItem(itemNode)  # Helper function to get the file path
+            
+            # Check for specific file extensions and perform the associated action
+            for ext, action in fileActions.items():
+                if itemText.endswith(ext):
+                    action(filePath)  # Call the appropriate function
+                    break  # Stop once the correct action is found
+
+    def getFilePathFromItem(self, item):
+        """
+        Get the full file path from a tree item.
+        
+        Args:
+            item: The QStandardItem representing a file.
+        
+        Returns:
+            str: Full path to the file.
+        """
+        # Traverse up the tree to reconstruct the full file path
+        parts = []
+        while item:
+            parts.insert(0, item.text())
+            item = item.parent()
+        return os.path.join(self.model.workFolder, *parts)
+
     def saveProject(self) -> None:
         """
         Select the file and save directory, then save the project to it.
@@ -280,8 +358,7 @@ class FWOController:
 
         if filePath:
             self.model.saveProject(filePath)
-            
-        self.view.displayInfoMessage("Proyecto Guardado", "El proyecto se guardó exitosamente.")
+            self.view.displayInfoMessage("Proyecto Guardado", "El proyecto se guardó exitosamente.")
 
     def loadProject(self) -> None:
         """
@@ -291,8 +368,7 @@ class FWOController:
 
         if filePath:
             self.model.loadProject(filePath)
-            
-        self.view.displayImportedRules(None, self.model.currentFirewall.getInputRules())
+            self.view.displayImportedRules(None, self.model.currentFirewall.getInputRules())
             
     def processCommand(self, command):
         """

@@ -286,10 +286,20 @@ class ConsoleCommands:
 
         # Split arguments by comma and handle optional parameters
         try:
-            table_chain, field, matchExpr = args.split()
+            parts = args.split()
+            table_chain, field, matchExpr = parts[0], parts[1], parts[2]
             table, chain = table_chain.split(',')
+            
+            # Optional literal parameter: check if '--literal' or '-l' is provided
+            literal = False
+            if len(parts) > 3:
+                optional_param = parts[3]
+                if optional_param in ['--literal', '-l']:
+                    literal = True
+                else:
+                    raise ValueError(f"Invalid optional argument '{optional_param}'. Use --literal or -l.")
         except ValueError:
-            self.console.appendToConsole(f"Invalid syntax. Use: print &lt;table&gt;,&lt;chain&gt; &lt;field&gt; &lt;MatchExpression&gt")
+            self.console.appendToConsole(f"Invalid syntax. Use: print &lt;table&gt;,&lt;chain&gt; &lt;field&gt; &lt;MatchExpression&gt [--literal|-l]")
             return
         
         fields = [f.getName() for f in self.model.currentFirewall.getFieldList().getFields()]
@@ -299,7 +309,7 @@ class ConsoleCommands:
 
         if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
             #Filter the FDD Graph
-            pathName, imgFormat= self.model.filterFDD(table, chain, field, matchExpr)
+            pathName, imgFormat= self.model.filterFDD(table, chain, field, matchExpr, literal)
             if self.model.graphicsView:
                 self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
             else:

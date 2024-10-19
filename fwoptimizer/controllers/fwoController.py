@@ -238,13 +238,14 @@ class FWOController:
                             unrollDecisions
                             )
         elif options[0] == 'filterFDD':
-            _ , tableName, chainName, field, match_expression = options
+            _ , tableName, chainName, field, match_expression, literal = options
             print(f"Filtering FDD for {tableName} -> {chainName}: {field} -> {match_expression}")
             self.runModelTask(self.model.filterFDD,
                               tableName,
                               chainName,
                               field,
-                              match_expression
+                              match_expression,
+                              literal
                               )
             
     def optimizeFDD(self):

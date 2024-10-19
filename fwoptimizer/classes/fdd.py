@@ -750,14 +750,7 @@ class FDD:
                     edge_color = 'blue' if edge.getMarking() else 'black'
                     edge.setAttributes(filterVisibility='True',color=edge_color)
 
-    def filterFDDForValue(self, fieldFiltered: str, matchExpresion: str):
-        """
-        Filter the FDD according to the parameters
-
-        Args:
-            fieldFiltered (str): Field to Filter
-            matchExpresion (str): Value of the Field
-        """
+    def filterFDDForValue(self, fieldFiltered: str, matchExpresion: str, literal: bool = False):
 
         self._setFilterAttr("False")
 
@@ -771,17 +764,24 @@ class FDD:
         if levelSelected == None:
             print(f"El campo {fieldFiltered} no coincide con nigún campo existente")
             return
+        
+        if literal:
+            matchExpresion = "^" + matchExpresion + "$"
+        else:
+            matchExpresion = "^" + matchExpresion
 
         for node in levelSelected.getNodes():
 
             for outgoing in node.getOutgoing():
 
-                if re.search(matchExpresion, str(outgoing.getElementSet())):
+                for element in outgoing.getElementSet().getElementsList():
 
-                    print(f"MATCH de {matchExpresion} con {str(outgoing.getElementSet())}")
-                    outgoing.setAttributes(filterVisibility="True")
-                    self._setFilterVisibiltyToTop(outgoing.getOrigin())
-                    self._setFilterVisibiltyToBot(outgoing.getDestination())
+                    if re.search(matchExpresion, str(element)):
+
+                        outgoing.setAttributes(filterVisibility="True")
+                        self._setFilterVisibiltyToTop(outgoing.getOrigin())
+                        self._setFilterVisibiltyToBot(outgoing.getDestination())
+                        break
 
     #TODO BORRAR
     def printFilteredFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False) -> None:
@@ -1166,7 +1166,7 @@ class FDD:
 
                                 edge1.getElementSet().remove(intersectionSet)
 
-                                # If edge2 is empty, delete it
+                                # If edge1 is empty, delete it
                                 if edge1.getElementSet().isEmpty():
 
                                     edge1.autoDisconnect()
@@ -1194,7 +1194,7 @@ class FDD:
 
                                 edge1.getElementSet().remove(intersectionSet)
 
-                                # If edge2 is empty, delete it
+                                # If edge1 is empty, delete it
                                 if edge1.getElementSet().isEmpty():
 
                                     edge1.autoDisconnect()

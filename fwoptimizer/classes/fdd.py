@@ -8,6 +8,8 @@ import toml
 import sys
 import re
 
+#QUITAR EN EL FUTURO
+import random
 from fwoptimizer.classes.rules import Chain, Rule
 from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
 
@@ -1695,4 +1697,118 @@ class FDD:
             if option1.isDisjoint(option2):  # Check if they have any common elements
                 return True
         return False
-        
+    
+    def addRuleToFDD(self, rule: Rule):
+
+        # Check that all predicates in the Rule are in the fieldList. If anyone not are include raise an error.
+        fields_names = [level.getField().getName() for level in self._levels]
+        for predicate in rule.getPredicates():
+            if predicate not in fields_names:
+                raise TypeError(f"Predicate {predicate} isn't include in FieldList")
+
+        nodes_next = [self._levels[0].getNodes()[0]]
+
+        for i in range(len(self._levels[:-2])):
+
+            level = self._levels[i]
+            field = level.getField()
+
+            nodes = nodes_next
+            nodes_next = []
+            elements = rule.getOption(field.getName())
+            elementSet = ElementSet.createElementSet(field.getType(), elements if elements else [])
+
+            for node in nodes:
+
+                edges = []
+
+                for outgoing in node.getOutgoing():
+
+                    if elementSet.isOverlapping(outgoing.getElementSet()):
+
+                        edges.append(outgoing)
+
+                for edge in edges:
+                    
+                    intersectionSet = elementSet.intersectionSet(edge.getElementSet())
+
+                    newNode = Node(self._levels[i+1].getField().getName() + " added " + str(random.randint(10000, 20000)), self._levels[i+1])
+                    newNode.autoConnect()
+
+                    #Chequear que los nodos no vayan directamente a decision sin pasar por los otros lvls intermedios.
+                    if edge.getDestination().getLevel() != self._levels[i+1]:
+
+                        self._completeNode(edge, newNode)
+
+                    else:
+
+                        # Replicate all outgoing edges of destination node of edge1 in the new node.
+                        for outEdge in edge.getDestination().getOutgoing():
+
+                            copiedEdge = outEdge.replicate()
+                            copiedEdge.setOrigin(newNode)
+                            copiedEdge.autoConnect()
+
+                    newEdge = Edge(edge.getId() + [rule.getId()], edge.getOrigin(), newNode, intersectionSet)
+                    newEdge.autoConnect()
+
+                    edge.getElementSet().remove(intersectionSet)
+
+                    # If edge is empty, delete it
+                    if edge.getElementSet().isEmpty():
+                        
+                        orphanNode = edge.getDestination()
+                        edge.autoDisconnect()
+
+                        # If after desconection the node no have any incomming edge, remove all his outgoing edges and delete it.
+                        if len(orphanNode.getIncoming()) == 0:
+
+                            while len(orphanNode.getOutgoing()) != 0:
+
+                                orphanNode.getOutgoing()[0].autoDisconnect()
+
+                            orphanNode.autoDisconnect()
+
+                    # Agrego el nuevo nodo para continuarlo en el siguiente bucle
+                    nodes_next.append(newNode)
+
+        #For the last level, the edges don't go to new nodes
+        for node in nodes_next:
+
+            level = self._levels[-2]
+            field = level.getField()
+
+            elements = rule.getOption(field.getName())
+            elementSet = ElementSet.createElementSet(field.getType(), elements if elements else [])
+
+            edges = []
+
+            for outgoing in node.getOutgoing():
+
+                    if elementSet.isOverlapping(outgoing.getElementSet()):
+
+                        edges.append(outgoing)
+
+            for edge in edges:
+
+                intersectionSet = elementSet.intersectionSet(edge.getElementSet())
+
+                newEdge = Edge(edge.getId() + [rule.getId()], node, self._getDecisionNode(rule.getDecision()), intersectionSet)
+                newEdge.autoConnect()
+
+                edge.getElementSet().remove(intersectionSet)
+
+                if edge.getElementSet().isEmpty():
+
+                    edge.autoDisconnect()
+         
+    def _completeNode(self, edge: Edge, newNode: Node):
+
+        if edge.getDestination().getLevel().getField().getName() != 'Decision':
+
+            print(f"Error _completeNode(): Caso no reconocido, edge no lleva a Decision Field")
+
+        else:
+
+            newEdge = Edge([999], newNode, edge.getDestination(), ElementSet.createElementSet(newNode.getLevel().getField().getType(), []))
+            newEdge.autoConnect()

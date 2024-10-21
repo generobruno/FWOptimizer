@@ -559,7 +559,8 @@ class FDD:
             ranksep_factor = 4.0
         else:
             ranksep_factor = 5.0
-            
+
+        # TODO Lucho - si la imagen ya esta en formato svg no debería informarse el cambio.   
         # Set SVG for large graphs
         if total_elements >= 1500:
             print(f'Graph too Large ({total_elements} elements). Rendering to .svg')
@@ -589,6 +590,7 @@ class FDD:
         for level in self._levels:
             field_name = level.getField().getName()  # Get the field name for the level
 
+            # TODO Lucho - Porque se chequea la existencia de subgraph si level se recorre solo una vez?
             if field_name not in field_subgraphs:
                 # Create a new subgraph for this field level if it doesn't exist
                 field_subgraphs[field_name] = graphviz.Digraph(name=f'cluster_{field_name}')
@@ -598,6 +600,7 @@ class FDD:
             for node in level.getNodes():
                 node_name = node.getName()
                 
+                # TODO Lucho - El hardcodeo de las decisiones puede ser mala idea, las decisiones están listadas en self._decisions asi que se puede reemplazar facilmente
                 # Skip adding ACCEPT and DROP nodes if unroll_decisions is True
                 if unroll_decisions and node_name in ['ACCEPT', 'DROP']:
                     dot.node(
@@ -631,6 +634,9 @@ class FDD:
                         label = f"{edge.getId()},\n{elements_str}"
 
                     edge_attributes = edge.getAttributes()
+                    if edge.getMarking():
+                        edge_attributes = edge_attributes.copy()
+                        edge_attributes["color"] = "blue"
 
                     # Add the intermediate node with the label
                     dot.node(
@@ -1280,6 +1286,7 @@ class FDD:
             changed |= self._removeIsomorphicNodes()
             changed |= self._mergeEdges()
             
+    #TODO Lucho - La documentación y el retorno no coinciden.
     def _removeSimpleNodes(self) -> None:
         """
         Apply the first reduction rule:
@@ -1318,7 +1325,8 @@ class FDD:
                 # print(f'\tRemoved Simple node {node} from {level.getField().getName()} Level')
         
         return changed
-            
+
+    #TODO Lucho - La documentación y el retorno no coinciden.       
     def _removeIsomorphicNodes(self) -> None:
         """
         Apply the second reduction rule:
@@ -1364,7 +1372,8 @@ class FDD:
                     # print(f'Removed Isomorphic node {node} from {level.getField().getName()} Level')
         
         return changed
-        
+
+    #TODO Lucho - La documentación y el retorno no coinciden. 
     def _mergeEdges(self) -> None:
         """
         Apply the third reduction rule:
@@ -1450,6 +1459,15 @@ class FDD:
         In a Marked version of an FDD exactly one outgoing edge of each non-terminal node is marked "All" (or "Any").
         Since all the edge's labels do not change, the semantics of a marked and a non-marked FDD are the same.
         """
+
+        # TODO Lucho - implementación temporal, ver si se puede optimizar
+        # Step 0: Erase previous marking
+        for level in self._levels:
+            for node in level.getNodes():
+                node.setLoad(0)
+                for edge in node.getOutgoing():
+                    edge.markEdge(False)
+                    
         # Step 1: Initialize the load of each terminal node to 1
         last_level = self._levels[-1]  # Last Level has terminal Nodes
         for node in last_level.getNodes():
@@ -1467,7 +1485,8 @@ class FDD:
                         best_edge = max(node.getOutgoing(), key=lambda e: (self._edgeLoad(e) - 1) * e.getDestination().getLoad())
                         best_edge.markEdge()
                         # print(f'Marking Edge {best_edge}')
-                        best_edge.setAttributes(color='blue')
+                        # TODO quité el color de este algoritmo, es mejor chequear las marcas en printFDD a demanda.
+                        # best_edge.setAttributes(color='blue')
 
                         # (b) Compute the load of v
                         node_load = sum(self._edgeLoad(e) * e.getDestination().getLoad() for e in node.getOutgoing())
@@ -1698,6 +1717,7 @@ class FDD:
                 return True
         return False
     
+    # TODO Lucho - mejorar para realizar reduction y marking solo sobre la parte editada?
     def addRuleToFDD(self, rule: Rule):
 
         # Check that all predicates in the Rule are in the fieldList. If anyone not are include raise an error.
@@ -1732,6 +1752,7 @@ class FDD:
                     
                     intersectionSet = elementSet.intersectionSet(edge.getElementSet())
 
+                    # TODO Lucho - quitar el random e implementar otra manera de nominar los nodos
                     newNode = Node(self._levels[i+1].getField().getName() + " added " + str(random.randint(10000, 20000)), self._levels[i+1])
                     newNode.autoConnect()
 

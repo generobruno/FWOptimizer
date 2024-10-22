@@ -137,7 +137,7 @@ class Firewall:
                     if fdd:
                         # Generate new chain
                         outputChain = fdd.firewallGen()
-                        outputChain.setDefaultDecision("DROP") #TODO VER como setear outputRules
+                        outputChain.setDefaultDecision(outputChain[-1].getDecision()) #TODO CHECK
                         # Add new chain
                         exportRuleSet[tableName].addChain(outputChain)
                         print(f'Exporting {tableName} - {chainName} Rules')
@@ -152,7 +152,7 @@ class Firewall:
             if fdd:
                 # Generate new chain
                 outputChain = fdd.firewallGen()
-                outputChain.setDefaultDecision("DROP") #TODO VER como setear outputRules
+                outputChain.setDefaultDecision(outputChain[-1].getDecision()) #TODO CHECK
                 # Add new chain
                 exportRuleSet[table].addChain(outputChain)
             else:

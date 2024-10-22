@@ -560,10 +560,9 @@ class FDD:
             ranksep_factor = 4.0
         else:
             ranksep_factor = 5.0
-
-        # TODO Lucho - si la imagen ya esta en formato svg no debería informarse el cambio.   
+   
         # Set SVG for large graphs
-        if total_elements >= 1500:
+        if total_elements >= 1500 and img_format != 'svg':
             print(f'Graph too Large ({total_elements} elements). Rendering to .svg')
             img_format = 'svg'
         
@@ -591,7 +590,6 @@ class FDD:
         for level in self._levels:
             field_name = level.getField().getName()  # Get the field name for the level
 
-            # TODO Lucho - Porque se chequea la existencia de subgraph si level se recorre solo una vez?
             if field_name not in field_subgraphs:
                 # Create a new subgraph for this field level if it doesn't exist
                 field_subgraphs[field_name] = graphviz.Digraph(name=f'cluster_{field_name}')
@@ -604,9 +602,8 @@ class FDD:
                 
                 node_name = node.getName()
                 
-                # TODO Lucho - El hardcodeo de las decisiones puede ser mala idea, las decisiones están listadas en self._decisions asi que se puede reemplazar facilmente
                 # Skip adding ACCEPT and DROP nodes if unroll_decisions is True
-                if unroll_decisions and node_name in ['ACCEPT', 'DROP']:
+                if unroll_decisions and node_name in self._decisions.keys():
                     dot.node(
                         node_name, 
                         style='invis'  # Make the node invisible
@@ -656,7 +653,7 @@ class FDD:
                     # Connect the origin to the intermediate node and intermediate node to the destination
                     dot.edge(origin_name, edge_node_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
 
-                    if unroll_decisions and destination_name in ['ACCEPT', 'DROP']:
+                    if unroll_decisions and destination_name in self._decisions.keys():
                         unique_destination_name = f"{destination_name}_{edge_node_counter}"
                         dot.node(
                             unique_destination_name, 
@@ -751,12 +748,7 @@ class FDD:
         """
         Clear all filters.
         """
-        for level in self._levels:
-            for node in level.getNodes():
-                node.setAttributes(filterVisibility='True',color='black')
-                for edge in node.getOutgoing():
-                    edge_color = 'blue' if edge.getMarking() else 'black'
-                    edge.setAttributes(filterVisibility='True',color=edge_color)
+        self._setFilterAttr('True')
 
     def filterFDDForValue(self, fieldFiltered: str, matchExpresion: str, literal: bool = False):
 
@@ -771,13 +763,14 @@ class FDD:
 
         if levelSelected == None:
             print(f"El campo {fieldFiltered} no coincide con nigún campo existente")
-            return
+            return False
         
         if literal:
             matchExpresion = "^" + matchExpresion + "$"
         else:
             matchExpresion = "^" + matchExpresion
 
+        found = False
         for node in levelSelected.getNodes():
 
             for outgoing in node.getOutgoing():
@@ -789,178 +782,10 @@ class FDD:
                         outgoing.setAttributes(filterVisibility="True")
                         self._setFilterVisibiltyToTop(outgoing.getOrigin())
                         self._setFilterVisibiltyToBot(outgoing.getDestination())
+                        found = True
                         break
-
-    #TODO BORRAR
-    def printFilteredFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False) -> None:
-        """
-        Generate a graph image from the data structure
-
-        Args:
-            name (str): Name of the graph
-            img_format (str, optional): Output Format. Defaults to 'png'.
-        """
-        dot = graphviz.Digraph(engine='dot')
-
-        # Create a dictionary to hold subgraphs for each field level
-        field_subgraphs = {}
-        edge_node_counter = 0 # For intermediate nodes
-        
-        # Calculate total number of nodes and edges
-        total_nodes = 0
-        total_edges = 0
-
-        for level in self._levels:
-
-            for node in level.getNodes():
-
-                if node.getAttributes().get('filterVisibility') == 'True': 
-
-                    total_nodes += 1
-
-                for edge in node.getOutgoing():
-
-                    if edge.getAttributes().get('filterVisibility') == 'True':
-
-                        total_edges += 1
-
-        if total_nodes < 1 or total_edges < 1:
-            print("No hubo resultados para el filtro, imposible imprimir el FDD")
-            return
-
-        # Determine node size based on total number of nodes and edges
-        base_width = 2.0
-        base_height = 0.5
-        base_font = 20.0
-        total_elements = (total_nodes + total_edges)
-        width_factor = 10.0 / total_elements
-        height_factor = 5.5 / total_elements
-        font_factor = 5.0 / total_elements
-        
-        if total_nodes < 50:
-            ranksep_factor = 2.5
-        elif total_nodes < 100:
-            ranksep_factor = 3.0
-        elif total_nodes < 200:
-            ranksep_factor = 3.5
-        elif total_nodes < 500:
-            ranksep_factor = 4.0
-        else:
-            ranksep_factor = 5.0
-            
-        # Set SVG for large graphs
-        if total_elements >= 1500:
-            print(f'Graph too Large ({total_elements} elements). Rendering to .svg')
-            img_format = 'svg'
-        
-        # Set graph attributes
-        dot.attr(ranksep=str(ranksep_factor),nodesep='0.5')#, overlap='scale', pack='true', sep='+4')
-        
-        # Change layout direction (rotate 90 degrees)
-        dot.attr(rankdir=rank_dir)
-        
-        # Set tail and head ports
-        if rank_dir == 'BT':
-            head_port = 's'
-            tail_port = 'n'
-        elif rank_dir == 'LR':
-            head_port = 'w'
-            tail_port = 'e'
-        elif rank_dir == 'RL':
-            head_port = 'e'
-            tail_port = 'w'
-        else: # TB
-            head_port = 'n'
-            tail_port = 's'
-
-        # Iterate through the levels to create subgraphs
-        for level in self._levels:
-            field_name = level.getField().getName()  # Get the field name for the level
-
-            if field_name not in field_subgraphs:
-                # Create a new subgraph for this field level if it doesn't exist
-                field_subgraphs[field_name] = graphviz.Digraph(name=f'cluster_{field_name}')
-                field_subgraphs[field_name].attr(label=f"{field_name} Level", style='invis')
-
-            # Add nodes to the corresponding subgraph
-            for node in level.getNodes():
-
-                if node.getAttributes().get('filterVisibility', 'True') == 'True':
-
-                    node_name = node.getName()
                     
-                    # Skip adding ACCEPT and DROP nodes if unroll_decisions is True
-                    if unroll_decisions and node_name in ['ACCEPT', 'DROP']:
-                        dot.node(
-                            node_name, 
-                            style='invis'  # Make the node invisible
-                        )
-                        continue
-                    
-                    field_subgraphs[field_name].node(
-                                                node_name, 
-                                                _attributes = node.getAttributes(), 
-                                                width = str(base_width + width_factor), 
-                                                height= str(base_height + height_factor), 
-                                                fontsize= str(base_font + font_factor))
-
-                    # Add edges to the main graph
-                    for edge in node.getOutgoing():
-
-                        if edge.getAttributes().get('filterVisibility', 'True') == 'True':
-
-                            origin_name = edge.getOrigin().getName()
-                            destination_name = edge.getDestination().getName()
-                            edge_node_name = f"edge_node_{edge_node_counter}"
-                            edge_node_counter += 1
-
-                            if edge.getAttributes('label') is not None:
-                                label = f"{edge.getId()},{edge.getAttributes('label')}"
-                            else:
-                                elements = edge.getElementSet().getElementsList()
-                                if len(elements) > 5:
-                                    elements_str = '\n'.join(str(elem) for elem in elements[:5]) + '\n...'
-                                else:
-                                    elements_str = '\n'.join(str(elem) for elem in elements)
-                                label = f"{edge.getId()},\n{elements_str}"
-
-                            edge_attributes = edge.getAttributes()
-
-                            # Add the intermediate node with the label
-                            dot.node(
-                                edge_node_name, 
-                                label, 
-                                shape='plaintext', 
-                                width=str(base_width + width_factor), 
-                                height=str(base_height + height_factor),
-                                fontsize=str(base_font + font_factor))
-
-                            # Connect the origin to the intermediate node and intermediate node to the destination
-                            dot.edge(origin_name, edge_node_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
-
-                            if unroll_decisions and destination_name in ['ACCEPT', 'DROP']:
-                                unique_destination_name = f"{destination_name}_{edge_node_counter}"
-                                dot.node(
-                                    unique_destination_name, 
-                                    destination_name, 
-                                    style='filled',
-                                    shape='box' if destination_name == 'ACCEPT' else 'diamond',
-                                    fillcolor='greenyellow' if destination_name == 'ACCEPT' else 'crimson',
-                                    width=str(base_width + width_factor), 
-                                    height=str(base_height + height_factor), 
-                                    fontsize=str(base_font + font_factor)
-                                )
-                                dot.edge(edge_node_name, unique_destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
-                            else:
-                                dot.edge(edge_node_name, destination_name, tailport=tail_port, headport=head_port, _attributes=edge_attributes)
-
-        # Add each subgraph to the main graph
-        for subgraph in field_subgraphs.values():
-            dot.subgraph(subgraph)
-            
-
-        # Render the graph to a file
-        dot.render(name, format=img_format, view=False, cleanup=True)
+        return found
 
     def _genPre(self, chain: Chain) -> None:
         """
@@ -1303,8 +1128,7 @@ class FDD:
             changed |= self._removeIsomorphicNodes()
             changed |= self._mergeEdges()
             
-    #TODO Lucho - La documentación y el retorno no coinciden.
-    def _removeSimpleNodes(self) -> None:
+    def _removeSimpleNodes(self) -> bool:
         """
         Apply the first reduction rule:
         If there is a node v that has only one outgoing edge e, assuming e points to node
@@ -1342,9 +1166,8 @@ class FDD:
                 # print(f'\tRemoved Simple node {node} from {level.getField().getName()} Level')
         
         return changed
-
-    #TODO Lucho - La documentación y el retorno no coinciden.       
-    def _removeIsomorphicNodes(self) -> None:
+    
+    def _removeIsomorphicNodes(self) -> bool:
         """
         Apply the second reduction rule:
         If there are two nodes v and v' that are isomorphic, then remove v' along with all 
@@ -1390,8 +1213,8 @@ class FDD:
         
         return changed
 
-    #TODO Lucho - La documentación y el retorno no coinciden. 
-    def _mergeEdges(self) -> None:
+
+    def _mergeEdges(self) -> bool:
         """
         Apply the third reduction rule:
         If there are two edges e and e' that both are between the same pair of nodes, then
@@ -1477,7 +1300,6 @@ class FDD:
         Since all the edge's labels do not change, the semantics of a marked and a non-marked FDD are the same.
         """
 
-        # TODO Lucho - implementación temporal, ver si se puede optimizar
         # Step 0: Erase previous marking
         for level in self._levels:
             for node in level.getNodes():
@@ -1502,8 +1324,6 @@ class FDD:
                         best_edge = max(node.getOutgoing(), key=lambda e: (self._edgeLoad(e) - 1) * e.getDestination().getLoad())
                         best_edge.markEdge()
                         # print(f'Marking Edge {best_edge}')
-                        # TODO quité el color de este algoritmo, es mejor chequear las marcas en printFDD a demanda.
-                        # best_edge.setAttributes(color='blue')
 
                         # (b) Compute the load of v
                         node_load = sum(self._edgeLoad(e) * e.getDestination().getLoad() for e in node.getOutgoing())
@@ -1591,7 +1411,10 @@ class FDD:
                     if not e.getMarking():  # Not marked with "all"
                         matching_predicate[field] = element_set
                     else:
-                        matching_predicate[field] = element_class.getDomain() 
+                        if len(element_set.getElements()) == 1: # EXCEPTION
+                            matching_predicate[field] = element_set
+                        else:
+                            matching_predicate[field] = element_class.getDomain()  
                         
                     resolving_predicate[field] = element_set 
     
@@ -1734,8 +1557,16 @@ class FDD:
                 return True
         return False
     
-    # TODO Lucho - mejorar para realizar reduction y marking solo sobre la parte editada?
     def addRuleToFDD(self, rule: Rule):
+        """
+        Add Rule to the FDD
+
+        Args:
+            rule (Rule): Rule to add
+
+        Raises:
+            TypeError: If the rule has an inexistent predicate.
+        """
 
         # Check that all predicates in the Rule are in the fieldList. If anyone not are include raise an error.
         fields_names = [level.getField().getName() for level in self._levels]

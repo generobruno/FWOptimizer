@@ -480,6 +480,9 @@ class FWOController:
             
         elif task_name in ['viewFDD', 'filterFDD']:
             pathName, imgFormat = result
+            if not pathName and task_name == 'filterFDD':
+                self.view.displayInfoMessage("Filter FDD","No results for filter.")
+                return
             if self.model.graphicsView:
                 self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
             else:

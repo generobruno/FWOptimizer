@@ -48,14 +48,14 @@ if __name__ == '__main__':
     finally:
         sys.exit(exit_code)
 
-"""
+
 from classes import *
 
-if __name__ == '__main__':
+if __name__ == '__main1__':
 
     iptables_strat = parser.IpTablesParser()
     parser = parser.Parser(iptables_strat)
-    rules_parsed = parser.parse("./example_set.txt")
+    rules_parsed = parser.parse("./.example_set.txt")
     
     firewall = Firewall(workFolder='test_wd')
     firewall.setFieldList("fwoptimizer/configs/fdd_config.toml")
@@ -67,10 +67,10 @@ if __name__ == '__main__':
     
     fdd: FDD = firewall.getFDD('INPUT')
     
+    fdd.printFDD('example','svg')
+    
     print(f'FIREWALL FIELDLIST: {[f.getName() for f in firewall.getFieldList().getFields()]}')
     
+    output_rules = firewall.genOutputRules('filter', 'INPUT')
     
-    #output_rules = firewall.genOutputRules('filter', 'INPUT')
-    
-    #print(f'PARSER OUTPUT:\n{parser.compose(output_rules)}')
-"""
+    print(f'PARSER OUTPUT:\n{parser.compose(output_rules)}')

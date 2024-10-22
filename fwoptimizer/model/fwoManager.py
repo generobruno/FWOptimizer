@@ -160,7 +160,7 @@ class FWOManager:
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(chain)
-        fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
+        fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized -> Save timestamp as image metadata?
         
         # Generate a unique hash from the parameters
         hash_input = f"{fdd_name}{table}{chain}{imgFormat}{graphDir}{unrollDecisions}"
@@ -172,7 +172,7 @@ class FWOManager:
         # Check if the image file already exists
         if not os.path.exists(pathName):
             # Clear previous filters
-            fdd.clearFilters() #TODO CHECK
+            fdd.clearFilters()
             # Generate graph 
             fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
         
@@ -199,7 +199,10 @@ class FWOManager:
         fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
         
         # Filter the FDD
-        fdd.filterFDDForValue(field, matchExpression, literal) #TODO Manage not found matchExpr case       
+        found = fdd.filterFDDForValue(field, matchExpression, literal) #TODO Manage not found matchExpr case       
+        
+        if not found:
+            return None, None
         
         # Create the path using the hash
         pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_f_{field}')

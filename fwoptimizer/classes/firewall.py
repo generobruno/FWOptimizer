@@ -186,7 +186,8 @@ class Firewall:
             self._fddList.remove(fdd)
         else:
             print(f"Can't remove FDD.")
-    
+
+    # TODO Lucho - Corregir documentación
     def getFDD(self, chainName: str):#TODO REVISAR
         """
         Get the FDD corresponding to the given table and chain.

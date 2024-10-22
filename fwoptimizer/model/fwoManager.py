@@ -152,12 +152,15 @@ class FWOManager:
             imgFormat (str, optional): Output image format. Defaults to 'svg'.
             graphDir (str, optional): Graph Orientation. Defaults to 'TB'.
             unrollDecisions (bool, optional): Show explicit decisions. Defaults to False.
+            
+            Returns:
+        str, str: Path of the graph and its format
         """
         print(f"Displaying FDD for {table} - {chain}")
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(chain)
-        fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
+        fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized -> Save timestamp as image metadata?
         
         # Generate a unique hash from the parameters
         hash_input = f"{fdd_name}{table}{chain}{imgFormat}{graphDir}{unrollDecisions}"
@@ -168,10 +171,47 @@ class FWOManager:
         
         # Check if the image file already exists
         if not os.path.exists(pathName):
-            # Generate graph
+            # Clear previous filters
+            fdd.clearFilters()
+            # Generate graph 
             fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
         
         return pathName, imgFormat
+    
+    def filterFDD(self, table, chain, field, matchExpression, literal):
+        """
+        Filter and Display FDD Graph
+
+        Args:
+            table (str): Table Name
+            chain (str): Chain Name
+            field (str): Field to Filter
+            matchExpression (str): Match expression
+
+        Returns:
+            str, str: Path of the graph and its format
+        """
+        print(f"Filtering FDD for {table} - {chain}")
+        #TODO Manage opts formats of printFDD here?
+        
+        # Get FDD
+        fdd = self.currentFirewall.getFDD(chain)
+        fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
+        
+        # Filter the FDD
+        found = fdd.filterFDDForValue(field, matchExpression, literal) #TODO Manage not found matchExpr case       
+        
+        if not found:
+            return None, None
+        
+        # Create the path using the hash
+        pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_f_{field}')
+        
+        if not os.path.exists(pathName):
+            # Generate Graph
+            fdd.printFDD(pathName, img_format='svg', rank_dir='TB', unroll_decisions=False)
+        
+        return pathName, 'svg'
         
     def optimizeFDD(self, table=None, chain=None):
         """

@@ -1,6 +1,8 @@
 """_summary_
 """
 
+import os
+
 import model.fwoManager as fwm
 import views.fwoView as fwv
 import views.customWidgets as cw
@@ -21,7 +23,8 @@ class ConsoleCommands:
             "generate": self.generateFdds,
             "optimize": self.optimizeFdds,
             "export": self.exportRules,
-            "print": self.printFdd
+            "print": self.printFdd,
+            "filter": self.filterFdd
         }
 
     def executeCommand(self, commandLine):
@@ -31,19 +34,23 @@ class ConsoleCommands:
         Args:
             commandLine (str): Command input
         """
-        # Split the command from the rest
-        parts = commandLine.split(maxsplit=1) 
-        command = parts[0].lower()
-        arguments = parts[1] if len(parts) > 1 else ""
+        try:
+            # Split the command from the rest
+            parts = commandLine.split(maxsplit=1) 
+            command = parts[0].lower()
+            arguments = parts[1] if len(parts) > 1 else ""
 
-        if command in self.commands:
-            self.commands[command](arguments)
-        elif command == "help":
-            self.console.appendToConsole("Available commands are: " + ", ".join(self.commands.keys()))
-        elif command == "clear":
-            self.console.clear()
-        else:
+            if command in self.commands:
+                self.commands[command](arguments)
+            elif command == "help":
+                self.console.appendToConsole("Available commands are: " + ", ".join(self.commands.keys()))
+            elif command == "clear":
+                self.console.clear()
+            else:
+                self.console.appendToConsole("Invalid command, type 'help' for more information.")
+        except (ValueError,IndexError):
             self.console.appendToConsole("Invalid command, type 'help' for more information.")
+            return
 
     def importRules(self, args):
         """
@@ -63,6 +70,10 @@ class ConsoleCommands:
 
         if self.model.currentFirewall.getInputRules():
             self.console.appendToConsole("Warning: The current firewall already has input rules. Importing new rules will overwrite them.")
+            
+        if not os.path.exists(filePath):
+            self.console.appendToConsole(f"No such file or directory: {filePath}")
+            return
 
         fileContent, rules = self.model.importRules(filePath)
         
@@ -127,7 +138,7 @@ class ConsoleCommands:
         Args:
             args (str): Command arguments, can specify table and chain.
         """
-        parts = args.split()
+        parts = args.split(',')
 
         # Ensure a field list is loaded
         if self.model.currentFirewall.getFieldList() is None:
@@ -146,11 +157,14 @@ class ConsoleCommands:
         if len(parts) == 2:
             tableName = parts[0]
             chainName = parts[1]
-            if tableName in tables and chainName in self.model.currentFirewall.getInputRules()[tableName]:
+            if tableName in tables and chainName in tables[tableName].getChains().keys():
                 self.model.generateFDD(tableName, chainName)
                 self.console.appendToConsole(f"FDD generated for table '{tableName}' and chain '{chainName}'.")
             else:
                 self.console.appendToConsole(f"Invalid table '{tableName}' or chain '{chainName}' specified.")
+            return
+        elif len(parts) == 1:
+            self.console.appendToConsole(f"Invalid syntax. Use: generate &lt;table&gt;,&lt;chain&gt")
             return
 
         # Else, generate all
@@ -164,17 +178,65 @@ class ConsoleCommands:
         Args:
             args (_type_): _description_
         """
-        self.console.appendToConsole("TODO")
-        pass
+        fdds = self.model.currentFirewall.getFDDs()
+        
+        if not self.model.currentFirewall or len(fdds) == 0:
+            self.console.appendToConsole("No FDDs generated yet. Please generate FDDs first.")
+            return
+
+        # Split arguments by comma and handle optional parameters
+        try:
+            table, chain = args.split(',')
+        except ValueError:
+            self.console.appendToConsole(f"Invalid syntax. Use: optimize &lt;table&gt;,&lt;chain&gt")
+            return
+
+        if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
+            self.model.optimizeFDD(table, chain)
+            self.console.appendToConsole(f"FDD for {table}/{chain} optimized.")
+        else:
+            self.console.appendToConsole(f"FDD for {table}/{chain} not found.")
     
     def exportRules(self, args):
-        """_summary_
+        """
+        Generate Rules from an specific FDD and export them to a file
 
         Args:
-            args (_type_): _description_
+            args (str): parameters
         """
-        self.console.appendToConsole("TODO")
-        pass
+        fdds = self.model.currentFirewall.getFDDs()
+        
+        if not self.model.currentFirewall or len(fdds) == 0:
+            self.console.appendToConsole("No FDDs generated yet. Please generate FDDs first.")
+            return
+
+        # Split arguments by comma and handle optional parameters
+        try:
+            table_chain, filePath = args.split()
+            tableName, chainName = table_chain.split(',')
+        except ValueError:
+            self.console.appendToConsole(f"Invalid syntax. Use: export &lt;table&gt;,&lt;chain&gt; &lt;fileName&gt")
+            return
+
+        if self.model.currentFirewall.getFDD(chainName): #TODO REVISAR
+            # Generate Rules
+            exportedRules = self.model.exportRules(tableName, chainName)
+            self.console.appendToConsole(f"FDD for {tableName}/{chainName} optimized.")
+            
+            # Generate export File from RuleSet, given the Parser Strategy
+            fileContent = self.model.getParserStrategy().compose(exportedRules)
+            
+            # Save exported rules to right menu 
+            if fileContent:
+                self.view.displayExportedRules(fileContent)
+                
+                # Write the file content to the specified file path
+                with open(filePath, 'w') as file:
+                    file.write(fileContent)
+                
+                print(f'Exported file to: {filePath}')
+        else:
+            self.console.appendToConsole(f"FDD for {tableName}/{chainName} not found.")
     
     def printFdd(self, args):
         """
@@ -199,117 +261,66 @@ class ConsoleCommands:
 
         if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
             # Handle optional parameters
-            outputFrmt      = optional_args[0] if len(optional_args) > 0 else None
-            graphDir        = optional_args[1] if len(optional_args) > 1 else None
-            unroll          = optional_args[2] if len(optional_args) > 2 else None
-
-            self.model.viewFDD(table, chain, outputFrmt, graphDir, unroll)
+            outputFrmt      = optional_args[0] if len(optional_args) > 0 else 'svg'
+            graphDir        = optional_args[1] if len(optional_args) > 1 else 'TB'
+            unroll          = optional_args[2] if len(optional_args) > 2 else False
+            # TODO Check optional params format
+            
+            pathName, imgFormat= self.model.viewFDD(table, chain, outputFrmt, graphDir, unroll)
+            if self.model.graphicsView:
+                self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+            else:
+                self.view.displayErrorMessage("Image Display not set.")
             self.console.appendToConsole(f"FDD for {table}/{chain} printed.")
         else:
             self.console.appendToConsole(f"FDD for {table}/{chain} not found.")
-
-"""
-
-def parse_file():
-    try:
-        global ruleset
-        filename = input("Enter the filename to parse: ")
-        # Select Parse Strategy
-        iptables_strat = parser.IpTablesParser() # TODO Set parse strat
-        # Create Parser Object
-        parser_obj = parser.Parser(iptables_strat)
-        # Parse File
-        ruleset = parser_obj.parse(filename)
-        print("File parsed successfully.")
-    except Exception as e:
-        print(f'Could not parse file. {e}')
-
-def display_rules():
-    try:
-        if not ruleset:
-            print("No ruleset parsed yet. Please parse a file first.")
+            
+    def filterFdd(self, args):
+        """
+        Filter a FDD using the console
+        
+        Args:
+            arguments (str): parameters
+        """
+        fdds = self.model.currentFirewall.getFDDs()
+        
+        if not self.model.currentFirewall or len(fdds) == 0:
+            self.console.appendToConsole("No FDDs generated yet. Please generate FDDs first.")
             return
-        table = input("Enter table name: ")
-        chain = input("Enter chain name: ")
 
-        print(ruleset[table][chain])
-    except Exception as e:
-        print(f'Could not Display rules: {e}')
-
-def add_field_list():
-    try:
-        global field_list
-        config_file = input("Enter config file path: ")
-        # Create FieldList Object
-        field_list = FieldList()
-        # Load Config
-        field_list.loadConfig(config_file)
-        print("Field list added successfully.")
-    except Exception as e:
-        print(f'Could not add FieldList. {e}')
-
-def generate_fdds():
-    try:
-        global fdds, ruleset, field_list
-        if not ruleset or not field_list:
-            print("Ruleset or field list not set. Please parse a file and add field list first.")
+        # Split arguments by comma and handle optional parameters
+        try:
+            parts = args.split()
+            table_chain, field, matchExpr = parts[0], parts[1], parts[2]
+            table, chain = table_chain.split(',')
+            
+            # Optional literal parameter: check if '--literal' or '-l' is provided
+            literal = False
+            if len(parts) > 3:
+                optional_param = parts[3]
+                if optional_param in ['--literal', '-l']:
+                    literal = True
+                else:
+                    raise ValueError(f"Invalid optional argument '{optional_param}'. Use --literal or -l.")
+        except (ValueError,IndexError):
+            self.console.appendToConsole(f"Invalid syntax. Use: filter &lt;table&gt;,&lt;chain&gt; &lt;field&gt; &lt;MatchExpression&gt; [--literal|-l]")
             return
         
-        for table in ruleset.getTables():
-            fdds[table] = {}
-            for chain in ruleset[table].getChains():
-                if len(ruleset[table][chain].getRules()) != 0: 
-                    fdd = FDD(field_list)
-                    fdd.genFDD(ruleset[table][chain])
-                    fdds[table][chain] = fdd
+        fields = [f.getName() for f in self.model.currentFirewall.getFieldList().getFields()]
+        if field not in fields:
+            self.console.appendToConsole(f"Invalid Field. This firewall uses:\n{fields}")
+            return
 
-        print("FDDs generated successfully.")
-    except Exception as e:
-        print(f'Could not generate FDD. {e}')
-
-def compile_fdd():
-    if not fdds:
-        print("No FDDs generated yet. Please generate FDDs first.")
-        return
-    
-    table = input("Enter table name: ")
-    chain = input("Enter chain name: ")
-    # Execute Reduction and Marking
-    if table in fdds and chain in fdds[table]:
-        fdds[table][chain].reduction()
-        fdds[table][chain].marking()
-        print(f"FDD for {table}/{chain} compiled successfully.")
-    else:
-        print(f"FDD for {table}/{chain} not found.")
-
-def generate_optimized_ruleset():
-    if not fdds:
-        print("No FDDs generated yet. Please generate FDDs first.")
-        return
-    
-    table = input("Enter table name: ")
-    chain = input("Enter chain name: ")
-    if table in fdds and chain in fdds[table]:
-        optimized_ruleset = fdds[table][chain].firewallGen()
-        print("Optimized ruleset generated:")
-        print(optimized_ruleset)
-    else:
-        print(f"FDD for {table}/{chain} not found.")
-
-def print_fdd():
-    if not fdds:
-        print("No FDDs generated yet. Please generate FDDs first.")
-        return
-    
-    table = input("Enter table name: ")
-    chain = input("Enter chain name: ")
-    if table in fdds and chain in fdds[table]:
-        name = input("Enter output file name: ")
-        format = input("Enter output format (default: svg): ") or 'svg'
-        fdds[table][chain].printFDD(name, format)
-        print(f"FDD for {table}/{chain} printed to {name}.{format}")
-    else:
-        print(f"FDD for {table}/{chain} not found.")
-
-
-"""
+        if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
+            #Filter the FDD Graph
+            pathName, imgFormat= self.model.filterFDD(table, chain, field, matchExpr, literal)
+            if not pathName:
+                self.console.appendToConsole("No results for filter.")
+                return
+            if self.model.graphicsView:
+                self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+            else:
+                self.view.displayErrorMessage("Image Display not set.")
+            self.console.appendToConsole(f"Filtered FDD for {table}/{chain} printed.")
+        else:
+            self.console.appendToConsole(f"FDD for {table}/{chain} not found.")

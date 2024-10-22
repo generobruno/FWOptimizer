@@ -55,10 +55,47 @@ class SelectFDDDialog(QtWidgets.QDialog):
         return None
     
 class ViewFDDDialog(QtWidgets.QDialog):
-    def __init__(self, tables=None, parent=None):
+    def __init__(self, tables=None, fields=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("View FDD")
+        self.tables = tables
+        self.fields = [f.getName() for f in fields]
+        
+        self.setWindowTitle("View or Filter FDD")
         self.setModal(True)
+        self.styleDialog()
+
+        # Create tab widget
+        self.tabWidget = QtWidgets.QTabWidget(self)
+
+        # Create View FDD tab
+        self.viewFddTab = QtWidgets.QWidget()
+        self.createViewFddTab(tables)
+
+        # Create Filter FDD tab
+        self.filterFddTab = QtWidgets.QWidget()
+        self.createFilterFddTab(tables)
+
+        # Add tabs to tab widget
+        self.tabWidget.addTab(self.viewFddTab, "View FDD")
+        self.tabWidget.addTab(self.filterFddTab, "Filter FDD")
+
+        # Button box for OK and Cancel
+        buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+
+        # Layout setup
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.tabWidget)
+        layout.addWidget(buttonBox)
+
+        # Set layout for dialog
+        self.setLayout(layout)
+
+        # Connecting signals
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+    def createViewFddTab(self, tables):
+        layout = QtWidgets.QVBoxLayout(self.viewFddTab)
 
         # Radio button for selecting specific chain
         self.specificChainRadio = QtWidgets.QRadioButton("View FDD for a specific Chain")
@@ -96,11 +133,7 @@ class ViewFDDDialog(QtWidgets.QDialog):
         self.unrollDecisionsCheckBox = QtWidgets.QCheckBox()
         self.unrollDecisionsCheckBox.setChecked(False)
 
-        # Button box for OK and Cancel
-        buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
-
-        # Layout setup
-        layout = QtWidgets.QVBoxLayout()
+        # Add components to the layout
         layout.addWidget(self.specificChainRadio)
         layout.addWidget(self.chainTreeView)
         layout.addWidget(self.imageFormatLabel)
@@ -109,24 +142,122 @@ class ViewFDDDialog(QtWidgets.QDialog):
         layout.addWidget(self.graphOrientationComboBox)
         layout.addWidget(self.unrollDecisionsLabel)
         layout.addWidget(self.unrollDecisionsCheckBox)
-        layout.addWidget(buttonBox)
-        self.setLayout(layout)
 
-        # Connecting signals
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
+    def createFilterFddTab(self, tables):
+        layout = QtWidgets.QVBoxLayout(self.filterFddTab)
+
+        # Dropdown for selecting table
+        self.tableNameLabel = QtWidgets.QLabel("Table Name:")
+        self.tableNameComboBox = QtWidgets.QComboBox(self.filterFddTab)
+        self.tableNameComboBox.addItems(tables.keys())
+
+        # Dropdown for selecting chain
+        self.chainNameLabel = QtWidgets.QLabel("Chain Name:")
+        self.chainNameComboBox = QtWidgets.QComboBox(self.filterFddTab)
+
+        # Populate chain options based on selected table
+        self.tableNameComboBox.currentIndexChanged.connect(self.updateChains)
+        self.updateChains(0)  # Initialize chain list for the first table
+
+        # Field and match expression inputs
+        self.fieldLabel = QtWidgets.QLabel("Field:")
+        self.fieldInputComboBox = QtWidgets.QComboBox(self.filterFddTab)
+        self.fieldInputComboBox.addItems(self.fields)
+
+        self.matchExpressionLabel = QtWidgets.QLabel("Match Expression:")
+        self.matchExpressionInput = QtWidgets.QLineEdit(self.filterFddTab)
+        
+        # Radio button for literal match expression
+        self.literalExpression = QtWidgets.QRadioButton("Literal")
+        self.literalExpression.setChecked(True)
+
+        # Add components to layout
+        layout.addWidget(self.tableNameLabel)
+        layout.addWidget(self.tableNameComboBox)
+        layout.addWidget(self.chainNameLabel)
+        layout.addWidget(self.chainNameComboBox)
+        layout.addWidget(self.fieldLabel)
+        layout.addWidget(self.fieldInputComboBox)
+        layout.addWidget(self.matchExpressionLabel)
+        layout.addWidget(self.matchExpressionInput)
+        layout.addWidget(self.literalExpression)
+
+    def styleDialog(self):
+        """
+        Apply a custom style sheet for the dialog
+        """
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #2e2e2e; /* Dark background */
+                color: #ffffff; /* White text */
+            }
+            QLabel {
+                color: #dcdcdc; /* Light gray labels */
+            }
+            QTreeWidget {
+                background-color: #3b3b3b; /* Darker tree background */
+                color: #ffffff; /* White text for tree */
+            }
+            QComboBox, QLineEdit, QTreeWidget {
+                border: 1px solid #5a5a5a; /* Gray borders for inputs */
+                padding: 5px;
+            }
+            QPushButton {
+                background-color: #4e4e4e; /* Darker buttons */
+                color: #ffffff; /* White text on buttons */
+                border: 1px solid #5a5a5a;
+                padding: 5px;
+                border-radius: 3px;
+            }
+            QPushButton:hover {
+                background-color: #5a5a5a; /* Lighter button when hovered */
+            }
+            QTabWidget::pane {
+                border: 1px solid #5a5a5a; /* Border for tabs */
+            }
+            QTabBar::tab {
+                background-color: #3b3b3b; /* Darker tab background */
+                color: #dcdcdc; /* Light gray text for tabs */
+                padding: 5px;
+            }
+            QTabBar::tab:selected {
+                background-color: #4e4e4e; /* Selected tab background */
+                color: #ffffff; /* White text for selected tab */
+            }
+        """)
+
+    def updateChains(self, index):
+        """ Update chain names based on selected table """
+        table_name = self.tableNameComboBox.currentText()
+        table = self.tables.get(table_name)
+        self.chainNameComboBox.clear()
+        if table:
+            self.chainNameComboBox.addItems(table.getChains().keys())
 
     def getSelectedOptions(self):
-        if self.specificChainRadio.isChecked():
-            selected_item = self.chainTreeView.currentItem()
-            if selected_item and selected_item.parent():
-                table_name = selected_item.parent().text(0)
-                chain_name = selected_item.text(0)
-                image_format = self.imageFormatComboBox.currentText()
-                graph_orientation = self.graphOrientationComboBox.currentText()
-                unroll_decisions = self.unrollDecisionsCheckBox.isChecked()
-                return (table_name, chain_name), image_format, graph_orientation, unroll_decisions
+        """ Determine which options to retrieve based on the active tab """
+        active_tab_index = self.tabWidget.currentIndex()
+
+        if active_tab_index == 0:  # View FDD tab
+            if self.specificChainRadio.isChecked():
+                selected_item = self.chainTreeView.currentItem()
+                if selected_item and selected_item.parent():
+                    table_name = selected_item.parent().text(0)
+                    chain_name = selected_item.text(0)
+                    image_format = self.imageFormatComboBox.currentText()
+                    graph_orientation = self.graphOrientationComboBox.currentText()
+                    unroll_decisions = self.unrollDecisionsCheckBox.isChecked()
+                    return "viewFDD", (table_name, chain_name), image_format, graph_orientation, unroll_decisions
+        elif active_tab_index == 1:  # Filter FDD tab
+            table_name = self.tableNameComboBox.currentText()
+            chain_name = self.chainNameComboBox.currentText()
+            field = self.fieldInputComboBox.currentText()
+            match_expression = self.matchExpressionInput.text()
+            literal = self.literalExpression.isChecked()
+            return "filterFDD", table_name, chain_name, field, match_expression, literal
+        
         return None
+
 
 class ExportRulesDialog(QtWidgets.QDialog):
     def __init__(self, tables=None, parent=None):

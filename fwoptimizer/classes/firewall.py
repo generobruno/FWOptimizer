@@ -225,7 +225,10 @@ class Firewall:
         Get all FDDs in the Firewall
 
         Returns:
-            List[FDD]: List of FDDs 
+            dict[str, list[str]]: Dictionary of table names and their corresponding FDD chain names.
         """
-        return self._fddList
+        fdd_view = {}
+        for tableName, fdd_list in self._fddList.items():
+            fdd_view[tableName] = [fdd.getName() for fdd in fdd_list]
         
+        return fdd_view

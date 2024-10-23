@@ -36,7 +36,7 @@ class FWOptimizer:
             self.controller.cleanUp()
 
 
-if __name__ == '__main__':
+if __name__ == '__main1__':
     
     app = FWOptimizer(sys.argv)
     
@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
 from classes import *
 
-if __name__ == '__main1__':
+if __name__ == '__main__':
 
     iptables_strat = parser.IpTablesParser()
     parser = parser.Parser(iptables_strat)
@@ -62,6 +62,7 @@ if __name__ == '__main1__':
     firewall.setInputRules(rules_parsed)
     
     firewall.genFdd('filter', 'INPUT')
+    firewall.genFdd('filter', 'OUTPUT')
     
     firewall.optimizeFdd('filter', 'INPUT')
     

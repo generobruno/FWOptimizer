@@ -65,7 +65,9 @@ if __name__ == '__main1__':
     
     firewall.optimizeFdd('filter', 'INPUT')
     
-    fdd: FDD = firewall.getFDD('INPUT')
+    fdd: FDD = firewall.getFDD('filter','INPUT')
+    
+    print(f'ALL FDDLIST: {firewall.getFDDs()}')
     
     fdd.printFDD('example','svg')
     

@@ -8,16 +8,16 @@ class Firewall:
     """_summary_
     """
     
-    def __init__(self, fieldList: FieldList = None, fdds: list[FDD] = [], inputRules: RuleSet= None, workFolder: str = ""):
+    def __init__(self, fieldList: FieldList = None, fdds: dict[str, list[FDD]] = [], inputRules: RuleSet= None, workFolder: str = ""):
         """
         Firewall Constructor
 
         Args:
             fieldList (FieldList, optional): Firewall's Field List. Defaults to None.
-            fdds (list[FDD], optional): Firewall's list of FDDs. Defaults to [].
+            fdds (dict[str, list[FDD]], optional): Dictionary mapping table names to lists of FDDs. Defaults to {}.
             inputRules (RuleSet, optional): Firewall's initial rules. Defaults to None.
         """
-        self._fddList: list[FDD] = fdds
+        self._fddList: dict[str, list[FDD]] = fdds if fdds else {}
         self._fieldList: FieldList = fieldList
         self._inputRules: RuleSet = inputRules
         self._outputRules: RuleSet = None
@@ -78,14 +78,14 @@ class Firewall:
             for tableName , table in self._inputRules.getTables().items():
                 for chainName, _ in table.getChains().items():
                     fdd = FDD(self._fieldList)
-                    self.addFdd(fdd)
+                    self.addFdd(tableName, fdd)
                     print(f'Generating {tableName} - {chainName} FDD')
                     fdd.genFDD(self._inputRules[tableName][chainName], self._workFolder + f"report-{tableName}-{chainName}.txt")
                     print(f'{tableName} - {chainName} FDD Done.')
         else:   # Generate Specific FDD
             print(f'Generating {table} - {chain} FDD')
             fdd = FDD(self._fieldList)
-            self.addFdd(fdd)
+            self.addFdd(table, fdd)
             fdd.genFDD(self._inputRules[table][chain], self._workFolder + f"report-{table}-{chain}.txt")
             print(f'{table} - {chain} FDD Done.')
                 
@@ -102,14 +102,14 @@ class Firewall:
         if table is None and chain is None:
             for tableName , table in self._inputRules.getTables().items():
                 for chainName, _ in table.getChains().items():
-                    fdd = self.getFDD(chainName)
+                    fdd = self.getFDD(tableName, chainName)
                     print(f'Optimizing {tableName} - {chainName} FDD')
                     fdd.reduction()
                     fdd.marking()
                     print(f'{tableName} - {chainName} optimization Done.')
         else:   # Optimize Specific FDD
             print(f'Optimizing {table} - {chain} FDD')
-            fdd = self.getFDD(chain)
+            fdd = self.getFDD(table, chain)
             fdd.reduction()
             fdd.marking()
             print(f'{table} - {chain} optimization Done.')
@@ -133,7 +133,7 @@ class Firewall:
                 # Add new table
                 exportRuleSet.addTable(Table(tableName))
                 for chainName, _ in table.getChains().items():
-                    fdd = self.getFDD(chainName)
+                    fdd = self.getFDD(tableName, chainName)
                     if fdd:
                         # Generate new chain
                         outputChain = fdd.firewallGen()
@@ -148,7 +148,7 @@ class Firewall:
             # Add new table
             exportRuleSet.addTable(Table(table))
             # Get specific FDD
-            fdd = self.getFDD(chain)
+            fdd = self.getFDD(table, chain)
             if fdd:
                 # Generate new chain
                 outputChain = fdd.firewallGen()
@@ -161,48 +161,63 @@ class Firewall:
         print(f'Generated RuleSet:\n{exportRuleSet}')
         return exportRuleSet
     
-    def addFdd(self, fdd: FDD):
+    def addFdd(self, tableName: str, fdd: FDD):
         """
-        Add FDD to the Firewall
+        Add FDD to the Firewall under the specified table.
 
         Args:
-            fdd (FDD): FDD to add
+            tableName (str): Name of the table to add the FDD to.
+            fdd (FDD): FDD to add.
         """
         if not isinstance(fdd, FDD):
             raise ValueError("Object is not of type FDD.")
         
-        self._fddList.append(fdd)
+        # If the table doesn't exist in the dictionary, create a new entry
+        if tableName not in self._fddList:
+            self._fddList[tableName] = []
+
+        # Append the FDD to the list for the specified table
+        self._fddList[tableName].append(fdd)
     
-    def delFDD(self, fdd: FDD):
+    def delFDD(self, tableName: str, fdd: FDD):
         """
-        Remove FDD from the firewall
+        Remove FDD from the firewall under the specified table.
 
         Args:
-            fdd (FDD): FDD to remove
+            tableName (str): Name of the table to remove the FDD from.
+            fdd (FDD): FDD to remove.
         """
-        removeFdd = self.getFDD(fdd)
-        
-        if removeFdd:
-            self._fddList.remove(fdd)
+        if tableName in self._fddList:
+            # Try to find the FDD in the list for the given table
+            if fdd in self._fddList[tableName]:
+                self._fddList[tableName].remove(fdd)
+                # If no FDDs are left in the table, remove the entry for the table
+                if len(self._fddList[tableName]) == 0:
+                    del self._fddList[tableName]
+            else:
+                print(f"FDD not found in table {tableName}.")
         else:
-            print(f"Can't remove FDD.")
+            print(f"Table {tableName} does not exist.")
 
-    # TODO Lucho - Corregir documentación
-    def getFDD(self, chainName: str):#TODO REVISAR
+    def getFDD(self, tableName: str, chainName: str):
         """
         Get the FDD corresponding to the given table and chain.
 
         Args:
-            table_name (str): Name of the table.
-            chain_name (str): Name of the chain.
+            tableName (str): Name of the table.
+            chainName (str): Name of the chain.
 
         Returns:
             FDD: The corresponding FDD if found, else None.
         """
-        for fdd in self._fddList:
-            if fdd.getName() == chainName:
-                return fdd
-        print(f"FDD not found for chain: {chainName}")
+        if tableName in self._fddList:
+            # Iterate over the FDDs in the specified table
+            for fdd in self._fddList[tableName]:
+                if fdd.getName() == chainName:
+                    return fdd
+            print(f"FDD not found for chain: {chainName} in table: {tableName}")
+        else:
+            print(f"Table {tableName} not found.")
         return None
     
     def getFDDs(self):

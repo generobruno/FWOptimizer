@@ -159,7 +159,7 @@ class FWOManager:
         print(f"Displaying FDD for {table} - {chain}")
         
         # Get FDD
-        fdd = self.currentFirewall.getFDD(chain)
+        fdd = self.currentFirewall.getFDD(table, chain)
         fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized -> Save timestamp as image metadata?
         
         # Generate a unique hash from the parameters
@@ -195,7 +195,7 @@ class FWOManager:
         #TODO Manage opts formats of printFDD here?
         
         # Get FDD
-        fdd = self.currentFirewall.getFDD(chain)
+        fdd = self.currentFirewall.getFDD(table, chain)
         fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
         
         # Filter the FDD

@@ -229,11 +229,12 @@ class FWOManager:
             self.currentFirewall.optimizeFdd(table, chain)
             return table, chain
     
-    def exportRules(self, table=None, chain=None):
+    def exportRules(self, filePath, table=None, chain=None):
         """
         Export RuleSet generated from an FDD.
 
         Args:
+            filePath (str): Path to store the rules.
             table (str, optional): Table Name. Defaults to None.
             chain (str, optional): Chain Name. Defaults to None.
 
@@ -242,9 +243,9 @@ class FWOManager:
         """
         print("Exporting Rules...")
         if table is None and chain is None:
-            return self.currentFirewall.genOutputRules()
+            return self.currentFirewall.genOutputRules(), filePath
         else:
-            return self.currentFirewall.genOutputRules(table, chain)
+            return self.currentFirewall.genOutputRules(table, chain), filePath
         
     def saveProject(self, filePath):
         """

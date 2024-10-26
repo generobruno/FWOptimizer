@@ -220,15 +220,22 @@ class Firewall:
             print(f"Table {tableName} not found.")
         return None
     
+    def getDecisions(self):
+        """
+        Get all possible decisions from all FDDs in the firewall.
+
+        Returns:
+            set: A set of unique decisions from all FDDs.
+        """
+        all_decisions = set()  # Using a set to avoid duplicates
+        for fdds in self._fddList.values():  # Iterate through all FDD lists in the firewall
+            for fdd in fdds:  # Iterate through each FDD
+                decisions = fdd.getDecisions()  # Get the decisions from the FDD
+                all_decisions.update(decisions.keys())  # Update the set with new decisions
+        return all_decisions  # Return the set of unique decisions
+    
     def getFDDs(self):
         """
         Get all FDDs in the Firewall
-
-        Returns:
-            dict[str, list[str]]: Dictionary of table names and their corresponding FDD chain names.
         """
-        fdd_view = {}
-        for tableName, fdd_list in self._fddList.items():
-            fdd_view[tableName] = [fdd.getName() for fdd in fdd_list]
-        
-        return fdd_view
+        return self._fddList

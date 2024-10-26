@@ -258,7 +258,6 @@ class ViewFDDDialog(QtWidgets.QDialog):
         
         return None
 
-
 class ExportRulesDialog(QtWidgets.QDialog):
     def __init__(self, tables=None, parent=None):
         super().__init__(parent)
@@ -420,3 +419,157 @@ class FileViewerDialog(QtWidgets.QDialog):
         # Apply default formatting (clears highlights)
         defaultFormat = QtGui.QTextCharFormat()
         cursor.setCharFormat(defaultFormat)
+
+class AddRulesDialog(QtWidgets.QDialog):
+    def __init__(self, tables, fields, decisions, parent=None):
+        super().__init__(parent)
+        self.tables = tables
+        self.fields = [f.getName() for f in fields]  # List of all possible predicate fields
+        self.used_predicates = set()  # Track predicates already added to avoid duplicates
+
+        self.setWindowTitle("Add Rule")
+        self.setModal(True)
+        self.resize(600, 200)  # Set initial width and height
+
+        self.styleDialog()
+
+        # FDD Selection
+        self.tableNameLabel = QtWidgets.QLabel("Table:")
+        self.tableNameComboBox = QtWidgets.QComboBox(self)
+        self.tableNameComboBox.addItems(tables.keys())
+
+        self.chainNameLabel = QtWidgets.QLabel("Chain:")
+        self.chainNameComboBox = QtWidgets.QComboBox(self)
+        self.tableNameComboBox.currentIndexChanged.connect(self.updateChains)
+        self.updateChains(0)  # Initialize chains for the first table
+
+        # Decision for the whole rule
+        self.decisionLabel = QtWidgets.QLabel("Decision:")
+        self.decisionComboBox = QtWidgets.QComboBox(self)
+        self.decisionComboBox.addItems(decisions)
+
+        # Predicate Section
+        self.predicateLayout = QtWidgets.QFormLayout()
+        self.predicateWidgets = {}  # Store predicate widgets for easy access
+        self.addPredicateButton = QtWidgets.QPushButton("Add Predicate")
+        self.addPredicateButton.clicked.connect(self.addPredicate)
+
+        # Button box
+        buttonBox = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+
+        # Main layout
+        mainLayout = QtWidgets.QVBoxLayout(self)
+        mainLayout.addWidget(self.tableNameLabel)
+        mainLayout.addWidget(self.tableNameComboBox)
+        mainLayout.addWidget(self.chainNameLabel)
+        mainLayout.addWidget(self.chainNameComboBox)
+        mainLayout.addWidget(self.decisionLabel)
+        mainLayout.addWidget(self.decisionComboBox)
+        mainLayout.addLayout(self.predicateLayout)
+        mainLayout.addWidget(self.addPredicateButton)
+        mainLayout.addWidget(buttonBox)
+
+        self.setLayout(mainLayout)
+
+        # Connect signals
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+    def updateChains(self, index):
+        """ Update chain names based on the selected table """
+        table_name = self.tableNameComboBox.currentText()
+        table = self.tables.get(table_name)
+        self.chainNameComboBox.clear()
+        if table:
+            self.chainNameComboBox.addItems(table.getChains().keys())
+
+    def addPredicate(self):
+        """ Adds a new predicate input row with a ComboBox to select unused predicates """
+        available_predicates = [f for f in self.fields if f not in self.used_predicates]
+        if not available_predicates:
+            QtWidgets.QMessageBox.information(self, "No More Predicates", "All predicates have been added.")
+            return
+
+        # Create a new predicate ComboBox
+        predicateComboBox = QtWidgets.QComboBox(self)
+        predicateComboBox.addItems(available_predicates)
+        predicateComboBox.setEditable(False)
+
+        # Predicate input field
+        predicateInput = QtWidgets.QLineEdit(self)
+
+        # Track widgets by predicate ComboBox reference
+        self.predicateWidgets[predicateComboBox] = predicateInput
+
+        # Add row to layout
+        self.predicateLayout.addRow(predicateComboBox, predicateInput)
+        self.used_predicates.add(predicateComboBox.currentText())  # Track used predicates
+
+        # Update used predicates when ComboBox selection changes
+        predicateComboBox.currentIndexChanged.connect(lambda: self.updateUsedPredicates(predicateComboBox))
+
+    def updateUsedPredicates(self, comboBox):
+        """ Update the list of available predicates when a ComboBox selection changes """
+        self.used_predicates = {cb.currentText() for cb in self.predicateWidgets.keys()}
+        available_predicates = [f for f in self.fields if f not in self.used_predicates]
+        for cb in self.predicateWidgets.keys():
+            current_selection = cb.currentText()
+            cb.blockSignals(True)
+            cb.clear()
+            cb.addItems([current_selection] + available_predicates)
+            cb.setCurrentText(current_selection)
+            cb.blockSignals(False)
+
+    def styleDialog(self):
+        """ Apply a custom style sheet for the dialog """
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #2e2e2e;
+                color: #ffffff;
+            }
+            QLabel {
+                color: #dcdcdc;
+            }
+            QComboBox {
+                background-color: #3a3a3a;  /* Darker background for ComboBox */
+                color: #ffffff;              /* White text for better contrast */
+                border: 1px solid #5a5a5a;
+                padding: 5px;
+            }
+            QComboBox::drop-down {
+                background-color: #3a3a3a;   /* Darker background for dropdown */
+            }
+            QComboBox QAbstractItemView {
+                background-color: #3a3a3a;   /* Darker background for item view */
+                color: #ffffff;               /* White text for better contrast */
+            }
+            QComboBox QAbstractItemView::item {
+                padding: 5px;                 /* Add some padding for items */
+            }
+            QLineEdit, QSpinBox {
+                border: 1px solid #5a5a5a;
+                padding: 5px;
+            }
+            QPushButton {
+                background-color: #4e4e4e;
+                color: #ffffff;
+                border: 1px solid #5a5a5a;
+                padding: 5px;
+                border-radius: 3px;
+            }
+            QPushButton:hover {
+                background-color: #5a5a5a;
+            }
+        """)
+
+    def getRuleDetails(self):
+        """ Returns rule details as a dictionary for further processing """
+        table_name = self.tableNameComboBox.currentText()
+        chain_name = self.chainNameComboBox.currentText()
+        decision = self.decisionComboBox.currentText()
+
+        # Collect values from predicate fields
+        predicates = {cb.currentText(): le.text() for cb, le in self.predicateWidgets.items()}
+        
+        return table_name, chain_name, decision, predicates

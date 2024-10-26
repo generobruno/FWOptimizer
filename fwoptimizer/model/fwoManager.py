@@ -12,7 +12,7 @@ import zipfile
 import hashlib
 import os
 from fwoptimizer.classes.firewall import Firewall
-from fwoptimizer.classes import parser
+from fwoptimizer.classes import parser, rules
 
 class FWOManager:
     """
@@ -247,6 +247,36 @@ class FWOManager:
         else:
             return self.currentFirewall.genOutputRules(table, chain), filePath
         
+    def addRules(self, table, chain, predicate, decision):
+        """
+        Add a new Rule to an specific FDD
+
+        Args:
+            table (str): Table
+            chain (str): Chain
+            predicate dict(str, str): Rule's predicate
+            decision (str): Rule's decision
+
+        Returns:
+            Rule: New Rule
+        """
+        
+        # Get the FDD
+        fdd = self.currentFirewall.getFDD(table, chain)
+        
+        # Create rule
+        newRule = rules.Rule(1234) #TODO CHECK
+        for fieldName, value in predicate.items():
+            newRule.setPredicate(fieldName, [value])
+        newRule.setDecision(decision)
+        
+        #TODO Check correctness of rule here?
+        
+        # Add the Rule
+        fdd.addRuleToFDD(newRule) #TODO Return smt
+        
+        return newRule       
+ 
     def saveProject(self, filePath):
         """
         Save the project

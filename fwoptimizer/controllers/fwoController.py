@@ -76,6 +76,10 @@ class FWOController:
         # Connect the action to load parser syntax
         view.actionSet_parser.triggered.connect(self.setParserStrat)
         
+        # Connect addRules actions
+        view.actionAdd_Rules_Wizard.triggered.connect(self.addRules)
+        view.actionAdd_Rules_from_File.triggered.connect(self.addRulesFromFile)
+        
         # Connect console commands
         view.console.commandEntered.connect(self.processCommand)
     
@@ -288,29 +292,54 @@ class FWOController:
         if option and filePath:
             # Generate rules given user selection
             if option == "all":
-                exportedRules = self.model.exportRules()
+                #exportedRules = self.model.exportRules()
+                self.runModelTask(self.model.exportRules,
+                                  filePath, None, None)
             elif isinstance(option, tuple):
                 tableName, chainName = option
                 print(f'Exporting specific - Table: {tableName}, Chain: {chainName}')
-                exportedRules = self.model.exportRules(tableName, chainName)
+                #exportedRules = self.model.exportRules(tableName, chainName)
+                self.runModelTask(self.model.exportRules,
+                                  filePath, tableName, chainName)
             else:
                 self.view.displayWarningMessage("No valid option selected for FDD generation.")
                 return
-            
-            # Generate export File from RuleSet, given the Parser Strategy
-            fileContent = self.model.getParserStrategy().compose(exportedRules)
-            
-            # Save exported rules to right menu 
-            if fileContent:
-                self.view.displayExportedRules(fileContent)
-                
-                # Write the file content to the specified file path
-                with open(filePath, 'w') as file:
-                    file.write(fileContent)
-                
-                print(f'Exported file to: {filePath}')
         else:
             self.view.displayWarningMessage("No valid option or file path selected for export.")
+
+    def addRules(self):
+        """
+        Add Rules to the FDD
+        """
+        if not self.model.currentFirewall or len(self.model.currentFirewall.getFDDs()) == 0:
+            self.view.displayWarningMessage("No FDD Generated.\nPlease generate an FDD for the firewall.")
+            return
+        
+        # Get current firewall
+        currentFirewall = self.model.currentFirewall
+
+        # Get all tables from the current firewall's RuleSet
+        tables = currentFirewall.getInputRules().getTables()
+        
+        # Get current firewall's Fields
+        fields = currentFirewall.getFieldList().getFields()
+        
+        # Get the current firewall's possible decisions
+        decisions = currentFirewall.getDecisions()
+        
+        options = self.view.addRulesDialog(tables, fields, decisions)
+        if options is None:
+            return
+        
+        tableName, chainName, decision, predicate = options
+        print(f'Adding Rule to {tableName} -> {chainName}:\n{predicate} -> {decision}')
+        self.model.addRules(tableName, chainName, predicate, decision)
+    
+    def addRulesFromFile(self):
+        """
+        Add Rules to the FDD using a File
+        """
+        print("TODO")#TODO
 
     def onTreeItemClicked(self, index):
         """
@@ -496,6 +525,25 @@ class FWOController:
                         self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
                     else:
                         self.view.displayErrorMessage("Image Display not set.")
+                        
+        elif task_name == 'exportRules':
+            exportedRules, filePath = result
+            # Generate export File from RuleSet, given the Parser Strategy
+            fileContent = self.model.getParserStrategy().compose(exportedRules)
+            
+            # Save exported rules to right menu 
+            if fileContent:
+                self.view.displayExportedRules(fileContent)
+                
+                # Write the file content to the specified file path
+                with open(filePath, 'w') as file:
+                    file.write(fileContent)
+                
+                print(f'Exported file to: {filePath}')
+                
+        elif task_name == 'addRules':
+            rule = result
+            self.view.displayInfoMessage('New Rule Created',f'{rule}')
     
     def cleanupWorker(self):
         """

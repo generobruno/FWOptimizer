@@ -522,6 +522,14 @@ class FDD:
             self._decisions[decision].autoConnect()
         return self._decisions[decision]
 
+    def getDecisions(self):
+        """
+        Get the FDD's Possible decisions
+
+        Returns:
+            Dict[fieldName, fieldType]: FDD's Decisions
+        """
+        return self._decisions
 
     def printFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False) -> None:
         """

@@ -191,7 +191,7 @@ class ConsoleCommands:
             self.console.appendToConsole(f"Invalid syntax. Use: optimize &lt;table&gt;,&lt;chain&gt")
             return
 
-        if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
+        if self.model.currentFirewall.getFDD(table, chain):
             self.model.optimizeFDD(table, chain)
             self.console.appendToConsole(f"FDD for {table}/{chain} optimized.")
         else:
@@ -218,9 +218,9 @@ class ConsoleCommands:
             self.console.appendToConsole(f"Invalid syntax. Use: export &lt;table&gt;,&lt;chain&gt; &lt;fileName&gt")
             return
 
-        if self.model.currentFirewall.getFDD(chainName): #TODO REVISAR
+        if self.model.currentFirewall.getFDD(tableName, chainName): 
             # Generate Rules
-            exportedRules = self.model.exportRules(tableName, chainName)
+            exportedRules, _ = self.model.exportRules(filePath, tableName, chainName)
             self.console.appendToConsole(f"FDD for {tableName}/{chainName} optimized.")
             
             # Generate export File from RuleSet, given the Parser Strategy
@@ -234,7 +234,7 @@ class ConsoleCommands:
                 with open(filePath, 'w') as file:
                     file.write(fileContent)
                 
-                print(f'Exported file to: {filePath}')
+                self.console.appendToConsole(f'Exported file to: {filePath}')
         else:
             self.console.appendToConsole(f"FDD for {tableName}/{chainName} not found.")
     
@@ -259,7 +259,7 @@ class ConsoleCommands:
             self.console.appendToConsole(f"Invalid syntax. Use: print &lt;table&gt;,&lt;chain&gt; [output_format] [graph_dir] [unroll_decisions]")
             return
 
-        if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
+        if self.model.currentFirewall.getFDD(table, chain): 
             # Handle optional parameters
             outputFrmt      = optional_args[0] if len(optional_args) > 0 else 'svg'
             graphDir        = optional_args[1] if len(optional_args) > 1 else 'TB'
@@ -311,7 +311,7 @@ class ConsoleCommands:
             self.console.appendToConsole(f"Invalid Field. This firewall uses:\n{fields}")
             return
 
-        if self.model.currentFirewall.getFDD(chain): #TODO REVISAR
+        if self.model.currentFirewall.getFDD(table, chain): 
             #Filter the FDD Graph
             pathName, imgFormat= self.model.filterFDD(table, chain, field, matchExpr, literal)
             if not pathName:

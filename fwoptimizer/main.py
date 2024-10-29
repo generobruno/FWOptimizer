@@ -48,7 +48,7 @@ if __name__ == '__main__':
     finally:
         sys.exit(exit_code)
 
-
+"""
 from classes import *
 
 if __name__ == '__main1__':
@@ -62,10 +62,13 @@ if __name__ == '__main1__':
     firewall.setInputRules(rules_parsed)
     
     firewall.genFdd('filter', 'INPUT')
+    firewall.genFdd('filter', 'OUTPUT')
     
     firewall.optimizeFdd('filter', 'INPUT')
     
-    fdd: FDD = firewall.getFDD('INPUT')
+    fdd: FDD = firewall.getFDD('filter','INPUT')
+    
+    print(f'ALL FDDLIST: {firewall.getFDDs()}')
     
     fdd.printFDD('example','svg')
     
@@ -74,3 +77,4 @@ if __name__ == '__main1__':
     output_rules = firewall.genOutputRules('filter', 'INPUT')
     
     print(f'PARSER OUTPUT:\n{parser.compose(output_rules)}')
+"""

@@ -361,6 +361,15 @@ class FWOView(QtWidgets.QMainWindow):
             return dialog.getSelectedOptions()
         return None
     
+    def addRulesDialog(self, tables, fields, decisions):
+        """
+        Show Dialog to create a Rule to add to and FDD.
+        """
+        dialog = Dialogs.AddRulesDialog(tables=tables, fields=fields, decisions=decisions, parent=self)
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            return dialog.getRuleDetails()
+        return None
+    
     def exportRulesDialog(self, tables):
         """
         Show Dialog to select the chain to generate, or all the firewall.

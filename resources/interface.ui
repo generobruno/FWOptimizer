@@ -14,7 +14,7 @@
    <string>FWOptimizer</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
+   <iconset>
     <normaloff>:/images/images/deku_tree_sprout.png</normaloff>:/images/images/deku_tree_sprout.png</iconset>
   </property>
   <property name="styleSheet">
@@ -135,13 +135,13 @@ QMenuBar, QStatusBar, QAction {
           <property name="bottomMargin">
            <number>5</number>
           </property>
-          <item alignment="Qt::AlignTop">
+          <item alignment="Qt::AlignmentFlag::AlignTop">
            <widget class="QFrame" name="leftMenuTopFrame">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_3">
              <item>
@@ -153,7 +153,7 @@ QMenuBar, QStatusBar, QAction {
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/align-justify.svg</normaloff>:/icons/icons/align-justify.svg</iconset>
                </property>
                <property name="iconSize">
@@ -167,7 +167,7 @@ QMenuBar, QStatusBar, QAction {
             </layout>
            </widget>
           </item>
-          <item alignment="Qt::AlignTop">
+          <item alignment="Qt::AlignmentFlag::AlignTop">
            <widget class="QFrame" name="leftMenuUpFrame">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -176,10 +176,10 @@ QMenuBar, QStatusBar, QAction {
              </sizepolicy>
             </property>
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <property name="spacing">
@@ -209,7 +209,7 @@ QMenuBar, QStatusBar, QAction {
                 <string>Home</string>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/home.svg</normaloff>:/icons/icons/home.svg</iconset>
                </property>
                <property name="iconSize">
@@ -229,7 +229,7 @@ QMenuBar, QStatusBar, QAction {
                 <string>Policies</string>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/list.svg</normaloff>:/icons/icons/list.svg</iconset>
                </property>
                <property name="iconSize">
@@ -249,7 +249,7 @@ QMenuBar, QStatusBar, QAction {
                 <string>Console</string>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/terminal.svg</normaloff>:/icons/icons/terminal.svg</iconset>
                </property>
                <property name="iconSize">
@@ -266,7 +266,7 @@ QMenuBar, QStatusBar, QAction {
           <item>
            <spacer name="verticalSpacer">
             <property name="orientation">
-             <enum>Qt::Vertical</enum>
+             <enum>Qt::Orientation::Vertical</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -276,13 +276,13 @@ QMenuBar, QStatusBar, QAction {
             </property>
            </spacer>
           </item>
-          <item alignment="Qt::AlignBottom">
+          <item alignment="Qt::AlignmentFlag::AlignBottom">
            <widget class="QFrame" name="leftMenuBottomFrame">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_5">
              <property name="spacing">
@@ -309,7 +309,7 @@ QMenuBar, QStatusBar, QAction {
                 <string>Reports</string>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/printer.svg</normaloff>:/icons/icons/printer.svg</iconset>
                </property>
                <property name="iconSize">
@@ -329,7 +329,7 @@ QMenuBar, QStatusBar, QAction {
                 <string>Settings</string>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/settings.svg</normaloff>:/icons/icons/settings.svg</iconset>
                </property>
                <property name="iconSize">
@@ -349,7 +349,7 @@ QMenuBar, QStatusBar, QAction {
                 <string>Help</string>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/help-circle.svg</normaloff>:/icons/icons/help-circle.svg</iconset>
                </property>
                <property name="iconSize">
@@ -423,29 +423,29 @@ QMenuBar, QStatusBar, QAction {
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item alignment="Qt::AlignTop">
+          <item alignment="Qt::AlignmentFlag::AlignTop">
            <widget class="QFrame" name="centerMenuFrame">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_2">
              <property name="leftMargin">
               <number>9</number>
              </property>
-             <item alignment="Qt::AlignLeft">
+             <item alignment="Qt::AlignmentFlag::AlignLeft">
               <widget class="QLabel" name="label">
                <property name="text">
                 <string>More Menu</string>
                </property>
                <property name="alignment">
-                <set>Qt::AlignCenter</set>
+                <set>Qt::AlignmentFlag::AlignCenter</set>
                </property>
               </widget>
              </item>
-             <item alignment="Qt::AlignRight">
+             <item alignment="Qt::AlignmentFlag::AlignRight">
               <widget class="QPushButton" name="closeCenterMenuBtn">
                <property name="toolTip">
                 <string>Close Menu</string>
@@ -454,7 +454,7 @@ QMenuBar, QStatusBar, QAction {
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/x-circle.svg</normaloff>:/icons/icons/x-circle.svg</iconset>
                </property>
                <property name="iconSize">
@@ -489,7 +489,7 @@ QMenuBar, QStatusBar, QAction {
                  <string>Settings</string>
                 </property>
                 <property name="alignment">
-                 <set>Qt::AlignCenter</set>
+                 <set>Qt::AlignmentFlag::AlignCenter</set>
                 </property>
                </widget>
               </item>
@@ -522,7 +522,7 @@ QMenuBar, QStatusBar, QAction {
                  <string>Help</string>
                 </property>
                 <property name="alignment">
-                 <set>Qt::AlignCenter</set>
+                 <set>Qt::AlignmentFlag::AlignCenter</set>
                 </property>
                </widget>
               </item>
@@ -563,19 +563,19 @@ QMenuBar, QStatusBar, QAction {
        <property name="bottomMargin">
         <number>0</number>
        </property>
-       <item alignment="Qt::AlignTop">
+       <item alignment="Qt::AlignmentFlag::AlignTop">
         <widget class="QWidget" name="headerContainer" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <property name="leftMargin">
            <number>9</number>
           </property>
-          <item alignment="Qt::AlignLeft|Qt::AlignVCenter">
+          <item alignment="Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter">
            <widget class="QFrame" name="leftHeaderFrame">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_6">
              <property name="spacing">
@@ -605,7 +605,7 @@ QMenuBar, QStatusBar, QAction {
                 <string/>
                </property>
                <property name="pixmap">
-                <pixmap resource="resources.qrc">:/images/images/deku_tree_sprout.png</pixmap>
+                <pixmap>:/images/images/deku_tree_sprout.png</pixmap>
                </property>
                <property name="scaledContents">
                 <bool>true</bool>
@@ -629,19 +629,19 @@ QMenuBar, QStatusBar, QAction {
                </property>
               </widget>
              </item>
-             <item alignment="Qt::AlignHCenter">
+             <item alignment="Qt::AlignmentFlag::AlignHCenter">
               <widget class="Spinner" name="loading" native="true"/>
              </item>
             </layout>
            </widget>
           </item>
-          <item alignment="Qt::AlignRight|Qt::AlignVCenter">
+          <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter">
            <widget class="QFrame" name="rightHeaderFrame">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <property name="spacing">
@@ -668,7 +668,7 @@ QMenuBar, QStatusBar, QAction {
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/upload.svg</normaloff>:/icons/icons/upload.svg</iconset>
                </property>
               </widget>
@@ -682,7 +682,7 @@ QMenuBar, QStatusBar, QAction {
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/play.svg</normaloff>:/icons/icons/play.svg</iconset>
                </property>
               </widget>
@@ -696,7 +696,7 @@ QMenuBar, QStatusBar, QAction {
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/tool.svg</normaloff>:/icons/icons/tool.svg</iconset>
                </property>
                <property name="iconSize">
@@ -716,7 +716,7 @@ QMenuBar, QStatusBar, QAction {
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/eye.svg</normaloff>:/icons/icons/eye.svg</iconset>
                </property>
               </widget>
@@ -730,7 +730,7 @@ QMenuBar, QStatusBar, QAction {
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset>
                  <normaloff>:/icons/icons/download.svg</normaloff>:/icons/icons/download.svg</iconset>
                </property>
               </widget>
@@ -783,10 +783,10 @@ QMenuBar, QStatusBar, QAction {
                 </size>
                </property>
                <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
+                <enum>QFrame::Shape::StyledPanel</enum>
                </property>
                <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
+                <enum>QFrame::Shadow::Raised</enum>
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_5">
                 <property name="spacing">
@@ -829,7 +829,7 @@ QMenuBar, QStatusBar, QAction {
             </layout>
            </widget>
           </item>
-          <item alignment="Qt::AlignRight">
+          <item alignment="Qt::AlignmentFlag::AlignRight">
            <widget class="QWidget" name="rightMenuContainer" native="true">
             <property name="minimumSize">
              <size>
@@ -874,20 +874,20 @@ QMenuBar, QStatusBar, QAction {
                 <item>
                  <widget class="QFrame" name="rightMenuFrame">
                   <property name="frameShape">
-                   <enum>QFrame::StyledPanel</enum>
+                   <enum>QFrame::Shape::StyledPanel</enum>
                   </property>
                   <property name="frameShadow">
-                   <enum>QFrame::Raised</enum>
+                   <enum>QFrame::Shadow::Raised</enum>
                   </property>
                   <layout class="QHBoxLayout" name="horizontalLayout_8">
-                   <item alignment="Qt::AlignLeft">
+                   <item alignment="Qt::AlignmentFlag::AlignLeft">
                     <widget class="QLabel" name="label_5">
                      <property name="text">
                       <string>Rules</string>
                      </property>
                     </widget>
                    </item>
-                   <item alignment="Qt::AlignRight">
+                   <item alignment="Qt::AlignmentFlag::AlignRight">
                     <widget class="QPushButton" name="closeRightMenuBtn">
                      <property name="toolTip">
                       <string>Close Menu</string>
@@ -896,7 +896,7 @@ QMenuBar, QStatusBar, QAction {
                       <string/>
                      </property>
                      <property name="icon">
-                      <iconset resource="resources.qrc">
+                      <iconset>
                        <normaloff>:/icons/icons/x-circle.svg</normaloff>:/icons/icons/x-circle.svg</iconset>
                      </property>
                      <property name="iconSize">
@@ -979,10 +979,10 @@ QMenuBar, QStatusBar, QAction {
              <item>
               <widget class="QFrame" name="consoleFrame">
                <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
+                <enum>QFrame::Shape::StyledPanel</enum>
                </property>
                <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
+                <enum>QFrame::Shadow::Raised</enum>
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_9">
                 <property name="spacing">
@@ -1044,7 +1044,7 @@ QMenuBar, QStatusBar, QAction {
      <x>0</x>
      <y>0</y>
      <width>1054</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -1052,10 +1052,18 @@ QMenuBar, QStatusBar, QAction {
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>Fi&amp;le</string>
     </property>
+    <widget class="QMenu" name="menuAdd_Rules">
+     <property name="title">
+      <string>Add Rules</string>
+     </property>
+     <addaction name="actionAdd_Rules_Wizard"/>
+     <addaction name="actionAdd_Rules_from_File"/>
+    </widget>
     <addaction name="actionImport_Policy"/>
     <addaction name="actionExport_Policy"/>
+    <addaction name="menuAdd_Rules"/>
     <addaction name="actionSave_Project"/>
     <addaction name="actionLoad_Project"/>
     <addaction name="actionExit"/>
@@ -1069,7 +1077,7 @@ QMenuBar, QStatusBar, QAction {
    </widget>
    <widget class="QMenu" name="menuSettings">
     <property name="title">
-     <string>Settings</string>
+     <string>Setti&amp;ngs</string>
     </property>
     <addaction name="actionLoad_syntax"/>
     <addaction name="actionSet_Parser"/>
@@ -1089,57 +1097,67 @@ QMenuBar, QStatusBar, QAction {
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionView_Imported_Rules">
    <property name="text">
-    <string>View Imported Rules</string>
+    <string>&amp;View Imported Rules</string>
    </property>
   </action>
   <action name="actionView_Exported_Rules">
    <property name="text">
-    <string>View Exported Rules</string>
+    <string>View &amp;Exported Rules</string>
    </property>
   </action>
   <action name="actionImport_Policy">
    <property name="text">
-    <string>Import Policy</string>
+    <string>&amp;Import Policy</string>
    </property>
   </action>
   <action name="actionExport_Policy">
    <property name="text">
-    <string>Export Policy</string>
+    <string>&amp;Export Policy</string>
    </property>
   </action>
   <action name="actionSave_Project">
    <property name="text">
-    <string>Save Project</string>
+    <string>&amp;Save Project</string>
    </property>
   </action>
   <action name="actionLoad_Project">
    <property name="text">
-    <string>Load Project</string>
+    <string>&amp;Load Project</string>
    </property>
   </action>
   <action name="actionExit">
    <property name="text">
-    <string>Exit</string>
+    <string>E&amp;xit</string>
    </property>
   </action>
   <action name="actionLoad_syntax">
    <property name="text">
-    <string>Load syntax</string>
+    <string>&amp;Load syntax</string>
    </property>
   </action>
   <action name="actionMore_Help">
    <property name="text">
-    <string>More Help</string>
+    <string>&amp;More Help</string>
    </property>
   </action>
   <action name="actionSet_Parser">
    <property name="text">
-    <string>Set Parser</string>
+    <string>&amp;Set Parser</string>
    </property>
   </action>
   <action name="actionSet_Field_List">
    <property name="text">
-    <string>Set Field List</string>
+    <string>Set &amp;Field List</string>
+   </property>
+  </action>
+  <action name="actionAdd_Rules_Wizard">
+   <property name="text">
+    <string>Add Rules Wizard</string>
+   </property>
+  </action>
+  <action name="actionAdd_Rules_from_File">
+   <property name="text">
+    <string>Add Rules from File</string>
    </property>
   </action>
  </widget>

@@ -726,6 +726,7 @@ class FDD:
         # Print the FDD with highlighted edges
         self.printFDD("highlighted_FDD")
 
+    # TODO Borrar
     def _setFilterVisibiltyToTop(self, node: Node):
 
         node.setAttributes(filterVisibility="True")
@@ -733,6 +734,7 @@ class FDD:
             edge.setAttributes(filterVisibility="True")
             self._setFilterVisibiltyToTop(edge.getOrigin())
 
+    # TODO Borrar
     def _setFilterVisibiltyToBot(self, node: Node):
 
         node.setAttributes(filterVisibility="True")
@@ -758,9 +760,8 @@ class FDD:
         """
         self._setFilterAttr('True')
 
+    # TODO Borrar
     def filterFDDForValue(self, fieldFiltered: str, matchExpresion: str, literal: bool = False):
-
-        self._setFilterAttr("False")
 
         levelSelected = None
 
@@ -778,22 +779,189 @@ class FDD:
         else:
             matchExpresion = "^" + matchExpresion
 
-        found = False
+        # Clear filterVisibility except at the level to search
+
+        for level in self._levels:
+
+            if level == levelSelected:
+                continue
+
+            for node in level.getNodes():
+
+                node.setAttributes(filterVisibility="False")
+
+                for edge in node.getOutgoing():
+
+                    edge.setAttributes(filterVisibility="False")
+
+        # Execute the search
+
+        results = False
+
         for node in levelSelected.getNodes():
 
             for outgoing in node.getOutgoing():
 
+                found = False
+
                 for element in outgoing.getElementSet().getElementsList():
 
-                    if re.search(matchExpresion, str(element)):
+                    if outgoing.getAttributes('filterVisibility') == "True":
 
-                        outgoing.setAttributes(filterVisibility="True")
-                        self._setFilterVisibiltyToTop(outgoing.getOrigin())
-                        self._setFilterVisibiltyToBot(outgoing.getDestination())
-                        found = True
-                        break
+                        if re.search(matchExpresion, str(element)):
+
+                            outgoing.setAttributes(filterVisibility="True")
+                            self._setFilterVisibiltyToBot(outgoing.getDestination())
+                            found = True
+
+                        else:
+
+                            if not found:
+                                outgoing.setAttributes(filterVisibility="False")
+
+                if found:
+
+                    self._setFilterVisibiltyToTop(node)
+                    results = True
                     
+        return results
+    
+
+    def _filterBranch(self, node: Node, levelFiltered: Level, matchSet: ElementSet) -> bool:
+        """
+        Recursively checks a node and its incoming edges for the specified field.
+
+        This method examines each incoming edge of the given `node` to see if it contains
+        the specified `levelFiltered`. If edges does not contain this field, the method
+        recursively calls itself on the source node of thats edges to continue the check.
+
+        Upon finding the level, it checks the condition and returns the corresponding boolean.
+
+        This method modifies the filterRecord attribute for paths that meet the condition. It only checks those paths whose filterVisibility is True.
+
+        Args:
+            levelFiltered (Level): Level to which the value to be compared belongs.
+            matchSet (ElementSet): Value to compare.
+
+        Returns:
+            True if this node or his upper nodes meet the condition. False otherwise
+
+        """
+
+        def setFilterRecordToTop(node: Node):
+
+            node.setAttributes(filterRecord="True")
+            for edge in node.getIncoming():
+                edge.setAttributes(filterRecord="True")
+                setFilterRecordToTop(edge.getOrigin())
+
+        if node.getLevel() == self._levels[0]:
+            node.setAttributes(filterRecord="True")
+            return True
+        
+        found = False
+
+        for edge in node.getIncoming():
+
+            if edge.getAttributes("filterVisibility") == "True":
+
+                if edge.getOrigin().getLevel() == levelFiltered:
+
+                    if edge.getElementSet().isOverlapping(matchSet):
+
+                        edge.setAttributes(filterRecord="True")
+                        setFilterRecordToTop(edge.getOrigin())
+                        found = True
+                    
+                else: 
+
+                    if self._filterBranch(edge.getOrigin(), levelFiltered, matchSet):
+
+                        edge.setAttributes(filterRecord="True")
+                        found = True
+        
+        if found:
+            node.setAttributes(filterRecord="True")
+
         return found
+                    
+    def filterFDD(self, fieldFiltered: str, matchExpresion: str) -> bool:
+        """
+        Filters the FDD view by hiding paths that do not meet the specified condition.
+
+        This method traverses the decision tree. If it finds at least one path meeting this condition,
+        it modifies an attribute to hide non-matching paths and returns True. If no paths match the 
+        condition, the tree view remains unchanged, and it returns`False.
+
+        The occurrence check is not done from string to string, but rather it checks if there is overlapping between the sets.
+
+        It only checks those paths whose filterVisibility is True.
+
+        Args: 
+            fieldFiltered (str): The name of the field to filter by.
+            matchExpresion (str): The value that the specified field should match for a path to be visible. This must be a possible value for the specified field.
+
+        Returns:
+            (bool) True if at least one path meets the filter condition and the attribute was modified, False otherwise.
+        """
+
+        # Check if field to filter exists
+        levelSelected = None
+        for level in self._levels:
+            if level.getField().getName() == fieldFiltered:
+                levelSelected = level
+                break
+        if levelSelected == None:
+            print(f"El campo {fieldFiltered} no coincide con nigún campo existente")
+            return False
+    
+        try:
+            matchSet = ElementSet.createElementSet(levelSelected.getField().getType(), [matchExpresion])
+        except:
+            print(f"La expresión {[matchExpresion]} no es un tipo conocido para el campo {fieldFiltered}")
+            return False
+
+
+        # Set filterRecord attribute to False for complete FDD
+        for level in self._levels:
+
+            for node in level.getNodes():
+
+                node.setAttributes(filterRecord="False")
+
+                for edge in node.getOutgoing():
+
+                    edge.setAttributes(filterRecord="False")
+
+        # Perform search
+        found = False
+        for node in self._levels[-1].getNodes():
+
+            if self._filterBranch(node, levelSelected, matchSet):
+                found = True
+
+        if found:
+            # Transform filterRecord into filterVisibility
+            for level in self._levels:
+
+                for node in level.getNodes():
+
+                    if node.getAttributes('filterRecord') == "True":
+                        node.setAttributes(filterVisibility="True")
+                    else:
+                        node.setAttributes(filterVisibility="False")
+
+                    for edge in node.getOutgoing():
+
+                        if edge.getAttributes('filterRecord') == "True":
+                            edge.setAttributes(filterVisibility="True")
+                        else:
+                            edge.setAttributes(filterVisibility="False")
+            return True
+        else:
+            return False
+            
+
 
     def _genPre(self, chain: Chain) -> None:
         """

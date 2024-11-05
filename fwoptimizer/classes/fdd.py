@@ -635,14 +635,14 @@ class FDD:
                     edge_node_counter += 1
 
                     if edge.getAttributes('label') is not None:
-                        label = f"{min(edge.getId())},{edge.getAttributes('label')}"
+                        label = f"{edge.getAttributes('label')}"
                     else:
                         elements = edge.getElementSet().getElementsList()
                         if len(elements) > 5:
                             elements_str = '\n'.join(str(elem) for elem in elements[:5]) + '\n...'
                         else:
                             elements_str = '\n'.join(str(elem) for elem in elements)
-                        label = f"{min(edge.getId())},\n{elements_str}"
+                        label = f"{elements_str}"
 
                     edge_attributes = edge.getAttributes()
                     if edge.getMarking():
@@ -1262,7 +1262,7 @@ class FDD:
 
                 if not left.isEmpty():
                     
-                    newEdge = Edge([999], node, self._getDecisionNode(defaultDecision), left)
+                    newEdge = Edge([-1], node, self._getDecisionNode(defaultDecision), left)
                     newEdge.autoConnect()
 
 
@@ -1855,5 +1855,5 @@ class FDD:
 
         else:
 
-            newEdge = Edge([999], newNode, edge.getDestination(), ElementSet.createElementSet(newNode.getLevel().getField().getType(), []))
+            newEdge = Edge([-1], newNode, edge.getDestination(), ElementSet.createElementSet(newNode.getLevel().getField().getType(), []))
             newEdge.autoConnect()

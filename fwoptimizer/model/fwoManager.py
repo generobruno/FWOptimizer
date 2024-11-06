@@ -199,7 +199,7 @@ class FWOManager:
         fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
         
         # Filter the FDD
-        found = fdd.filterFDD(field, matchExpression) #TODO Manage not found matchExpr case       
+        found = fdd.filterFDD(field, matchExpression)      
         
         if not found:
             return None, None

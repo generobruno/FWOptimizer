@@ -258,13 +258,33 @@ class ConsoleCommands:
         except ValueError:
             self.console.appendToConsole(f"Invalid syntax. Use: print &lt;table&gt;,&lt;chain&gt; [output_format] [graph_dir] [unroll_decisions]")
             return
+        
+        # Define valid options
+        valid_options = {
+            "outputFrmt": {'svg', 'png', 'jpg'},
+            "graphDir": {'TB', 'BT', 'LR', 'RL'},
+            "unroll": {'True', 'False'}
+        }
 
         if self.model.currentFirewall.getFDD(table, chain): 
             # Handle optional parameters
             outputFrmt      = optional_args[0] if len(optional_args) > 0 else 'svg'
             graphDir        = optional_args[1] if len(optional_args) > 1 else 'TB'
-            unroll          = optional_args[2] if len(optional_args) > 2 else False
-            # TODO Check optional params format
+            unroll          = optional_args[2] if len(optional_args) > 2 else 'False'
+           
+            # Validate optional parameters
+            if outputFrmt not in valid_options["outputFrmt"]:
+                self.console.appendToConsole(f"Invalid output format: {outputFrmt}. Choose from {valid_options['outputFrmt']}")
+                return
+            if graphDir not in valid_options["graphDir"]:
+                self.console.appendToConsole(f"Invalid graph direction: {graphDir}. Choose from {valid_options['graphDir']}")
+                return
+            if unroll not in valid_options["unroll"]:
+                self.console.appendToConsole(f"Invalid unroll option: {unroll}. Choose 'True' or 'False'")
+                return
+            
+            # Convert unroll to a boolean
+            unroll = unroll == 'True'
             
             pathName, imgFormat= self.model.viewFDD(table, chain, outputFrmt, graphDir, unroll)
             if self.model.graphicsView:

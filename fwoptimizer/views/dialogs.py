@@ -167,10 +167,6 @@ class ViewFDDDialog(QtWidgets.QDialog):
         self.matchExpressionLabel = QtWidgets.QLabel("Match Expression:")
         self.matchExpressionInput = QtWidgets.QLineEdit(self.filterFddTab)
         
-        # Radio button for literal match expression
-        self.literalExpression = QtWidgets.QRadioButton("Literal")
-        self.literalExpression.setChecked(True)
-
         # Add components to layout
         layout.addWidget(self.tableNameLabel)
         layout.addWidget(self.tableNameComboBox)
@@ -180,7 +176,6 @@ class ViewFDDDialog(QtWidgets.QDialog):
         layout.addWidget(self.fieldInputComboBox)
         layout.addWidget(self.matchExpressionLabel)
         layout.addWidget(self.matchExpressionInput)
-        layout.addWidget(self.literalExpression)
 
     def styleDialog(self):
         """
@@ -253,8 +248,7 @@ class ViewFDDDialog(QtWidgets.QDialog):
             chain_name = self.chainNameComboBox.currentText()
             field = self.fieldInputComboBox.currentText()
             match_expression = self.matchExpressionInput.text()
-            literal = self.literalExpression.isChecked()
-            return "filterFDD", table_name, chain_name, field, match_expression, literal
+            return "filterFDD", table_name, chain_name, field, match_expression
         
         return None
 

@@ -178,7 +178,7 @@ class FWOManager:
         
         return pathName, imgFormat
     
-    def filterFDD(self, table, chain, field, matchExpression, literal):
+    def filterFDD(self, table, chain, field, matchExpression):
         """
         Filter and Display FDD Graph
 
@@ -199,7 +199,7 @@ class FWOManager:
         fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
         
         # Filter the FDD
-        found = fdd.filterFDDForValue(field, matchExpression, literal) #TODO Manage not found matchExpr case       
+        found = fdd.filterFDD(field, matchExpression) #TODO Manage not found matchExpr case       
         
         if not found:
             return None, None

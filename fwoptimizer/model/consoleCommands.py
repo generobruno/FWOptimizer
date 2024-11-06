@@ -293,17 +293,8 @@ class ConsoleCommands:
             parts = args.split()
             table_chain, field, matchExpr = parts[0], parts[1], parts[2]
             table, chain = table_chain.split(',')
-            
-            # Optional literal parameter: check if '--literal' or '-l' is provided
-            literal = False
-            if len(parts) > 3:
-                optional_param = parts[3]
-                if optional_param in ['--literal', '-l']:
-                    literal = True
-                else:
-                    raise ValueError(f"Invalid optional argument '{optional_param}'. Use --literal or -l.")
         except (ValueError,IndexError):
-            self.console.appendToConsole(f"Invalid syntax. Use: filter &lt;table&gt;,&lt;chain&gt; &lt;field&gt; &lt;MatchExpression&gt; [--literal|-l]")
+            self.console.appendToConsole(f"Invalid syntax. Use: filter &lt;table&gt;,&lt;chain&gt; &lt;field&gt; &lt;MatchExpression&gt;")
             return
         
         fields = [f.getName() for f in self.model.currentFirewall.getFieldList().getFields()]
@@ -313,7 +304,7 @@ class ConsoleCommands:
 
         if self.model.currentFirewall.getFDD(table, chain): 
             #Filter the FDD Graph
-            pathName, imgFormat= self.model.filterFDD(table, chain, field, matchExpr, literal)
+            pathName, imgFormat= self.model.filterFDD(table, chain, field, matchExpr)
             if not pathName:
                 self.console.appendToConsole("No results for filter.")
                 return

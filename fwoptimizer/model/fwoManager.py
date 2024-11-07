@@ -11,6 +11,7 @@ import pickle
 import zipfile
 import hashlib
 import os
+import shutil
 from fwoptimizer.classes.firewall import Firewall
 from fwoptimizer.classes import parser, rules
 
@@ -18,15 +19,16 @@ class FWOManager:
     """
     Top Module of the App Model
     """
-    def __init__(self, workFolder = "workdir/"):
+    def __init__(self, defaultWorkFolder = "fwo_workdir/"):
         # Work folder
-        self.workFolder = workFolder
-        if not os.path.exists(self.workFolder):
-            os.makedirs(self.workFolder)
+        self.defaultWorkFolder = defaultWorkFolder
+        if not os.path.exists(self.defaultWorkFolder):
+            os.makedirs(self.defaultWorkFolder)
+            
         # List of Firewalls Managed
         self.firewalls = []
         # Current Firewall
-        self.currentFirewall = Firewall(workFolder=self.workFolder)
+        self.currentFirewall = Firewall(defaultWorkFolder=self.defaultWorkFolder)
         # Add default field List
         self.setFieldList('fwoptimizer/configs/fdd_config.toml')
         # Current Parser Strategy (Default to IpTables)
@@ -91,7 +93,16 @@ class FWOManager:
         if self.currentFirewall:
             self.currentFirewall.setInputRules(rulesParsed)
             print("Rules parsed and saved to the current firewall.")
-            #TODO Save input file in workdir
+            # Save input file in workdir
+            inputsFolder = os.path.join(self.currentFirewall.getWorkFolder(), "inputs")
+            os.makedirs(inputsFolder, exist_ok=True)
+
+            # Define the destination path
+            destinationPath = os.path.join(inputsFolder, os.path.basename(filePath))
+
+            # Copy the file to the inputs folder
+            shutil.copy(filePath, destinationPath)
+            
             return self._copyFile(filePath), rulesParsed
         else:
             print("No firewall selected to save the parsed rules.")
@@ -167,7 +178,7 @@ class FWOManager:
         file_hash = hashlib.md5(hash_input.encode()).hexdigest()
 
         # Create the path using the hash
-        pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_{file_hash}')
+        pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_{file_hash}')
         
         # Check if the image file already exists
         if not os.path.exists(pathName):
@@ -205,7 +216,7 @@ class FWOManager:
             return None, None
         
         # Create the path using the hash
-        pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_f_{field}')
+        pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_f_{field}')
         
         if not os.path.exists(pathName):
             # Generate Graph
@@ -285,7 +296,7 @@ class FWOManager:
             filePath: Path to store the project
         """
         
-        serializedFirewallPath = self.workFolder + "firewall.pkl"
+        serializedFirewallPath = self.defaultWorkFolder + "firewall.pkl"
 
         # Serialize firewall object
         with open(serializedFirewallPath, 'wb') as file:
@@ -294,11 +305,11 @@ class FWOManager:
         # Createa ZIP File in save_path
         with zipfile.ZipFile(filePath, 'w', zipfile.ZIP_DEFLATED) as zipf:
             # Recorrer el directorio output/
-            for root, dirs, files in os.walk(self.workFolder):
+            for root, dirs, files in os.walk(self.defaultWorkFolder):
                 for file in files:
                     file_path = os.path.join(root, file)
                     # Agregar el archivo al ZIP, manteniendo la estructura de directorios
-                    zipf.write(file_path, os.path.relpath(file_path, self.workFolder))
+                    zipf.write(file_path, os.path.relpath(file_path, self.defaultWorkFolder))
 
         #Remove serialized object
         if os.path.exists(serializedFirewallPath):
@@ -312,7 +323,7 @@ class FWOManager:
             filePath: Path from where to load the project
         """
 
-        serializedFirewallPath = self.workFolder + "firewall.pkl"
+        serializedFirewallPath = self.defaultWorkFolder + "firewall.pkl"
 
         def removeDir(dirPath):
             for filename in os.listdir(dirPath):
@@ -327,11 +338,11 @@ class FWOManager:
                     print(f'Error al eliminar {path}: {e}')
 
         # Eliminar todo el contenido del directorio de trabajo
-        removeDir(self.workFolder)
+        removeDir(self.defaultWorkFolder)
 
         # Extraer el archivo en el directorio de trabajo
         with zipfile.ZipFile(filePath, 'r') as zip_ref:
-            zip_ref.extractall(self.workFolder)
+            zip_ref.extractall(self.defaultWorkFolder)
 
         # Deserializar el firewall
         with open(serializedFirewallPath, 'rb') as file:

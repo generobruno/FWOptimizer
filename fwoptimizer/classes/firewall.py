@@ -8,7 +8,7 @@ class Firewall:
     """_summary_
     """
     
-    def __init__(self, fieldList: FieldList = None, fdds: dict[str, list[FDD]] = [], inputRules: RuleSet= None, workFolder: str = ""):
+    def __init__(self, fieldList: FieldList = None, fdds: dict[str, list[FDD]] = [], inputRules: RuleSet= None, defaultWorkFolder: str = ""):
         """
         Firewall Constructor
 
@@ -20,9 +20,18 @@ class Firewall:
         self._fddList: dict[str, list[FDD]] = fdds if fdds else {}
         self._fieldList: FieldList = fieldList
         self._inputRules: RuleSet = inputRules
-        self._outputRules: RuleSet = None
-        self._workFolder: str = workFolder
-        
+        self._optRules: RuleSet = None
+        self._workFolder: str = defaultWorkFolder
+    
+    def getWorkFolder(self):
+        """
+        Get current work Folder
+
+        Returns:
+            str: Work Folder
+        """
+        return self._workFolder
+      
     def setInputRules(self, rules: RuleSet):
         """
         Set Firewall Input Rules
@@ -43,6 +52,27 @@ class Firewall:
             RuleSet: Initial RuleSet
         """
         return self._inputRules
+    
+    def setOptRules(self, rules: RuleSet):
+        """
+        Set Firewall Output Rules
+
+        Args:
+            rules (RuleSet): New RuleSet
+        """
+        if not isinstance(rules, RuleSet):
+            raise ValueError("Object is not of type RuleSet.")
+        
+        self._optRules = rules
+        
+    def getOptRules(self):
+        """
+        Get Output Rules
+
+        Returns:
+            RuleSet: New RuleSet
+        """
+        return self._optRules
     
     def setFieldList(self, filePath: str):
         """
@@ -159,6 +189,7 @@ class Firewall:
                 print(f'FDD not found for chain: {chain} in table: {table}')
                         
         print(f'Generated RuleSet:\n{exportRuleSet}')
+        self.setOptRules(exportRuleSet)
         return exportRuleSet
     
     def addFdd(self, tableName: str, fdd: FDD):

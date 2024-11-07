@@ -42,7 +42,7 @@ class FWOController:
         # Home button - Show WorkDir
         view.homeBtn.clicked.connect(
             lambda: (
-                self.view.displayWorkingDirectoryTree(model.workFolder)
+                self.view.displayWorkingDirectoryTree(model.defaultWorkFolder)
             )
         )
         view.treeWorkdirView.doubleClicked.connect(self.onTreeItemClicked)
@@ -391,7 +391,7 @@ class FWOController:
         while item:
             parts.insert(0, item.text())
             item = item.parent()
-        return os.path.join(self.model.workFolder, *parts)
+        return os.path.join(self.model.defaultWorkFolder, *parts)
 
     def saveProject(self) -> None:
         """
@@ -527,6 +527,8 @@ class FWOController:
                         
         elif task_name == 'exportRules':
             exportedRules, filePath = result
+            #TODO displayOptRules in IDE -> change to have them in another tab
+            #self.view.displayImportedRules(filePath, exportedRules)
             # Generate export File from RuleSet, given the Parser Strategy
             fileContent = self.model.getParserStrategy().compose(exportedRules)
             
@@ -538,7 +540,7 @@ class FWOController:
                 with open(filePath, 'w') as file:
                     file.write(fileContent)
                 
-                print(f'Exported file to: {filePath}')
+                self.view.displayInfoMessage('Rules Exported',f'Exported rules to: {filePath}')
                 
         elif task_name == 'addRules':
             rule = result

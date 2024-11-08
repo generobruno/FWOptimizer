@@ -494,6 +494,14 @@ class FDD:
         # Create the last level, which contains leaf nodes or what is the same, decisions 
         self._levels.append(Level(Field('Decision', 'Decision')))
 
+        # TODO esta accion no debería realizarce aqui ya que puede otros firewalls que no utilizen estos nombres
+        # Create the default decisions for iptables
+        self._decisions['ACCEPT'] = Node('ACCEPT', self._levels[-1], shape='box', fontsize='35', style='filled', fillcolor='greenyellow')
+        self._decisions['ACCEPT'].autoConnect()
+
+        self._decisions['DROP'] = Node('DROP', self._levels[-1], shape='diamond', fontsize='35', style='filled', fillcolor='crimson')
+        self._decisions['DROP'].autoConnect()
+
         # Create the only root node in the first level of the tree.
         root = Node(self._levels[0].getField().getName(), self._levels[0])
         root.autoConnect()
@@ -517,8 +525,8 @@ class FDD:
         Returns:
             A Node in the last level of the tree with the given decision.
         """
-        if decision  not in self._decisions:
-            self._decisions[decision] = Node(decision, self._levels[-1], shape='box', fontsize='35')
+        if decision not in self._decisions:
+            self._decisions[decision] = Node(decision, self._levels[-1], shape='ellipse', fontsize='35', style='filled', fillcolor='skyblue')
             self._decisions[decision].autoConnect()
         return self._decisions[decision]
 
@@ -630,6 +638,7 @@ class FDD:
                     if edge.getAttributes('filterVisibility') == 'False':
                         continue
                     origin_name = edge.getOrigin().getName()
+                    destination = edge.getDestination()
                     destination_name = edge.getDestination().getName()
                     edge_node_name = f"edge_node_{edge_node_counter}"
                     edge_node_counter += 1
@@ -665,10 +674,8 @@ class FDD:
                         unique_destination_name = f"{destination_name}_{edge_node_counter}"
                         dot.node(
                             unique_destination_name, 
-                            destination_name, 
-                            style='filled',
-                            shape='box' if destination_name == 'ACCEPT' else 'diamond',
-                            fillcolor='greenyellow' if destination_name == 'ACCEPT' else 'crimson',
+                            destination_name,
+                            destination.getAttributes(), 
                             width=str(base_width + width_factor), 
                             height=str(base_height + height_factor), 
                             fontsize=str(base_font + font_factor)

@@ -324,7 +324,8 @@ class ConsoleCommands:
 
         if self.model.currentFirewall.getFDD(table, chain): 
             #Filter the FDD Graph
-            pathName, imgFormat= self.model.filterFDD(table, chain, field, matchExpr)
+            opts = ('svg', 'TB', False)
+            pathName, imgFormat= self.model.filterFDD(table, chain, opts, field, matchExpr)
             if not pathName:
                 self.console.appendToConsole("No results for filter.")
                 return

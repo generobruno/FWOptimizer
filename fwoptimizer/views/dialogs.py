@@ -167,6 +167,32 @@ class ViewFDDDialog(QtWidgets.QDialog):
         self.matchExpressionLabel = QtWidgets.QLabel("Match Expression:")
         self.matchExpressionInput = QtWidgets.QLineEdit(self.filterFddTab)
         
+        # Create a horizontal layout for image format, graph orientation, and unroll decisions
+        optionsLayout = QtWidgets.QHBoxLayout()
+
+        # Dropdown for image format selection
+        self.fimageFormatLabel = QtWidgets.QLabel("Image Format:")
+        self.fimageFormatComboBox = QtWidgets.QComboBox()
+        self.fimageFormatComboBox.addItems(['svg', 'png', 'jpeg'])
+        self.fimageFormatComboBox.setCurrentText('svg')
+        optionsLayout.addWidget(self.fimageFormatLabel)
+        optionsLayout.addWidget(self.fimageFormatComboBox)
+
+        # Dropdown for graph orientation selection
+        self.fgraphOrientationLabel = QtWidgets.QLabel("Graph Orientation:")
+        self.fgraphOrientationComboBox = QtWidgets.QComboBox()
+        self.fgraphOrientationComboBox.addItems(['TB', 'BT', 'LR', 'RL'])
+        self.fgraphOrientationComboBox.setCurrentText('TB')
+        optionsLayout.addWidget(self.fgraphOrientationLabel)
+        optionsLayout.addWidget(self.fgraphOrientationComboBox)
+
+        # Checkbox for unrolling decisions
+        self.funrollDecisionsLabel = QtWidgets.QLabel("Unroll Decisions:")
+        self.funrollDecisionsCheckBox = QtWidgets.QCheckBox()
+        self.funrollDecisionsCheckBox.setChecked(False)
+        optionsLayout.addWidget(self.funrollDecisionsLabel)
+        optionsLayout.addWidget(self.funrollDecisionsCheckBox)
+
         # Add components to layout
         layout.addWidget(self.tableNameLabel)
         layout.addWidget(self.tableNameComboBox)
@@ -176,6 +202,9 @@ class ViewFDDDialog(QtWidgets.QDialog):
         layout.addWidget(self.fieldInputComboBox)
         layout.addWidget(self.matchExpressionLabel)
         layout.addWidget(self.matchExpressionInput)
+
+        # Add the horizontal layout with the image format, orientation, and unroll options
+        layout.addLayout(optionsLayout)
 
     def styleDialog(self):
         """
@@ -246,9 +275,12 @@ class ViewFDDDialog(QtWidgets.QDialog):
         elif active_tab_index == 1:  # Filter FDD tab
             table_name = self.tableNameComboBox.currentText()
             chain_name = self.chainNameComboBox.currentText()
+            image_format = self.fimageFormatComboBox.currentText()
+            graph_orientation = self.fgraphOrientationComboBox.currentText()
+            unroll_decisions = self.funrollDecisionsCheckBox.isChecked()
             field = self.fieldInputComboBox.currentText()
             match_expression = self.matchExpressionInput.text()
-            return "filterFDD", table_name, chain_name, field, match_expression
+            return "filterFDD", table_name, chain_name, (image_format, graph_orientation, unroll_decisions), field, match_expression
         
         return None
 

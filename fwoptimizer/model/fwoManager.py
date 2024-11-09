@@ -189,7 +189,7 @@ class FWOManager:
         
         return pathName, imgFormat
     
-    def filterFDD(self, table, chain, field, matchExpression):
+    def filterFDD(self, table, chain, opts, field, matchExpression):
         """
         Filter and Display FDD Graph
 
@@ -202,8 +202,8 @@ class FWOManager:
         Returns:
             str, str: Path of the graph and its format
         """
-        print(f"Filtering FDD for {table} - {chain}")
-        #TODO Manage opts formats of printFDD here?
+        imageFrmt, graphDir, unrollDecisions = opts
+        print(f"Filtering FDD for {table} - {chain}\n{imageFrmt} - {graphDir} - {unrollDecisions}")
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(table, chain)
@@ -220,7 +220,7 @@ class FWOManager:
         
         if not os.path.exists(pathName):
             # Generate Graph
-            fdd.printFDD(pathName, img_format='svg', rank_dir='TB', unroll_decisions=False)
+            fdd.printFDD(pathName, img_format=imageFrmt, rank_dir=graphDir, unroll_decisions=unrollDecisions)
         
         return pathName, 'svg'
         

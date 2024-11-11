@@ -153,7 +153,7 @@ class FWOManager:
         """
         self.graphicsView = graphicsView
     
-    def viewFDD(self, table, chain, imgFormat='svg', graphDir='TB', unrollDecisions=False):
+    def viewFDD(self, table, chain, imgFormat='svg', graphDir='TB', unrollDecisions=False, display=True):
         """
         Display the FDD Graph in the graphicsView
 
@@ -187,9 +187,9 @@ class FWOManager:
             # Generate graph 
             fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
         
-        return pathName, imgFormat
+        return pathName, imgFormat, display
     
-    def filterFDD(self, table, chain, opts, field, matchExpression):
+    def filterFDD(self, table, chain, opts, field, matchExpression, display=True):
         """
         Filter and Display FDD Graph
 
@@ -213,7 +213,7 @@ class FWOManager:
         found = fdd.filterFDD(field, matchExpression)      
         
         if not found:
-            return None, None
+            return None, None, None 
         
         # Create the path using the hash
         pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_f_{field}')
@@ -222,7 +222,7 @@ class FWOManager:
             # Generate Graph
             fdd.printFDD(pathName, img_format=imageFrmt, rank_dir=graphDir, unroll_decisions=unrollDecisions)
         
-        return pathName, 'svg'
+        return pathName, imageFrmt, display
         
     def optimizeFDD(self, table=None, chain=None):
         """

@@ -286,7 +286,7 @@ class ConsoleCommands:
             # Convert unroll to a boolean
             unroll = unroll == 'True'
             
-            pathName, imgFormat= self.model.viewFDD(table, chain, outputFrmt, graphDir, unroll)
+            pathName, imgFormat, _ = self.model.viewFDD(table, chain, outputFrmt, graphDir, unroll)
             if self.model.graphicsView:
                 self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
             else:
@@ -325,7 +325,7 @@ class ConsoleCommands:
         if self.model.currentFirewall.getFDD(table, chain): 
             #Filter the FDD Graph
             opts = ('svg', 'TB', False)
-            pathName, imgFormat= self.model.filterFDD(table, chain, opts, field, matchExpr)
+            pathName, imgFormat, _ = self.model.filterFDD(table, chain, opts, field, matchExpr)
             if not pathName:
                 self.console.appendToConsole("No results for filter.")
                 return

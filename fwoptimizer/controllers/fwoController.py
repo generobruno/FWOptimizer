@@ -242,7 +242,7 @@ class FWOController:
                 return
             
             totalElements = fdd.getElementsNum()
-            if totalElements > 100:
+            if totalElements > 10000:
                 userChoice = self.view.largeFDDWarningDialog(totalElements)
                 
                 if userChoice == 'cancel':
@@ -273,7 +273,7 @@ class FWOController:
                 return
             
             totalElements = fdd.getElementsNum(filter=True)
-            if totalElements > 100:
+            if totalElements > 10000:
                 userChoice = self.view.largeFDDWarningDialog(totalElements)
                 
                 if userChoice == 'cancel':
@@ -312,6 +312,12 @@ class FWOController:
             self.runModelTask(self.model.optimizeFDD)
         elif isinstance(option, tuple):
             tableName, chainName = option
+            
+            fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+            if fdd is None:
+                self.view.displayErrorMessage("There isn't a FDD Generated for the selection")
+                return
+            
             self.runModelTask(self.model.optimizeFDD, tableName, chainName)
         else:
             self.view.displayWarningMessage("No valid option selected for FDD generation.")
@@ -540,8 +546,13 @@ class FWOController:
         elif task_name == 'generateFDD':
             tableName, chainName = result
             if tableName is not None and chainName is not None:
+                    fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+                    if fdd is None:
+                        self.view.displayErrorMessage("There isn't a FDD for the selection")
+                        return
+                    
                     # If graph too big, ask for confirmation
-                    totalElements = self.model.currentFirewall.getFDD(tableName, chainName).getElementsNum()
+                    totalElements = fdd.getElementsNum()
                     
                     if totalElements > 10000:
                         userChoice = self.view.largeFDDWarningDialog(totalElements)
@@ -579,9 +590,14 @@ class FWOController:
         elif task_name == 'optimizeFDD':
             tableName, chainName = result
             if tableName is not None and chainName is not None:
+                    fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+                    if fdd is None:
+                        self.view.displayErrorMessage("There isn't a FDD for the selection")
+                        return
+                    
                     # If graph too big, ask for confirmation
-                    totalElements = self.model.currentFirewall.getFDD(tableName, chainName).getElementsNum()
-                    if totalElements > 100:
+                    totalElements = fdd.getElementsNum()
+                    if totalElements > 10000:
                         userChoice = self.view.largeFDDWarningDialog(totalElements)
                         
                         if userChoice == 'display_anyways':

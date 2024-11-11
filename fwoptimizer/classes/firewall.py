@@ -133,6 +133,9 @@ class Firewall:
             for tableName , table in self._inputRules.getTables().items():
                 for chainName, _ in table.getChains().items():
                     fdd = self.getFDD(tableName, chainName)
+                    if fdd is None:
+                        print(f'[WARNING] No FDD generated for {tableName} - {chainName} (Skipping.)')
+                        continue
                     print(f'Optimizing {tableName} - {chainName} FDD')
                     fdd.reduction()
                     fdd.marking()

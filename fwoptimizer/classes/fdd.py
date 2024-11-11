@@ -507,6 +507,15 @@ class FDD:
         """
         return self._name
 
+    def setName(self, newName:str):
+        """
+        Set FDD's Name
+
+        Args:
+            newName (str): New Name
+        """
+        self._name = newName
+
     def _getDecisionNode(self, decision: str) -> Node:
         """
         Obtains the node corresponding to this decision if it exists, or adds a new one and returns it.

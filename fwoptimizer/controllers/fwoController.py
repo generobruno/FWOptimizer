@@ -242,7 +242,7 @@ class FWOController:
                 return
             
             totalElements = fdd.getElementsNum()
-            if totalElements > 100:
+            if totalElements > 10000:
                 userChoice = self.view.largeFDDWarningDialog(totalElements)
                 
                 if userChoice == 'cancel':
@@ -272,7 +272,7 @@ class FWOController:
                 return
             
             totalElements = fdd.getElementsNum(filter=True)
-            if totalElements > 100:
+            if totalElements > 10000:
                 userChoice = self.view.largeFDDWarningDialog(totalElements)
                 
                 if userChoice == 'cancel':

@@ -531,6 +531,32 @@ class FDD:
         """
         return self._decisions
 
+    def getElementsNum(self, filter: bool = False):
+        """
+        Get the total number of Edges and Nodes in the FDD (printable)
+
+        Args:
+            filter (bool): If True, only elements with 'filterVisibility' == 'True' are counted
+
+        Returns:
+            int: Total Elements
+        """
+        # Calculate total nodes based on filter condition
+        total_nodes = sum(
+            1 for level in self._levels for node in level.getNodes()
+            if not filter or node.getAttributes('filterVisibility') == 'True'
+        )
+
+        # Calculate total edges based on filter condition
+        total_edges = sum(
+            1 for level in self._levels for node in level.getNodes()
+            if not filter or node.getAttributes('filterVisibility') == 'True'
+            for edge in node.getOutgoing()
+            if not filter or edge.getAttributes('filterVisibility') == 'True'
+        )
+
+        return total_nodes + total_edges
+
     def printFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False) -> None:
         """
         Generate a graph image from the data structure

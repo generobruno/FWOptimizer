@@ -233,6 +233,25 @@ class FWOController:
         
         if options[0] == 'viewFDD':
             _ , (tableName, chainName), imageFrmt, graphDir, unrollDecisions = options
+            display = True
+            
+            # If graph too big, ask for confirmation
+            fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+            if fdd is None:
+                self.view.displayErrorMessage("There isn't a FDD for the selection")
+                return
+            
+            totalElements = fdd.getElementsNum()
+            if totalElements > 100:
+                userChoice = self.view.largeFDDWarningDialog(totalElements)
+                
+                if userChoice == 'cancel':
+                    return
+                elif userChoice == 'generate_no_display':
+                    display = False #TODO FIX -> This would display anyway
+                elif userChoice == 'display_anyways':
+                    pass
+            
             print(f"Viewing FDD for {tableName} -> {chainName}:\n{imageFrmt} format, {graphDir} orientation, Unroll Decisions: {unrollDecisions}")
             self.runModelTask(self.model.viewFDD,
                             tableName,
@@ -241,15 +260,35 @@ class FWOController:
                             graphDir,
                             unrollDecisions
                             )
+            
         elif options[0] == 'filterFDD':
-            _ , tableName, chainName, opts, field, match_expression = options
-            print(f"Filtering FDD for {tableName} -> {chainName}: {field} -> {match_expression}")
+            _ , tableName, chainName, opts, field, matchExpression = options
+            display = True
+            
+            # If graph too big, ask for confirmation
+            fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+            if fdd is None:
+                self.view.displayErrorMessage("There isn't a FDD for the selection")
+                return
+            
+            totalElements = fdd.getElementsNum(filter=True)
+            if totalElements > 100:
+                userChoice = self.view.largeFDDWarningDialog(totalElements)
+                
+                if userChoice == 'cancel':
+                    return
+                elif userChoice == 'generate_no_display':
+                    display = False #TODO FIX -> This would display anyway
+                elif userChoice == 'display_anyways':
+                    pass
+            
+            print(f"Filtering FDD for {tableName} -> {chainName}: {field} -> {matchExpression}")
             self.runModelTask(self.model.filterFDD,
                               tableName,
                               chainName,
                               opts,
                               field,
-                              match_expression
+                              matchExpression
                               )
             
     def optimizeFDD(self):
@@ -499,19 +538,38 @@ class FWOController:
         elif task_name == 'generateFDD':
             tableName, chainName = result
             if tableName is not None and chainName is not None:
-                    pathName, imgFormat = self.model.viewFDD(tableName, chainName)
-                    if self.model.graphicsView:
-                        self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                    # If graph too big, ask for confirmation
+                    totalElements = self.model.currentFirewall.getFDD(tableName, chainName).getElementsNum()
+                    
+                    if totalElements > 10000:
+                        userChoice = self.view.largeFDDWarningDialog(totalElements)
+                        
+                        if userChoice == 'display_anyways':
+                            pathName, imgFormat = self.model.viewFDD(tableName, chainName)
+                            if self.model.graphicsView:
+                                self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                            else:
+                                self.view.displayErrorMessage("Image Display not set.")
+                        elif userChoice == 'generate_no_display':
+                            pathName, imgFormat = self.model.viewFDD(tableName, chainName)
+                            self.view.displayInfoMessage('Graph Generated', f'Saved in {pathName}.{imgFormat}')
                     else:
-                        self.view.displayErrorMessage("Image Display not set.")
+                        pathName, imgFormat = self.model.viewFDD(tableName, chainName)
+                        if self.model.graphicsView:
+                            self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                        else:
+                            self.view.displayErrorMessage("Image Display not set.")
+                
             # Enable Buttons
             self.view.ui.generateBtn.setEnabled(True)
             
         elif task_name in ['viewFDD', 'filterFDD']:
             pathName, imgFormat = result
+            
             if not pathName and task_name == 'filterFDD':
                 self.view.displayInfoMessage("Filter FDD","No results for filter.")
                 return
+            
             if self.model.graphicsView:
                 self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
             else:
@@ -520,11 +578,26 @@ class FWOController:
         elif task_name == 'optimizeFDD':
             tableName, chainName = result
             if tableName is not None and chainName is not None:
-                    pathName, imgFormat = self.model.viewFDD(tableName, chainName)
-                    if self.model.graphicsView:
-                        self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                    # If graph too big, ask for confirmation
+                    totalElements = self.model.currentFirewall.getFDD(tableName, chainName).getElementsNum()
+                    if totalElements > 10000:
+                        userChoice = self.view.largeFDDWarningDialog(totalElements)
+                        
+                        if userChoice == 'display_anyways':
+                            pathName, imgFormat = self.model.viewFDD(tableName, chainName)
+                            if self.model.graphicsView:
+                                self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                            else:
+                                self.view.displayErrorMessage("Image Display not set.")
+                        elif userChoice == 'generate_no_display':
+                            pathName, imgFormat = self.model.viewFDD(tableName, chainName)
+                            self.view.displayInfoMessage('Graph Generated', f'Saved in {pathName}.{imgFormat}')
                     else:
-                        self.view.displayErrorMessage("Image Display not set.")
+                        pathName, imgFormat = self.model.viewFDD(tableName, chainName)
+                        if self.model.graphicsView:
+                            self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                        else:
+                            self.view.displayErrorMessage("Image Display not set.")
                         
         elif task_name == 'exportRules':
             exportedRules, filePath = result

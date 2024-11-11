@@ -361,6 +361,36 @@ class FWOView(QtWidgets.QMainWindow):
             return dialog.getSelectedOptions()
         return None
     
+    def largeFDDWarningDialog(self, numElements):
+        """
+        Show a dialog if the FDD is too large.
+        
+        Returns:
+            str: The user's choice ('cancel', 'generate_no_display', or 'display_anyways')
+        """
+        dialog = QtWidgets.QMessageBox()
+        dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+        dialog.setWindowTitle("Large FDD Warning")
+        dialog.setText("The FDD is too large and may cause performance issues.")
+        dialog.setInformativeText(f"It has too many elements ({numElements}). Would you like to proceed?")
+        
+        # Add buttons for options
+        cancel_button = dialog.addButton("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole)
+        no_display_button = dialog.addButton("Generate but don't Display", QtWidgets.QMessageBox.ButtonRole.DestructiveRole)
+        display_anyways_button = dialog.addButton("Display Anyways", QtWidgets.QMessageBox.ButtonRole.YesRole)
+
+        # Execute the dialog and get the result
+        dialog.exec()
+
+        # Check which button was clicked
+        if dialog.clickedButton() == cancel_button:
+            return 'cancel'
+        elif dialog.clickedButton() == no_display_button:
+            return 'generate_no_display'
+        elif dialog.clickedButton() == display_anyways_button:
+            return 'display_anyways'
+        return 'cancel'
+    
     def addRulesDialog(self, tables, fields, decisions):
         """
         Show Dialog to create a Rule to add to and FDD.

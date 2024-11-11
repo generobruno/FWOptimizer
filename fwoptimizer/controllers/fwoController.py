@@ -88,20 +88,24 @@ class FWOController:
         Ask for user confirmation to cancel tasks when trying to close
         the app.
         """
+        self.model.logger.info("Terminating App")
         if self.areTasksRunning():
             reply = self.view.showCloseConfirmationDialog('Confirmar Cierre',
             "Todavía hay tareas corriendo, cerrar la aplicación las cancelará.\nEstas seguro que deseas salir?")
             
             if reply is True:  # User clicked Yes
+                self.model.logger.info("Cancelling Tasks")
                 self.cancelAllTasks()
                 if event:
                     event.accept()
                 else:
                     self.view.close()
             elif reply is False:  # User clicked No
+                self.model.logger.info("Termination Cancelled")
                 if event:
                     event.ignore()
             elif reply is None:  # User dismissed the dialog
+                self.model.logger.info("Termination Cancelled")
                 if event:
                     event.ignore()  # Ignore event and prevent closing
         else:
@@ -167,13 +171,13 @@ class FWOController:
         """
         Set the model's Field List
         """
-        print("Setting Field List...")
+        self.model.logger.info("Setting Field List...")
         filePath = self.view.selectFileDialog("TOML Files (*.toml);;All Files (*)")
         
         if filePath:
             self.model.setFieldList(filePath)
         else:
-            print("No file Selected.")
+            self.model.logger.info("No file Selected.")
     
     def importRules(self):
         """
@@ -184,7 +188,7 @@ class FWOController:
         if filePath:
             self.runModelTask(self.model.importRules, filePath)
         else:
-            print("No file Selected.")
+            self.model.logger.info("No file Selected.")
             
     def generateFDD(self):
         """
@@ -252,7 +256,7 @@ class FWOController:
                 elif userChoice == 'display_anyways':
                     pass
             
-            print(f"Viewing FDD for {tableName} -> {chainName}:\n{imageFrmt} format, {graphDir} orientation, Unroll Decisions: {unrollDecisions}")
+            self.model.logger.info(f"Viewing FDD for {tableName} -> {chainName}:\n{imageFrmt} format, {graphDir} orientation, Unroll Decisions: {unrollDecisions}")
             self.runModelTask(self.model.viewFDD,
                             tableName,
                             chainName,
@@ -283,7 +287,7 @@ class FWOController:
                 elif userChoice == 'display_anyways':
                     pass
             
-            print(f"Filtering FDD for {tableName} -> {chainName}: {field} -> {matchExpression}")
+            self.model.logger.info(f"Filtering FDD for {tableName} -> {chainName}: {field} -> {matchExpression}")
             self.runModelTask(self.model.filterFDD,
                               tableName,
                               chainName,
@@ -344,7 +348,7 @@ class FWOController:
                                   filePath, None, None)
             elif isinstance(option, tuple):
                 tableName, chainName = option
-                print(f'Exporting specific - Table: {tableName}, Chain: {chainName}')
+                self.model.logger.info(f'Exporting specific - Table: {tableName}, Chain: {chainName}')
                 #exportedRules = self.model.exportRules(tableName, chainName)
                 self.runModelTask(self.model.exportRules,
                                   filePath, tableName, chainName)
@@ -379,7 +383,7 @@ class FWOController:
             return
         
         tableName, chainName, decision, predicate = options
-        print(f'Adding Rule to {tableName} -> {chainName}:\n{predicate} -> {decision}')
+        self.model.logger.info(f'Adding Rule to {tableName} -> {chainName}:\n{predicate} -> {decision}')
         self.model.addRules(tableName, chainName, predicate, decision)
     
     def addRulesFromFile(self):
@@ -449,6 +453,7 @@ class FWOController:
 
         if filePath:
             self.model.saveProject(filePath)
+            self.model.logger.info("Proyecto guardado")
             self.view.displayInfoMessage("Proyecto Guardado", "El proyecto se guardó exitosamente.")
 
     def loadProject(self) -> None:
@@ -459,6 +464,7 @@ class FWOController:
 
         if filePath:
             self.model.loadProject(filePath)
+            self.model.logger.info("Proyecto cargado")
             self.view.displayImportedRules(None, self.model.currentFirewall.getInputRules())
             
     def processCommand(self, command):
@@ -527,6 +533,7 @@ class FWOController:
         """
         self.view.showLoadingIndicator(False)
         self.view.displayErrorMessage(f"Error in {task_name}: {error_message}")
+        self.model.logger.error(f"Error in {task_name}: {error_message}")
         # Enable buttons
         self.enableButtons()
         # Clean Up Worker

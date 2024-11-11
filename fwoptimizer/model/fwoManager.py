@@ -9,7 +9,7 @@ Returns:
 
 import pickle
 import zipfile
-import hashlib
+import logging
 import os
 import shutil
 from fwoptimizer.classes.firewall import Firewall
@@ -24,6 +24,9 @@ class FWOManager:
         self.defaultWorkFolder = defaultWorkFolder
         if not os.path.exists(self.defaultWorkFolder):
             os.makedirs(self.defaultWorkFolder)
+         
+        # Set up Logger
+        self.setUpLogger()
             
         # List of Firewalls Managed
         self.firewalls = []
@@ -36,11 +39,37 @@ class FWOManager:
         # Graphics Viewer
         self.graphicsView = None
         
+        self.logger.info("Initialized App")
+    
+    def setUpLogger(self):
+        """
+        Set up the model's logger
+        """
+        # Set up logging to save in work folder
+        log_folder = os.path.join(self.defaultWorkFolder, 'logs')
+        if not os.path.exists(log_folder):
+            os.makedirs(log_folder)
+        log_path = os.path.join(log_folder, 'fwo.log')
+        self.logger = logging.getLogger('FWOManager')
+        self.logger.setLevel(logging.INFO)
+        
+        # File handler for log file in the work folder
+        file_handler = logging.FileHandler(log_path)
+        file_handler.setLevel(logging.DEBUG)
+
+        # Set formatter
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        
+        # Add the handler to the logger
+        self.logger.addHandler(file_handler)
+     
     def addFirewall(self, firewall: Firewall):
         """
         Add a new Firewall to the manager.
         """
         self.firewalls.append(firewall)
+        self.logger.info("Added Firewall to FWOManager")
         self.setActiveFirewall(len(self.firewalls) - 1)
 
     def setActiveFirewall(self, index: int):
@@ -49,6 +78,7 @@ class FWOManager:
         """
         if 0 <= index < len(self.firewalls):
             self.currentFirewall = self.firewalls[index]
+            self.logger.info(f'Current Firewall now is {self.firewalls[index]}')
         else:
             raise IndexError("Firewall index out of range.")
 
@@ -65,6 +95,7 @@ class FWOManager:
         Args:
             strategy: Parser strategy to be used
         """
+        self.logger.info(f'Parser Strategy set: {strategy}')
         self.parserStrategy = strategy
     
     def getParserStrategy(self):
@@ -85,14 +116,14 @@ class FWOManager:
             RuleSet: RuleSet extracted from file
         """
         if self.parserStrategy is None:
-            print("No parser strategy set.")
+            self.logger.warning("No parser strategy set.")
             return None, None
 
-        print(f"Importing Rules from: {filePath}")
+        self.logger.info(f"Importing Rules from: {filePath}")
         rulesParsed = self.parserStrategy.parse(filePath)
         if self.currentFirewall:
             self.currentFirewall.setInputRules(rulesParsed)
-            print("Rules parsed and saved to the current firewall.")
+            self.logger.info("Rules parsed and saved to the current firewall.")
             # Save input file in workdir
             inputsFolder = os.path.join(self.currentFirewall.getWorkFolder(), "inputs")
             os.makedirs(inputsFolder, exist_ok=True)
@@ -105,7 +136,7 @@ class FWOManager:
             
             return self._copyFile(filePath), rulesParsed
         else:
-            print("No firewall selected to save the parsed rules.")
+            self.logger.info("No firewall selected to save the parsed rules.")
             return None, None
     
     def _copyFile(self, filePath):
@@ -123,10 +154,10 @@ class FWOManager:
         """
         Set the current Firewall's Field List
         """
-        print(f"Setting FieldList from: {filePath}")
+        self.logger.info(f"Setting FieldList from: {filePath}")
         self.currentFirewall.setFieldList(f'{filePath}')
-        print("Field List set.")
-        self.currentFirewall.getFieldList().printConfig()
+        self.logger.info("Field List set.")
+        self.logger.info(f"Field List Config:\n{self.currentFirewall.getFieldList().printConfig()}")
 
     def generateFDD(self, table=None, chain=None):
         """
@@ -136,7 +167,7 @@ class FWOManager:
             table (str, optional): Table Name. Defaults to None.
             chain (str, optional): Chain Name. Defaults to None.
         """
-        print("Generating FDD...")
+        self.logger.info("Generating FDD...")
         if table is None and chain is None:
             self.currentFirewall.genFdd()
             return None, None
@@ -167,7 +198,7 @@ class FWOManager:
             Returns:
         str, str: Path of the graph and its format
         """
-        print(f"Displaying FDD for {table} - {chain}")
+        self.logger.info(f"Displaying FDD for {table} - {chain}")
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(table, chain)
@@ -199,7 +230,7 @@ class FWOManager:
             str, str: Path of the graph and its format
         """
         imageFrmt, graphDir, unrollDecisions = opts
-        print(f"Filtering FDD for {table} - {chain}\n{imageFrmt} - {graphDir} - {unrollDecisions}")
+        self.logger.info(f"Filtering FDD for {table} - {chain}\n{imageFrmt} - {graphDir} - {unrollDecisions}")
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(table, chain)
@@ -228,7 +259,7 @@ class FWOManager:
             table (str, optional): Table Name. Defaults to None.
             chain (str, optional): Chain Name. Defaults to None.
         """
-        print("Optimizing FDD...")
+        self.logger.info("Optimizing FDD...")
         if table is None and chain is None:
             self.currentFirewall.optimizeFdd()
             return None, None
@@ -248,7 +279,7 @@ class FWOManager:
         Returns:
             RuleSet: Generated RuleSet
         """
-        print("Exporting Rules...")
+        self.logger.info("Exporting Rules...")
         if table is None and chain is None:
             return self.currentFirewall.genOutputRules(), filePath
         else:
@@ -331,7 +362,7 @@ class FWOManager:
                         removeDir(path)
                         os.rmdir(path)
                 except Exception as e:
-                    print(f'Error al eliminar {path}: {e}')
+                    self.logger.error(f'Error al eliminar {path}: {e}')
 
         # Eliminar todo el contenido del directorio de trabajo
         removeDir(self.defaultWorkFolder)

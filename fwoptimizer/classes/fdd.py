@@ -78,8 +78,11 @@ class FieldList:
     def printConfig(self):
         """_summary_
         """
+        conf = []
         for i, field in enumerate(self._fields_):
-            print(f'{i} [{field.getName()}, {field.getType()}]')
+            conf.append(f'{i} [{field.getName()}, {field.getType()}]')
+            
+        return "\n".join(conf)
 
 class Level:
     """

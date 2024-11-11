@@ -3,12 +3,13 @@
 
 from fwoptimizer.classes.fdd import FDD, FieldList
 from fwoptimizer.classes.rules import RuleSet, Table
+import logging, os
 
 class Firewall:
     """_summary_
     """
     
-    def __init__(self, fieldList: FieldList = None, fdds: dict[str, list[FDD]] = [], inputRules: RuleSet= None, defaultWorkFolder: str = ""):
+    def __init__(self, fieldList: FieldList = None, fdds: dict[str, list[FDD]] = [], inputRules: RuleSet= None, defaultWorkFolder: str = "", logger = None):
         """
         Firewall Constructor
 
@@ -22,6 +23,14 @@ class Firewall:
         self._inputRules: RuleSet = inputRules
         self._optRules: RuleSet = None
         self._workFolder: str = defaultWorkFolder
+        self.logger = logger or logging.getLogger('Firewall')
+        
+        # Ensure work folder exists
+        if self._workFolder and not os.path.exists(self._workFolder):
+            os.makedirs(self._workFolder)
+            self.logger.info(f"Created work folder for Firewall at {self._workFolder}")
+            
+        self.logger.info("Initialized Firewall")
     
     def getWorkFolder(self):
         """
@@ -109,15 +118,15 @@ class Firewall:
                 for chainName, _ in table.getChains().items():
                     fdd = FDD(self._fieldList)
                     self.addFdd(tableName, fdd)
-                    print(f'Generating {tableName} - {chainName} FDD')
+                    self.logger.info(f'Generating {tableName} - {chainName} FDD')
                     fdd.genFDD(self._inputRules[tableName][chainName], self._workFolder + f"report-{tableName}-{chainName}.txt")
-                    print(f'{tableName} - {chainName} FDD Done.')
+                    self.logger.info(f'{tableName} - {chainName} FDD Done.')
         else:   # Generate Specific FDD
-            print(f'Generating {table} - {chain} FDD')
+            self.logger.info(f'Generating {table} - {chain} FDD')
             fdd = FDD(self._fieldList)
             self.addFdd(table, fdd)
             fdd.genFDD(self._inputRules[table][chain], self._workFolder + f"report-{table}-{chain}.txt")
-            print(f'{table} - {chain} FDD Done.')
+            self.logger.info(f'{table} - {chain} FDD Done.')
                 
     def optimizeFdd(self, table=None, chain=None):
         """
@@ -134,18 +143,18 @@ class Firewall:
                 for chainName, _ in table.getChains().items():
                     fdd = self.getFDD(tableName, chainName)
                     if fdd is None:
-                        print(f'[WARNING] No FDD generated for {tableName} - {chainName} (Skipping.)')
+                        self.logger.warning(f'No FDD generated for {tableName} - {chainName} (Skipping.)')
                         continue
-                    print(f'Optimizing {tableName} - {chainName} FDD')
+                    self.logger.info(f'Optimizing {tableName} - {chainName} FDD')
                     fdd.reduction()
                     fdd.marking()
-                    print(f'{tableName} - {chainName} optimization Done.')
+                    self.logger.info(f'{tableName} - {chainName} optimization Done.')
         else:   # Optimize Specific FDD
-            print(f'Optimizing {table} - {chain} FDD')
+            self.logger.info(f'Optimizing {table} - {chain} FDD')
             fdd = self.getFDD(table, chain)
             fdd.reduction()
             fdd.marking()
-            print(f'{table} - {chain} optimization Done.')
+            self.logger.info(f'{table} - {chain} optimization Done.')
     
     def genOutputRules(self, table=None, chain=None):
         """
@@ -173,11 +182,11 @@ class Firewall:
                         outputChain.setDefaultDecision(outputChain[-1].getDecision()) #TODO CHECK
                         # Add new chain
                         exportRuleSet[tableName].addChain(outputChain)
-                        print(f'Exporting {tableName} - {chainName} Rules')
+                        self.logger.info(f'Exporting {tableName} - {chainName} Rules')
                     else:
-                        print(f'FDD not found for chain: {chain} in table: {table}')
+                        self.logger.warning(f'FDD not found for chain: {chain} in table: {table}')
         else:  
-            print(f'Exporting {table} - {chain} Rules')
+            self.logger.info(f'Exporting {table} - {chain} Rules')
             # Add new table
             exportRuleSet.addTable(Table(table))
             # Get specific FDD
@@ -189,9 +198,9 @@ class Firewall:
                 # Add new chain
                 exportRuleSet[table].addChain(outputChain)
             else:
-                print(f'FDD not found for chain: {chain} in table: {table}')
+                self.logger.warning(f'FDD not found for chain: {chain} in table: {table}')
                         
-        print(f'Generated RuleSet:\n{exportRuleSet}')
+        self.logger.info(f'Generated RuleSet:\n{exportRuleSet}')
         self.setOptRules(exportRuleSet)
         return exportRuleSet
     
@@ -229,9 +238,9 @@ class Firewall:
                 if len(self._fddList[tableName]) == 0:
                     del self._fddList[tableName]
             else:
-                print(f"FDD not found in table {tableName}.")
+                self.logger.warning(f"FDD not found in table {tableName}.")
         else:
-            print(f"Table {tableName} does not exist.")
+            self.logger.warning(f"Table {tableName} does not exist.")
 
     def getFDD(self, tableName: str, chainName: str):
         """
@@ -249,9 +258,9 @@ class Firewall:
             for fdd in self._fddList[tableName]:
                 if fdd.getName() == chainName:
                     return fdd
-            print(f"FDD not found for chain: {chainName} in table: {tableName}")
+            self.logger.warning(f"FDD not found for chain: {chainName} in table: {tableName}")
         else:
-            print(f"Table {tableName} not found.")
+            self.logger.warning(f"Table {tableName} not found.")
         return None
     
     def getDecisions(self):

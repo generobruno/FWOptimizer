@@ -27,6 +27,8 @@ class FWOptimizer:
         self.app.aboutToQuit.connect(self.cleanUp)
         
         self.view.show()
+        
+        #self.controller.startUp()
 
     def run(self):
         return self.app.exec()

@@ -25,13 +25,24 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.startUpState()
         self.setUpFunctions()
+            
+    def startUpDialog(self):
+        """
+        Show Start Up Dialog
+
+        Returns:
+            int: User's Choice
+        """
+        # Show the startup dialog
+        dialog = Dialogs.StartupDialog(self)
+        choice = dialog.exec()
+        
+        return choice
 
     def startUpState(self):
         """
         Set up GUI Initial State
         """
-        # TODO Display projects window
-        
         # Hide side Menues
         self.ui.leftMenuContainer.collapse()
         self.ui.centerMenuContainer.hide()

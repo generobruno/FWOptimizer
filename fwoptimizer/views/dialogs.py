@@ -1,4 +1,5 @@
 from PyQt6 import QtWidgets, QtGui, QtCore
+import fwoptimizer.views.resources_rc
 
 class SelectFDDDialog(QtWidgets.QDialog):
     def __init__(self, tables=None, mode='Generate', parent=None):
@@ -614,3 +615,92 @@ class AddRulesDialog(QtWidgets.QDialog):
         predicates = {cb.currentText(): le.text() for cb, le in self.predicateWidgets.items()}
         
         return table_name, chain_name, decision, predicates
+
+class StartupDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Set the title and fixed size for the dialog
+        self.setWindowTitle("Start Project")
+        self.setFixedSize(600, 250)
+
+        # Style the dialog for a modern look
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #1e1e1e;
+                color: #ffffff;
+                border-radius: 10px;
+            }
+            QLabel#titleLabel {
+                font-size: 32px;
+                font-weight: bold;
+                color: #ffffff;
+                font-family: "Segoe UI", Arial, sans-serif;
+            }
+            QLabel#subtitleLabel {
+                font-size: 18px;
+                color: #b3b3b3;
+                font-family: "Segoe UI", Arial, sans-serif;
+            }
+            QPushButton {
+                background-color: #3c3c3c;
+                color: #ffffff;
+                padding: 12px 20px;
+                border-radius: 6px;
+                font-size: 16px;
+                font-family: "Segoe UI", Arial, sans-serif;
+            }
+            QPushButton:hover {
+                background-color: #4c4c4c;
+            }
+        """)
+
+        # Left side: buttons for project options
+        self.newProjectButton = QtWidgets.QPushButton("Create New Project")
+        self.openProjectButton = QtWidgets.QPushButton("Open Existing Project")
+        self.loadProjectButton = QtWidgets.QPushButton("Load Recent Project")
+        
+        # Layout for the buttons
+        buttonLayout = QtWidgets.QVBoxLayout()
+        buttonLayout.addWidget(self.newProjectButton)
+        buttonLayout.addWidget(self.openProjectButton)
+        buttonLayout.addWidget(self.loadProjectButton)
+        buttonLayout.setSpacing(20)
+
+        # Right side: title label and image
+        self.titleLabel = QtWidgets.QLabel("FWOptimizer")
+        self.titleLabel.setObjectName("titleLabel")
+        self.titleLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        
+        self.subtitle = QtWidgets.QLabel("Firewall Optimization Tool")
+        self.subtitle.setObjectName("subtitleLabel")
+        self.subtitle.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        
+        # Set margins to reduce spacing between title and subtitle
+        self.titleLabel.setContentsMargins(0, 0, 15, 2)
+        self.subtitle.setContentsMargins(0, 0, 15, 3)
+
+        self.imageLabel = QtWidgets.QLabel()
+        self.imageLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.imageLabel.setPixmap(QtGui.QPixmap(":/images/images/deku_tree_sprout.png").scaled(150, 150, QtCore.Qt.AspectRatioMode.KeepAspectRatio))
+
+        # Layout for title, subtitle, and image
+        rightLayout = QtWidgets.QVBoxLayout()
+        rightLayout.addWidget(self.titleLabel)
+        rightLayout.addWidget(self.subtitle)
+        rightLayout.addWidget(self.imageLabel, alignment=QtCore.Qt.AlignmentFlag.AlignRight)
+        rightLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        rightLayout.setSpacing(10)
+
+        # Main layout
+        mainLayout = QtWidgets.QHBoxLayout()
+        mainLayout.addLayout(buttonLayout, 1)  # Left side
+        mainLayout.addLayout(rightLayout, 1)   # Right side
+        mainLayout.setContentsMargins(40, 40, 40, 40)
+
+        self.setLayout(mainLayout)
+
+        # Connect buttons to dialog actions
+        self.newProjectButton.clicked.connect(lambda: self.done(1))
+        self.openProjectButton.clicked.connect(lambda: self.done(2))
+        self.loadProjectButton.clicked.connect(lambda: self.done(3))

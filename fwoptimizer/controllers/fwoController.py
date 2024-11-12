@@ -28,6 +28,24 @@ class FWOController:
         
         self.connectSignals()
         
+    def startUp(self):
+        """
+        Start Up the App to let the user:
+            1. Create a New Project
+            2. Select an Existing Project
+        """
+        choice = self.view.startUpDialog()
+        
+        if choice == 1:
+            #self.createNewProject()
+            print('Create new project')
+        elif choice == 2:
+            #self.openExistingProject()
+            print('Open project')
+        elif choice == 3:
+            #self.loadRecentProject()
+            print('Load Project')
+        
     def connectSignals(self):
         """
         Connect the view's and worker's signals with the model functions

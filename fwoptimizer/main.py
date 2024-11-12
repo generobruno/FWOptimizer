@@ -24,7 +24,7 @@ class FWOptimizer:
         self.controller = FWOController(self.model, self.view)
 
         # Connect the aboutToQuit signal
-        self.app.aboutToQuit.connect(self.cleanUp)
+        self.app.aboutToQuit.connect(self.cleanUp) #TODO Remove work folder if not saved
         
         self.view.show()
         

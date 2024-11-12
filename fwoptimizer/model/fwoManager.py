@@ -236,9 +236,9 @@ class FWOManager:
         fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
         
         # Filter the FDD
-        found = fdd.filterFDD(field, matchExpression)      
+        found = fdd.filterFDD(field, matchExpression)   
         
-        if not found:
+        if found == False:
             return None, None, None 
         
         # Create the path using the hash

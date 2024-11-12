@@ -697,6 +697,7 @@ class FWOController:
         Args:
             thread (QThread): Thread to terminate
         """
+        #TODO Check dot process not terminating when closing
         thread_id = int(thread.currentThreadId())
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), ctypes.py_object(SystemExit))
         if res > 1: # If we get more than one Thread, cancel the exception, to avoid instability

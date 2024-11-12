@@ -27,6 +27,7 @@ class FWOManager:
          
         # Set up Logger
         self.setUpLogger()
+        self.logger.info("Initialized App")
             
         # List of Firewalls Managed
         self.firewalls = []
@@ -38,8 +39,6 @@ class FWOManager:
         self.parserStrategy = parser.IpTablesParser()
         # Graphics Viewer
         self.graphicsView = None
-        
-        self.logger.info("Initialized App")
     
     def setUpLogger(self):
         """
@@ -205,7 +204,7 @@ class FWOManager:
         fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized -> Save timestamp as image metadata?
 
         # Create the path using the hash
-        pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_{table}_{chain}_{graphDir}_{"U" if unrollDecisions else ""}')
+        pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_{table}_{chain}_{graphDir}{"_U" if unrollDecisions else ""}')
         
         # Check if the image file already exists
         if not os.path.exists(pathName):
@@ -243,7 +242,7 @@ class FWOManager:
             return None, None, None 
         
         # Create the path using the hash
-        pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_f_{field}_{graphDir}_{"U" if unrollDecisions else ""}')
+        pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_f_{field}_{graphDir}{"_U" if unrollDecisions else ""}')
         
         if not os.path.exists(pathName):
             # Generate Graph
@@ -305,13 +304,15 @@ class FWOManager:
         # Create rule
         newRule = rules.Rule(1234) #TODO CHECK
         for fieldName, value in predicate.items():
-            newRule.setPredicate(fieldName, [value])
+            newRule.setPredicate(fieldName, [value] if value != '' else None)
         newRule.setDecision(decision)
         
         #TODO Check correctness of rule here?
         
         # Add the Rule
         fdd.addRuleToFDD(newRule) #TODO Return smt
+        
+        #TODO Add rule to optRules?
         
         return newRule       
  

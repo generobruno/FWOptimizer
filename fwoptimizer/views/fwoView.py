@@ -327,7 +327,7 @@ class FWOView(QtWidgets.QMainWindow):
         
         return filePath
     
-    def selectFddDialog(self, tables):
+    def selectFddDialog(self, tables, mode:str = "Generate"):
         """
         Show Dialog to select the chain to generate, or all the firewall.
 
@@ -337,13 +337,16 @@ class FWOView(QtWidgets.QMainWindow):
         Returns:
             str: Option selected
         """
-        dialog = Dialogs.SelectFDDDialog(tables=tables, parent=self)
+        dialog = Dialogs.SelectFDDDialog(tables=tables, mode=mode, parent=self)
         if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             option = dialog.getSelectedOption()
+            if option is None:
+                return None
             if option == "all":
                 return option
             elif option[0] == "specific":
                 return option[1]
+                
                 #TODO Manejar erro NoneType cuando selecciono la tabla sin querer
     
     def selectViewFddDialog(self, tables, fields):

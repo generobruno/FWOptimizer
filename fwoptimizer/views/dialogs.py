@@ -1,14 +1,14 @@
-from PyQt6 import QtWidgets, QtGui
+from PyQt6 import QtWidgets, QtGui, QtCore
 
 class SelectFDDDialog(QtWidgets.QDialog):
-    def __init__(self, tables=None, parent=None):
+    def __init__(self, tables=None, mode='Generate', parent=None):
         super().__init__(parent)
         self.setWindowTitle("Generate FDD")
         self.setModal(True)
 
         # Radio buttons for selecting generation options
-        self.allChainsRadio = QtWidgets.QRadioButton("Generate FDDs for all chains")
-        self.specificChainRadio = QtWidgets.QRadioButton("Generate FDD for a specific Chain")
+        self.allChainsRadio = QtWidgets.QRadioButton(f"{mode} FDDs for all chains")
+        self.specificChainRadio = QtWidgets.QRadioButton(f"{mode} FDD for a specific Chain")
         self.specificChainRadio.setChecked(True)
 
         # Tree view for selecting a specific chain
@@ -19,6 +19,7 @@ class SelectFDDDialog(QtWidgets.QDialog):
             for table_name, table in tables.items():
                 table_item = QtWidgets.QTreeWidgetItem(self.chainTreeView)
                 table_item.setText(0, table_name)
+                table_item.setFlags(table_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsSelectable)
                 
                 for chain_name, _ in table.getChains().items():
                     chain_item = QtWidgets.QTreeWidgetItem(table_item)
@@ -109,6 +110,7 @@ class ViewFDDDialog(QtWidgets.QDialog):
             for table_name, table in tables.items():
                 table_item = QtWidgets.QTreeWidgetItem(self.chainTreeView)
                 table_item.setText(0, table_name)
+                table_item.setFlags(table_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsSelectable)
                 
                 for chain_name, _ in table.getChains().items():
                     chain_item = QtWidgets.QTreeWidgetItem(table_item)
@@ -247,6 +249,19 @@ class ViewFDDDialog(QtWidgets.QDialog):
             QTabBar::tab:selected {
                 background-color: #4e4e4e; /* Selected tab background */
                 color: #ffffff; /* White text for selected tab */
+            }
+            QCheckBox::indicator {
+                width: 13px;
+                height: 13px;
+                background-color: #ffffff; /* White background for checkbox indicator */
+                border: 1px solid #5a5a5a;
+                border-radius: 2px;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #4e4e4e; /* Darker color when checked */
+            }
+            QCheckBox::indicator:unchecked:hover {
+                background-color: #e0e0e0; /* Light gray on hover */
             }
         """)
 

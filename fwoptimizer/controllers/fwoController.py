@@ -309,7 +309,7 @@ class FWOController:
         tables = self.model.currentFirewall.getInputRules().getTables()
 
         # User selects option to generate
-        option = self.view.selectFddDialog(tables)
+        option = self.view.selectFddDialog(tables, mode='Optimize') #TODO MODIFY TO ONLY SHOW GENERATED FDDS
         
         # Optimize FDD given user selection
         if option == "all":  
@@ -384,7 +384,9 @@ class FWOController:
         
         tableName, chainName, decision, predicate = options
         self.model.logger.info(f'Adding Rule to {tableName} -> {chainName}:\n{predicate} -> {decision}')
-        self.model.addRules(tableName, chainName, predicate, decision)
+        newRule = self.model.addRules(tableName, chainName, predicate, decision)
+        
+        self.view.displayInfoMessage('Added new Rule',f'({tableName},{chainName}):\n{newRule}')
     
     def addRulesFromFile(self):
         """
@@ -501,11 +503,7 @@ class FWOController:
         self.view.showLoadingIndicator()
         
         # Get the function name
-        funcName = func.__name__
-        
-        # Disable GUI buttons
-        if funcName in ['importRules', 'generateFDD', 'viewFDD', 'optimizeFDD']:
-            self.disableButtons()
+        self.disableButtons()
 
     def onTaskFinished(self, task_name, result):
         """

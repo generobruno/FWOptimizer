@@ -357,8 +357,6 @@ class FWOView(QtWidgets.QMainWindow):
                 return option
             elif option[0] == "specific":
                 return option[1]
-                
-                #TODO Manejar erro NoneType cuando selecciono la tabla sin querer
     
     def selectViewFddDialog(self, tables, fields):
         """

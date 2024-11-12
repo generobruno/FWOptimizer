@@ -285,7 +285,7 @@ class FWOController:
                             )
             
         elif options[0] == 'filterFDD':
-            _ , tableName, chainName, opts, field, matchExpression = options
+            _ , tableName, chainName, opts, field, matchExpression, clearFilters = options
             display = True
             
             # If graph too big, ask for confirmation
@@ -294,17 +294,6 @@ class FWOController:
                 self.view.displayErrorMessage("There isn't a FDD for the selection")
                 return
             
-            totalElements = fdd.getElementsNum(filter=True)
-            if totalElements > 10000:
-                userChoice = self.view.largeFDDWarningDialog(totalElements)
-                
-                if userChoice == 'cancel':
-                    return
-                elif userChoice == 'generate_no_display':
-                    display = False
-                elif userChoice == 'display_anyways':
-                    pass
-            
             self.model.logger.info(f"Filtering FDD for {tableName} -> {chainName}: {field} -> {matchExpression}")
             self.runModelTask(self.model.filterFDD,
                               tableName,
@@ -312,6 +301,7 @@ class FWOController:
                               opts,
                               field,
                               matchExpression,
+                              clearFilters,
                               display
                               )
             

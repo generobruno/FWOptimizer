@@ -32,7 +32,7 @@ class FWOManager:
         # List of Firewalls Managed
         self.firewalls = []
         # Current Firewall
-        self.currentFirewall = Firewall(defaultWorkFolder=self.defaultWorkFolder)
+        self.currentFirewall = Firewall(defaultWorkFolder=self.defaultWorkFolder, logger=self.logger)
         # Add default field List
         self.setFieldList('fwoptimizer/configs/fdd_config.toml')
         # Current Parser Strategy (Default to IpTables)
@@ -49,12 +49,14 @@ class FWOManager:
         if not os.path.exists(log_folder):
             os.makedirs(log_folder)
         log_path = os.path.join(log_folder, 'fwo.log')
+        
+        # Initialize logger
         self.logger = logging.getLogger('FWOManager')
         self.logger.setLevel(logging.INFO)
         
-        # File handler for log file in the work folder
+        # File handler for log file
         file_handler = logging.FileHandler(log_path)
-        file_handler.setLevel(logging.DEBUG)
+        file_handler.setLevel(logging.INFO)  # Log INFO and higher levels
 
         # Set formatter
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -215,7 +217,7 @@ class FWOManager:
         
         return pathName, imgFormat, display
     
-    def filterFDD(self, table, chain, opts, field, matchExpression, display=True):
+    def filterFDD(self, table, chain, opts, field, matchExpression, clearFilters, display=True):
         """
         Filter and Display FDD Graph
 
@@ -233,20 +235,29 @@ class FWOManager:
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(table, chain)
-        fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
+        fdd_name = fdd.getName() 
         
+        if clearFilters == True:
+            self.logger.info(f"Clearing Filters for {table} - {chain}")
+            fdd.clearFilters()
+
         # Filter the FDD
         found = fdd.filterFDD(field, matchExpression)   
         
         if found == False:
             return None, None, None 
-        
+          
         # Create the path using the hash
         pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_f_{field}_{graphDir}{"_U" if unrollDecisions else ""}')
         
         if not os.path.exists(pathName):
             # Generate Graph
             fdd.printFDD(pathName, img_format=imageFrmt, rank_dir=graphDir, unroll_decisions=unrollDecisions)
+            
+        totalElements = fdd.getElementsNum(filter=True)
+        if totalElements > 10000:
+            self.logger.warning(f"Graph contains too many elements ({totalElements}). Not displaying but saving in {pathName}")
+            display = False
         
         return pathName, imageFrmt, display
         

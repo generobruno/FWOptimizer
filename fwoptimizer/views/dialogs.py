@@ -195,6 +195,13 @@ class ViewFDDDialog(QtWidgets.QDialog):
         self.funrollDecisionsCheckBox.setChecked(False)
         optionsLayout.addWidget(self.funrollDecisionsLabel)
         optionsLayout.addWidget(self.funrollDecisionsCheckBox)
+        
+        # Checkbox to clear filters
+        self.fclearFiltersLabel = QtWidgets.QLabel("Clear Previous Filters:")
+        self.fclearFitlersCheckBox = QtWidgets.QCheckBox()
+        self.fclearFitlersCheckBox.setChecked(False)
+        optionsLayout.addWidget(self.fclearFiltersLabel)
+        optionsLayout.addWidget(self.fclearFitlersCheckBox)
 
         # Add components to layout
         layout.addWidget(self.tableNameLabel)
@@ -296,7 +303,8 @@ class ViewFDDDialog(QtWidgets.QDialog):
             unroll_decisions = self.funrollDecisionsCheckBox.isChecked()
             field = self.fieldInputComboBox.currentText()
             match_expression = self.matchExpressionInput.text()
-            return "filterFDD", table_name, chain_name, (image_format, graph_orientation, unroll_decisions), field, match_expression
+            clear_filters = self.fclearFitlersCheckBox.isChecked()
+            return "filterFDD", table_name, chain_name, (image_format, graph_orientation, unroll_decisions), field, match_expression, clear_filters
         
         return None
 

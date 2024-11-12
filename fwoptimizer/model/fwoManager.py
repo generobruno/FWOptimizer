@@ -54,6 +54,10 @@ class FWOManager:
         self.logger = logging.getLogger('FWOManager')
         self.logger.setLevel(logging.INFO)
         
+        # Clear existing handlers
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        
         # File handler for log file
         file_handler = logging.FileHandler(log_path)
         file_handler.setLevel(logging.INFO)  # Log INFO and higher levels
@@ -390,4 +394,7 @@ class FWOManager:
         # Borrar el archivo de serializado
         if os.path.exists(serializedFirewallPath):
             os.remove(serializedFirewallPath)
+            
+        # Reinicializar el logger
+        self.setUpLogger()
         

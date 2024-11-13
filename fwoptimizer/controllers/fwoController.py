@@ -9,7 +9,7 @@ Returns:
 
 from PyQt6.QtCore import pyqtSignal, QThread
 import ctypes
-import os
+import os, shutil
 
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
@@ -699,6 +699,13 @@ class FWOController:
         Clean Up on close.
         """
         self.cancelAllTasks()
+        
+        # Delete the work folder and its contents
+        if os.path.exists(self.model.defaultWorkFolder):
+            try:
+                shutil.rmtree(self.model.defaultWorkFolder)
+            except Exception as e:
+                print(f"Error deleting work folder: {e}")
 
 class Worker(QThread):
     """

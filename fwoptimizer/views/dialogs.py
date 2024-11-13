@@ -665,7 +665,7 @@ class StartupDialog(QtWidgets.QDialog):
 
         # Left side: buttons for project options
         self.newProjectButton = QtWidgets.QPushButton("Create New Project")
-        self.openProjectButton = QtWidgets.QPushButton("Open Existing Project")
+        self.openProjectButton = QtWidgets.QPushButton("Open Project Folder")
         self.loadProjectButton = QtWidgets.QPushButton("Load Recent Project")
         
         # Layout for the buttons

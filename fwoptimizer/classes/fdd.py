@@ -720,7 +720,6 @@ class FDD:
         for subgraph in field_subgraphs.values():
             dot.subgraph(subgraph)
             
-
         # Render the graph to a file
         dot.render(name, format=img_format, view=False, cleanup=True)
 
@@ -864,7 +863,23 @@ class FDD:
                     results = True
                     
         return results
-    
+
+
+    def _setFilterRecordToTop(self, node: Node):
+        """
+        Recursively set filterRecord to True if filterVisibility is True previusly.
+
+        Acts on incoming arcs to the node and expands to higher nodes.
+
+        Args:
+            node (Node): Node to set and inspect his incoming edges.
+        """
+
+        node.setAttributes(filterRecord="True")
+        for edge in node.getIncoming():
+            if edge.getAttributes("filterVisibility") == "True":
+                edge.setAttributes(filterRecord="True")
+                self._setFilterRecordToTop(edge.getOrigin())
 
     def _filterBranch(self, node: Node, levelFiltered: Level, matchSet: ElementSet) -> bool:
         """
@@ -887,13 +902,6 @@ class FDD:
 
         """
 
-        def setFilterRecordToTop(node: Node):
-
-            node.setAttributes(filterRecord="True")
-            for edge in node.getIncoming():
-                edge.setAttributes(filterRecord="True")
-                setFilterRecordToTop(edge.getOrigin())
-
         if node.getLevel() == self._levels[0]:
             node.setAttributes(filterRecord="True")
             return True
@@ -909,7 +917,7 @@ class FDD:
                     if edge.getElementSet().isOverlapping(matchSet):
 
                         edge.setAttributes(filterRecord="True")
-                        setFilterRecordToTop(edge.getOrigin())
+                        self._setFilterRecordToTop(edge.getOrigin())
                         found = True
                     
                 else: 
@@ -953,14 +961,7 @@ class FDD:
         if levelSelected == None:
             print(f"El campo {fieldFiltered} no coincide con nigún campo existente")
             return False
-    
-        try:
-            matchSet = ElementSet.createElementSet(levelSelected.getField().getType(), [matchExpresion])
-        except:
-            print(f"La expresión {[matchExpresion]} no es un tipo conocido para el campo {fieldFiltered}")
-            return False
-
-
+        
         # Set filterRecord attribute to False for complete FDD
         for level in self._levels:
 
@@ -972,12 +973,36 @@ class FDD:
 
                     edge.setAttributes(filterRecord="False")
 
-        # Perform search
+        # Set found flag to False
         found = False
-        for node in self._levels[-1].getNodes():
 
-            if self._filterBranch(node, levelSelected, matchSet):
+        # algorithm for "no decision" fields
+        if levelSelected.getField().getName() != 'Decision':
+
+            try:
+                matchSet = ElementSet.createElementSet(levelSelected.getField().getType(), [matchExpresion])
+            except:
+                print(f"La expresión {[matchExpresion]} no es un tipo conocido para el campo {fieldFiltered}")
+                return False
+
+            # Perform search
+            for node in self._levels[-1].getNodes():
+
+                if self._filterBranch(node, levelSelected, matchSet):
+                    found = True
+        
+        # algorithm for "decision" field
+        else:
+
+            decision = self._decisions.get(matchExpresion, None)
+
+            if decision == None:
+                print(f"La expresión {matchExpresion} no es un tipo conocido para el campo {fieldFiltered}")
+                return False
+            else:
+                self._setFilterRecordToTop(decision)
                 found = True
+
 
         if found:
             # Transform filterRecord into filterVisibility

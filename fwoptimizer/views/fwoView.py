@@ -25,13 +25,24 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.startUpState()
         self.setUpFunctions()
+            
+    def startUpDialog(self):
+        """
+        Show Start Up Dialog
+
+        Returns:
+            int: User's Choice
+        """
+        # Show the startup dialog
+        dialog = Dialogs.StartupDialog(self)
+        choice = dialog.exec()
+        
+        return choice
 
     def startUpState(self):
         """
         Set up GUI Initial State
         """
-        # TODO Display projects window
-        
         # Hide side Menues
         self.ui.leftMenuContainer.collapse()
         self.ui.centerMenuContainer.hide()
@@ -127,9 +138,9 @@ class FWOView(QtWidgets.QMainWindow):
         Show the imported Rules tab
         """
         self._togglePage(1)
-        self.ui.label.setText("Imported Rules")
+        self.ui.label.setText("Firewall Rules")
 
-    def displayImportedRules(self, content, rulesParsed):
+    def displayRules(self, rulesParsed):
         """
         Display the parsed rules in the QTreeView and right menu.
         
@@ -195,20 +206,26 @@ class FWOView(QtWidgets.QMainWindow):
         for column in range(treeView.columnCount()):
             self.ui.treePoliciesView.resizeColumnToContents(column)
         
+        self.displayImportedRulesTab()
+    
+    def displayImportedRules(self, content):
+        """
+        Display the parsed rules in the right menu (importedPage).
+
+        Args:
+            content: Rules as text to display in right menu
+        """
         # Set imported rules right menu
         self.ui.importedRules.setText(content)
         self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
-        
-        self.displayImportedRulesTab()
-        
+       
     def displayExportedRules(self, content):
         """
-        Display the parsed rules in the right menu.
+        Display the parsed rules in the right menu (exportedPage).
         
         Args:
             content: Rules as text to display in right menu
         """
-        #TODO Also display on centerMenu as RuleSet?
         # Set exported rules right menu
         self.ui.exportedRules.setText(str(content))
         self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage)
@@ -327,7 +344,7 @@ class FWOView(QtWidgets.QMainWindow):
         
         return filePath
     
-    def selectFddDialog(self, tables):
+    def selectFddDialog(self, tables, mode:str = "Generate"):
         """
         Show Dialog to select the chain to generate, or all the firewall.
 
@@ -337,14 +354,15 @@ class FWOView(QtWidgets.QMainWindow):
         Returns:
             str: Option selected
         """
-        dialog = Dialogs.SelectFDDDialog(tables=tables, parent=self)
+        dialog = Dialogs.SelectFDDDialog(tables=tables, mode=mode, parent=self)
         if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             option = dialog.getSelectedOption()
+            if option is None:
+                return None
             if option == "all":
                 return option
             elif option[0] == "specific":
                 return option[1]
-                #TODO Manejar erro NoneType cuando selecciono la tabla sin querer
     
     def selectViewFddDialog(self, tables, fields):
         """
@@ -360,6 +378,36 @@ class FWOView(QtWidgets.QMainWindow):
         if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             return dialog.getSelectedOptions()
         return None
+    
+    def largeFDDWarningDialog(self, numElements):
+        """
+        Show a dialog if the FDD is too large.
+        
+        Returns:
+            str: The user's choice ('cancel', 'generate_no_display', or 'display_anyways')
+        """
+        dialog = QtWidgets.QMessageBox()
+        dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+        dialog.setWindowTitle("Large FDD Warning")
+        dialog.setText("The FDD is too large and may cause performance issues.")
+        dialog.setInformativeText(f"It has too many elements ({numElements}). Would you like to proceed?")
+        
+        # Add buttons for options
+        cancel_button = dialog.addButton("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole)
+        no_display_button = dialog.addButton("Generate but don't Display", QtWidgets.QMessageBox.ButtonRole.DestructiveRole)
+        display_anyways_button = dialog.addButton("Display Anyways", QtWidgets.QMessageBox.ButtonRole.YesRole)
+
+        # Execute the dialog and get the result
+        dialog.exec()
+
+        # Check which button was clicked
+        if dialog.clickedButton() == cancel_button:
+            return 'cancel'
+        elif dialog.clickedButton() == no_display_button:
+            return 'generate_no_display'
+        elif dialog.clickedButton() == display_anyways_button:
+            return 'display_anyways'
+        return 'cancel'
     
     def addRulesDialog(self, tables, fields, decisions):
         """

@@ -78,7 +78,8 @@ class ConsoleCommands:
         fileContent, rules = self.model.importRules(filePath)
         
         if fileContent and rules:
-            self.view.displayImportedRules(fileContent, rules)
+            self.view.displayRules(rules)
+            self.view.displayImportedRules(fileContent)
             self.console.appendToConsole(f"Rules imported from {filePath}.")
         else:
             self.console.appendToConsole(f"Failed to import rules from {filePath}. Please check the file path and format.")
@@ -91,7 +92,7 @@ class ConsoleCommands:
             args (str): Command arguments, can specify table and chain.
         """
         parts = args.split()
-        rules = self.model.currentFirewall.getInputRules()
+        rules = self.model.currentFirewall.getInputRules() #TODO CHANGE
         
         if rules is None:
             self.console.appendToConsole("No rules available.")
@@ -258,15 +259,35 @@ class ConsoleCommands:
         except ValueError:
             self.console.appendToConsole(f"Invalid syntax. Use: print &lt;table&gt;,&lt;chain&gt; [output_format] [graph_dir] [unroll_decisions]")
             return
+        
+        # Define valid options
+        valid_options = {
+            "outputFrmt": {'svg', 'png', 'jpg'},
+            "graphDir": {'TB', 'BT', 'LR', 'RL'},
+            "unroll": {'True', 'False'}
+        }
 
         if self.model.currentFirewall.getFDD(table, chain): 
             # Handle optional parameters
             outputFrmt      = optional_args[0] if len(optional_args) > 0 else 'svg'
             graphDir        = optional_args[1] if len(optional_args) > 1 else 'TB'
-            unroll          = optional_args[2] if len(optional_args) > 2 else False
-            # TODO Check optional params format
+            unroll          = optional_args[2] if len(optional_args) > 2 else 'False'
+           
+            # Validate optional parameters
+            if outputFrmt not in valid_options["outputFrmt"]:
+                self.console.appendToConsole(f"Invalid output format: {outputFrmt}. Choose from {valid_options['outputFrmt']}")
+                return
+            if graphDir not in valid_options["graphDir"]:
+                self.console.appendToConsole(f"Invalid graph direction: {graphDir}. Choose from {valid_options['graphDir']}")
+                return
+            if unroll not in valid_options["unroll"]:
+                self.console.appendToConsole(f"Invalid unroll option: {unroll}. Choose 'True' or 'False'")
+                return
             
-            pathName, imgFormat= self.model.viewFDD(table, chain, outputFrmt, graphDir, unroll)
+            # Convert unroll to a boolean
+            unroll = unroll == 'True'
+            
+            pathName, imgFormat, _ = self.model.viewFDD(table, chain, outputFrmt, graphDir, unroll)
             if self.model.graphicsView:
                 self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
             else:
@@ -293,17 +314,8 @@ class ConsoleCommands:
             parts = args.split()
             table_chain, field, matchExpr = parts[0], parts[1], parts[2]
             table, chain = table_chain.split(',')
-            
-            # Optional literal parameter: check if '--literal' or '-l' is provided
-            literal = False
-            if len(parts) > 3:
-                optional_param = parts[3]
-                if optional_param in ['--literal', '-l']:
-                    literal = True
-                else:
-                    raise ValueError(f"Invalid optional argument '{optional_param}'. Use --literal or -l.")
         except (ValueError,IndexError):
-            self.console.appendToConsole(f"Invalid syntax. Use: filter &lt;table&gt;,&lt;chain&gt; &lt;field&gt; &lt;MatchExpression&gt; [--literal|-l]")
+            self.console.appendToConsole(f"Invalid syntax. Use: filter &lt;table&gt;,&lt;chain&gt; &lt;field&gt; &lt;MatchExpression&gt;")
             return
         
         fields = [f.getName() for f in self.model.currentFirewall.getFieldList().getFields()]
@@ -313,7 +325,8 @@ class ConsoleCommands:
 
         if self.model.currentFirewall.getFDD(table, chain): 
             #Filter the FDD Graph
-            pathName, imgFormat= self.model.filterFDD(table, chain, field, matchExpr, literal)
+            opts = ('svg', 'TB', False)
+            pathName, imgFormat, _ = self.model.filterFDD(table, chain, opts, field, matchExpr)
             if not pathName:
                 self.console.appendToConsole("No results for filter.")
                 return

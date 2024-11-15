@@ -9,7 +9,7 @@ Returns:
 
 from PyQt6.QtCore import pyqtSignal, QThread
 import ctypes
-import os
+import os, shutil
 
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
@@ -28,6 +28,24 @@ class FWOController:
         
         self.connectSignals()
         
+    def startUp(self):
+        """
+        Start Up the App to let the user:
+            1. Create a New Project
+            2. Select an Existing Project
+        """
+        choice = self.view.startUpDialog()
+        
+        if choice == 1:
+            #self.createNewProject()
+            print('Create new project')
+        elif choice == 2:
+            #self.openExistingProject()
+            print('Open project')
+        elif choice == 3:
+            #self.loadRecentProject()
+            print('Load Project')
+        
     def connectSignals(self):
         """
         Connect the view's and worker's signals with the model functions
@@ -42,7 +60,7 @@ class FWOController:
         # Home button - Show WorkDir
         view.homeBtn.clicked.connect(
             lambda: (
-                self.view.displayWorkingDirectoryTree(model.workFolder)
+                self.view.displayWorkingDirectoryTree(model.defaultWorkFolder)
             )
         )
         view.treeWorkdirView.doubleClicked.connect(self.onTreeItemClicked)
@@ -88,20 +106,24 @@ class FWOController:
         Ask for user confirmation to cancel tasks when trying to close
         the app.
         """
+        self.model.logger.info("Terminating App")
         if self.areTasksRunning():
             reply = self.view.showCloseConfirmationDialog('Confirmar Cierre',
             "Todavía hay tareas corriendo, cerrar la aplicación las cancelará.\nEstas seguro que deseas salir?")
             
             if reply is True:  # User clicked Yes
+                self.model.logger.info("Cancelling Tasks")
                 self.cancelAllTasks()
                 if event:
                     event.accept()
                 else:
                     self.view.close()
             elif reply is False:  # User clicked No
+                self.model.logger.info("Termination Cancelled")
                 if event:
                     event.ignore()
             elif reply is None:  # User dismissed the dialog
+                self.model.logger.info("Termination Cancelled")
                 if event:
                     event.ignore()  # Ignore event and prevent closing
         else:
@@ -167,13 +189,13 @@ class FWOController:
         """
         Set the model's Field List
         """
-        print("Setting Field List...")
+        self.model.logger.info("Setting Field List...")
         filePath = self.view.selectFileDialog("TOML Files (*.toml);;All Files (*)")
         
         if filePath:
             self.model.setFieldList(filePath)
         else:
-            print("No file Selected.")
+            self.model.logger.info("No file Selected.")
     
     def importRules(self):
         """
@@ -184,7 +206,7 @@ class FWOController:
         if filePath:
             self.runModelTask(self.model.importRules, filePath)
         else:
-            print("No file Selected.")
+            self.model.logger.info("No file Selected.")
             
     def generateFDD(self):
         """
@@ -194,12 +216,12 @@ class FWOController:
             self.view.displayWarningMessage("No Field List loaded.\nPlease import it first.")
             return
 
-        if not self.model.currentFirewall or not self.model.currentFirewall._inputRules:
+        if not self.model.currentFirewall or not self.model.currentFirewall.getInputRules():
             self.view.displayWarningMessage("No rules loaded.\nPlease import rules first.")
             return
         
         # Get all tables
-        tables = self.model.currentFirewall._inputRules.getTables()
+        tables = self.model.currentFirewall.getInputRules().getTables()
 
         # User selects option to generate
         option = self.view.selectFddDialog(tables)
@@ -233,23 +255,54 @@ class FWOController:
         
         if options[0] == 'viewFDD':
             _ , (tableName, chainName), imageFrmt, graphDir, unrollDecisions = options
-            print(f"Viewing FDD for {tableName} -> {chainName}:\n{imageFrmt} format, {graphDir} orientation, Unroll Decisions: {unrollDecisions}")
+            display = True
+            
+            # If graph too big, ask for confirmation
+            fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+            if fdd is None:
+                self.view.displayErrorMessage("There isn't a FDD for the selection")
+                return
+            
+            totalElements = fdd.getElementsNum()
+            if totalElements > 10000:
+                userChoice = self.view.largeFDDWarningDialog(totalElements)
+                
+                if userChoice == 'cancel':
+                    return
+                elif userChoice == 'generate_no_display':
+                    display = False 
+                elif userChoice == 'display_anyways':
+                    pass
+            
+            self.model.logger.info(f"Viewing FDD for {tableName} -> {chainName}:\n{imageFrmt} format, {graphDir} orientation, Unroll Decisions: {unrollDecisions}")
             self.runModelTask(self.model.viewFDD,
                             tableName,
                             chainName,
                             imageFrmt,
                             graphDir,
-                            unrollDecisions
+                            unrollDecisions,
+                            display
                             )
+            
         elif options[0] == 'filterFDD':
-            _ , tableName, chainName, field, match_expression, literal = options
-            print(f"Filtering FDD for {tableName} -> {chainName}: {field} -> {match_expression}")
+            _ , tableName, chainName, opts, field, matchExpression, clearFilters = options
+            display = True
+            
+            # If graph too big, ask for confirmation
+            fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+            if fdd is None:
+                self.view.displayErrorMessage("There isn't a FDD for the selection")
+                return
+            
+            self.model.logger.info(f"Filtering FDD for {tableName} -> {chainName}: {field} -> {matchExpression}")
             self.runModelTask(self.model.filterFDD,
                               tableName,
                               chainName,
+                              opts,
                               field,
-                              match_expression,
-                              literal
+                              matchExpression,
+                              clearFilters,
+                              display
                               )
             
     def optimizeFDD(self):
@@ -264,13 +317,19 @@ class FWOController:
         tables = self.model.currentFirewall.getInputRules().getTables()
 
         # User selects option to generate
-        option = self.view.selectFddDialog(tables)
+        option = self.view.selectFddDialog(tables, mode='Optimize') #TODO MODIFY TO ONLY SHOW GENERATED FDDS
         
         # Optimize FDD given user selection
         if option == "all":  
             self.runModelTask(self.model.optimizeFDD)
         elif isinstance(option, tuple):
             tableName, chainName = option
+            
+            fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+            if fdd is None:
+                self.view.displayErrorMessage("There isn't a FDD Generated for the selection")
+                return
+            
             self.runModelTask(self.model.optimizeFDD, tableName, chainName)
         else:
             self.view.displayWarningMessage("No valid option selected for FDD generation.")
@@ -297,7 +356,7 @@ class FWOController:
                                   filePath, None, None)
             elif isinstance(option, tuple):
                 tableName, chainName = option
-                print(f'Exporting specific - Table: {tableName}, Chain: {chainName}')
+                self.model.logger.info(f'Exporting specific - Table: {tableName}, Chain: {chainName}')
                 #exportedRules = self.model.exportRules(tableName, chainName)
                 self.runModelTask(self.model.exportRules,
                                   filePath, tableName, chainName)
@@ -332,8 +391,10 @@ class FWOController:
             return
         
         tableName, chainName, decision, predicate = options
-        print(f'Adding Rule to {tableName} -> {chainName}:\n{predicate} -> {decision}')
-        self.model.addRules(tableName, chainName, predicate, decision)
+        self.model.logger.info(f'Adding Rule to {tableName} -> {chainName}:\n{predicate} -> {decision}')
+        newRule = self.model.addRules(tableName, chainName, predicate, decision)
+        
+        self.view.displayInfoMessage('Added new Rule',f'({tableName},{chainName}):\n{newRule}')
     
     def addRulesFromFile(self):
         """
@@ -392,7 +453,7 @@ class FWOController:
         while item:
             parts.insert(0, item.text())
             item = item.parent()
-        return os.path.join(self.model.workFolder, *parts)
+        return os.path.join(self.model.defaultWorkFolder, *parts)
 
     def saveProject(self) -> None:
         """
@@ -402,6 +463,7 @@ class FWOController:
 
         if filePath:
             self.model.saveProject(filePath)
+            self.model.logger.info("Proyecto guardado")
             self.view.displayInfoMessage("Proyecto Guardado", "El proyecto se guardó exitosamente.")
 
     def loadProject(self) -> None:
@@ -412,7 +474,13 @@ class FWOController:
 
         if filePath:
             self.model.loadProject(filePath)
-            self.view.displayImportedRules(None, self.model.currentFirewall.getInputRules())
+            self.view.displayRules(self.model.currentFirewall.getOptRules())
+            # Cargar el archivo de entrada
+            with open(self.model.currentFirewall.getInputFile(), 'r') as file:
+                data = file.read()
+                self.view.displayImportedRules(data)
+            
+            self.model.logger.info("Proyecto cargado")
             
     def processCommand(self, command):
         """
@@ -448,11 +516,7 @@ class FWOController:
         self.view.showLoadingIndicator()
         
         # Get the function name
-        funcName = func.__name__
-        
-        # Disable GUI buttons
-        if funcName in ['importRules', 'generateFDD', 'viewFDD', 'optimizeFDD']:
-            self.disableButtons()
+        self.disableButtons()
 
     def onTaskFinished(self, task_name, result):
         """
@@ -480,6 +544,7 @@ class FWOController:
         """
         self.view.showLoadingIndicator(False)
         self.view.displayErrorMessage(f"Error in {task_name}: {error_message}")
+        self.model.logger.error(f"Error in {task_name}: {error_message}")
         # Enable buttons
         self.enableButtons()
         # Clean Up Worker
@@ -494,24 +559,51 @@ class FWOController:
             result (obj): Result from task
         """
         if task_name == 'importRules':
-            self.view.displayImportedRules(result[0], result[1])
+            importedFile, importedRules = result
+            self.view.displayRules(importedRules)
+            self.view.displayImportedRules(importedFile)
             
         elif task_name == 'generateFDD':
             tableName, chainName = result
             if tableName is not None and chainName is not None:
-                    pathName, imgFormat = self.model.viewFDD(tableName, chainName)
-                    if self.model.graphicsView:
-                        self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                    fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+                    if fdd is None:
+                        self.view.displayErrorMessage("There isn't a FDD for the selection")
+                        return
+                    
+                    # TODO Update Rules tab
+                    
+                    # If graph too big, ask for confirmation
+                    totalElements = fdd.getElementsNum()
+                    
+                    if totalElements > 10000:
+                        userChoice = self.view.largeFDDWarningDialog(totalElements)
+                        
+                        if userChoice == 'display_anyways':
+                            self.runModelTask(self.model.viewFDD,
+                              tableName,
+                              chainName)
+                        elif userChoice == 'generate_no_display':
+                            self.runModelTask(self.model.viewFDD,
+                                tableName,
+                                chainName,
+                                display=False)
                     else:
-                        self.view.displayErrorMessage("Image Display not set.")
-            # Enable Buttons
-            self.view.ui.generateBtn.setEnabled(True)
+                        self.runModelTask(self.model.viewFDD,
+                              tableName,
+                              chainName)
             
         elif task_name in ['viewFDD', 'filterFDD']:
-            pathName, imgFormat = result
+            pathName, imgFormat, display = result
+            
             if not pathName and task_name == 'filterFDD':
                 self.view.displayInfoMessage("Filter FDD","No results for filter.")
                 return
+            
+            if not display:
+                self.view.displayInfoMessage('Graph Generated', f'Saved in {pathName}.{imgFormat}')
+                return
+            
             if self.model.graphicsView:
                 self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
             else:
@@ -520,14 +612,36 @@ class FWOController:
         elif task_name == 'optimizeFDD':
             tableName, chainName = result
             if tableName is not None and chainName is not None:
-                    pathName, imgFormat = self.model.viewFDD(tableName, chainName)
-                    if self.model.graphicsView:
-                        self.model.graphicsView.displayImage(f'{pathName}.{imgFormat}')
+                    fdd = self.model.currentFirewall.getFDD(tableName, chainName)
+                    if fdd is None:
+                        self.view.displayErrorMessage("There isn't a FDD for the selection")
+                        return
+                    
+                    # TODO Update Rules tab
+                    
+                    # If graph too big, ask for confirmation
+                    totalElements = fdd.getElementsNum()
+                    if totalElements > 10000:
+                        userChoice = self.view.largeFDDWarningDialog(totalElements)
+                        
+                        if userChoice == 'display_anyways':
+                            self.runModelTask(self.model.viewFDD,
+                              tableName,
+                              chainName)
+                        elif userChoice == 'generate_no_display':
+                            self.runModelTask(self.model.viewFDD,
+                              tableName,
+                              chainName,
+                              display=False)
                     else:
-                        self.view.displayErrorMessage("Image Display not set.")
+                        self.runModelTask(self.model.viewFDD,
+                            tableName,
+                            chainName)
                         
         elif task_name == 'exportRules':
             exportedRules, filePath = result
+            # Update Rules tab
+            self.view.displayRules(exportedRules)
             # Generate export File from RuleSet, given the Parser Strategy
             fileContent = self.model.getParserStrategy().compose(exportedRules)
             
@@ -539,10 +653,11 @@ class FWOController:
                 with open(filePath, 'w') as file:
                     file.write(fileContent)
                 
-                print(f'Exported file to: {filePath}')
+                self.view.displayInfoMessage('Rules Exported',f'Exported rules to: {filePath}')
                 
         elif task_name == 'addRules':
             rule = result
+            # TODO Update Rules tab
             self.view.displayInfoMessage('New Rule Created',f'{rule}')
     
     def cleanupWorker(self):
@@ -584,6 +699,7 @@ class FWOController:
         Args:
             thread (QThread): Thread to terminate
         """
+        #TODO Check dot process not terminating when closing
         thread_id = int(thread.currentThreadId())
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), ctypes.py_object(SystemExit))
         if res > 1: # If we get more than one Thread, cancel the exception, to avoid instability
@@ -595,6 +711,13 @@ class FWOController:
         Clean Up on close.
         """
         self.cancelAllTasks()
+        
+        # Delete the work folder and its contents
+        if os.path.exists(self.model.defaultWorkFolder):
+            try:
+                shutil.rmtree(self.model.defaultWorkFolder)
+            except Exception as e:
+                print(f"Error deleting work folder: {e}")
 
 class Worker(QThread):
     """

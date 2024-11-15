@@ -138,9 +138,9 @@ class FWOView(QtWidgets.QMainWindow):
         Show the imported Rules tab
         """
         self._togglePage(1)
-        self.ui.label.setText("Imported Rules")
+        self.ui.label.setText("Firewall Rules")
 
-    def displayImportedRules(self, content, rulesParsed):
+    def displayRules(self, rulesParsed):
         """
         Display the parsed rules in the QTreeView and right menu.
         
@@ -206,20 +206,26 @@ class FWOView(QtWidgets.QMainWindow):
         for column in range(treeView.columnCount()):
             self.ui.treePoliciesView.resizeColumnToContents(column)
         
+        self.displayImportedRulesTab()
+    
+    def displayImportedRules(self, content):
+        """
+        Display the parsed rules in the right menu (importedPage).
+
+        Args:
+            content: Rules as text to display in right menu
+        """
         # Set imported rules right menu
         self.ui.importedRules.setText(content)
         self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage)
-        
-        self.displayImportedRulesTab()
-        
+       
     def displayExportedRules(self, content):
         """
-        Display the parsed rules in the right menu.
+        Display the parsed rules in the right menu (exportedPage).
         
         Args:
             content: Rules as text to display in right menu
         """
-        #TODO Also display on centerMenu as RuleSet?
         # Set exported rules right menu
         self.ui.exportedRules.setText(str(content))
         self.ui.rightMenuStack.setCurrentWidget(self.ui.exportedPage)

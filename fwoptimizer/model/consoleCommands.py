@@ -78,7 +78,8 @@ class ConsoleCommands:
         fileContent, rules = self.model.importRules(filePath)
         
         if fileContent and rules:
-            self.view.displayImportedRules(fileContent, rules)
+            self.view.displayRules(rules)
+            self.view.displayImportedRules(fileContent)
             self.console.appendToConsole(f"Rules imported from {filePath}.")
         else:
             self.console.appendToConsole(f"Failed to import rules from {filePath}. Please check the file path and format.")
@@ -91,7 +92,7 @@ class ConsoleCommands:
             args (str): Command arguments, can specify table and chain.
         """
         parts = args.split()
-        rules = self.model.currentFirewall.getInputRules()
+        rules = self.model.currentFirewall.getInputRules() #TODO CHANGE
         
         if rules is None:
             self.console.appendToConsole("No rules available.")

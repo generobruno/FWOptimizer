@@ -128,6 +128,7 @@ class FWOManager:
         rulesParsed = self.parserStrategy.parse(filePath)
         if self.currentFirewall:
             self.currentFirewall.setInputRules(rulesParsed)
+            self.currentFirewall.setOptRules(rulesParsed) # Also set optRules (as current Rules)
             self.logger.info("Rules parsed and saved to the current firewall.")
             # Save input file in workdir
             inputsFolder = os.path.join(self.currentFirewall.getWorkFolder(), "inputs")
@@ -138,6 +139,7 @@ class FWOManager:
 
             # Copy the file to the inputs folder
             shutil.copy(filePath, destinationPath)
+            self.currentFirewall.setInputFile(destinationPath)
             
             return self._copyFile(filePath), rulesParsed
         else:

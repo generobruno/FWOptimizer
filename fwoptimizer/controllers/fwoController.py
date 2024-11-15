@@ -216,12 +216,12 @@ class FWOController:
             self.view.displayWarningMessage("No Field List loaded.\nPlease import it first.")
             return
 
-        if not self.model.currentFirewall or not self.model.currentFirewall._inputRules:
+        if not self.model.currentFirewall or not self.model.currentFirewall.getInputRules():
             self.view.displayWarningMessage("No rules loaded.\nPlease import rules first.")
             return
         
         # Get all tables
-        tables = self.model.currentFirewall._inputRules.getTables()
+        tables = self.model.currentFirewall.getInputRules().getTables()
 
         # User selects option to generate
         option = self.view.selectFddDialog(tables)
@@ -474,8 +474,13 @@ class FWOController:
 
         if filePath:
             self.model.loadProject(filePath)
+            self.view.displayRules(self.model.currentFirewall.getOptRules())
+            # Cargar el archivo de entrada
+            with open(self.model.currentFirewall.getInputFile(), 'r') as file:
+                data = file.read()
+                self.view.displayImportedRules(data)
+            
             self.model.logger.info("Proyecto cargado")
-            self.view.displayImportedRules(None, self.model.currentFirewall.getInputRules())
             
     def processCommand(self, command):
         """
@@ -554,7 +559,9 @@ class FWOController:
             result (obj): Result from task
         """
         if task_name == 'importRules':
-            self.view.displayImportedRules(result[0], result[1])
+            importedFile, importedRules = result
+            self.view.displayRules(importedRules)
+            self.view.displayImportedRules(importedFile)
             
         elif task_name == 'generateFDD':
             tableName, chainName = result
@@ -563,6 +570,8 @@ class FWOController:
                     if fdd is None:
                         self.view.displayErrorMessage("There isn't a FDD for the selection")
                         return
+                    
+                    # TODO Update Rules tab
                     
                     # If graph too big, ask for confirmation
                     totalElements = fdd.getElementsNum()
@@ -608,6 +617,8 @@ class FWOController:
                         self.view.displayErrorMessage("There isn't a FDD for the selection")
                         return
                     
+                    # TODO Update Rules tab
+                    
                     # If graph too big, ask for confirmation
                     totalElements = fdd.getElementsNum()
                     if totalElements > 10000:
@@ -629,8 +640,8 @@ class FWOController:
                         
         elif task_name == 'exportRules':
             exportedRules, filePath = result
-            #TODO displayOptRules in IDE -> change to have them in another tab
-            #self.view.displayImportedRules(filePath, exportedRules)
+            # Update Rules tab
+            self.view.displayRules(exportedRules)
             # Generate export File from RuleSet, given the Parser Strategy
             fileContent = self.model.getParserStrategy().compose(exportedRules)
             
@@ -646,6 +657,7 @@ class FWOController:
                 
         elif task_name == 'addRules':
             rule = result
+            # TODO Update Rules tab
             self.view.displayInfoMessage('New Rule Created',f'{rule}')
     
     def cleanupWorker(self):

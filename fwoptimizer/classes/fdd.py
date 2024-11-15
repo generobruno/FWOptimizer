@@ -9,8 +9,6 @@ import sys
 import re
 import hashlib
 
-#QUITAR EN EL FUTURO
-import random
 from fwoptimizer.classes.rules import Chain, Rule
 from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
 
@@ -141,10 +139,10 @@ class Node:
     """
     Node Class
     """
-    def __init__(self, name: str, level: Level, **attrs):
+    def __init__(self, level: Level, **attrs):
         """
         Create a new Node. 
-        A Node has a name, attributes and Lists of outgoing and incoming
+        A Node has a attributes and Lists of outgoing and incoming
         Edges.
         
         Args:
@@ -153,7 +151,7 @@ class Node:
             attrs: Node optional attributes
         """
         self._level: Level = level
-        self._name: str = name
+        self._name: str = ""
         self._load : int = 0
         self._attributes = attrs if attrs else {}
         self._incoming: List[Edge] = []
@@ -259,6 +257,15 @@ class Node:
             load (int): New Node's Load
         """
         self._load = load
+
+    def setName(self, name:str):
+        """
+        Set the Node' name
+
+        Args:
+            name (str): New Node's name
+        """
+        self._name = name
     
     def getName(self):
         """
@@ -497,8 +504,18 @@ class FDD:
         # Create the last level, which contains leaf nodes or what is the same, decisions 
         self._levels.append(Level(Field('Decision', 'Decision')))
 
+        # TODO esta accion no debería realizarce aqui ya que puede otros firewalls que no utilizen estos nombres
+        # Create the default decisions for iptables
+        self._decisions['ACCEPT'] = Node(self._levels[-1], shape='box', fontsize='35', style='filled', fillcolor='greenyellow')
+        self._decisions['ACCEPT'].setName('ACCEPT')
+        self._decisions['ACCEPT'].autoConnect()
+
+        self._decisions['DROP'] = Node(self._levels[-1], shape='diamond', fontsize='35', style='filled', fillcolor='crimson')
+        self._decisions['DROP'].setName('DROP')
+        self._decisions['DROP'].autoConnect()
+
         # Create the only root node in the first level of the tree.
-        root = Node(self._levels[0].getField().getName(), self._levels[0])
+        root = Node(self._levels[0])
         root.autoConnect()
 
     def getName(self):
@@ -529,8 +546,9 @@ class FDD:
         Returns:
             A Node in the last level of the tree with the given decision.
         """
-        if decision  not in self._decisions:
-            self._decisions[decision] = Node(decision, self._levels[-1], shape='box', fontsize='35')
+        if decision not in self._decisions:
+            self._decisions[decision] = Node(self._levels[-1], shape='ellipse', fontsize='35', style='filled', fillcolor='skyblue')
+            self._decisions[decision].setName(decision)
             self._decisions[decision].autoConnect()
         return self._decisions[decision]
 
@@ -577,10 +595,17 @@ class FDD:
             name (str): Name of the graph
             img_format (str, optional): Output Format. Defaults to 'png'.
         """
+
+        def resetNames():
+            for level in self._levels[:-1]:
+                for node in level.getNodes():
+                    node.setName("")
+
         dot = graphviz.Digraph(engine='dot')
 
         # Create a dictionary to hold subgraphs for each field level
         field_subgraphs = {}
+        node_counter = 0 # For nodes
         edge_node_counter = 0 # For intermediate nodes
         
         # Calculate total number of nodes and edges
@@ -632,6 +657,9 @@ class FDD:
             head_port = 'n'
             tail_port = 's'
 
+        # Reset Node names to assign new names
+        resetNames()
+
         # Iterate through the levels to create subgraphs
         for level in self._levels:
             field_name = level.getField().getName()  # Get the field name for the level
@@ -646,7 +674,12 @@ class FDD:
                 if node.getAttributes('filterVisibility') == 'False':
                     continue
                 
+                # Generate node name to identify it
                 node_name = node.getName()
+                if node_name == "":
+                    node_name = f"{node.getLevel().getField().getName()} {node_counter}"
+                    node_counter += 1
+                    node.setName(node_name)
                 
                 # Skip adding ACCEPT and DROP nodes if unroll_decisions is True
                 if unroll_decisions and node_name in self._decisions.keys():
@@ -658,6 +691,7 @@ class FDD:
                 
                 field_subgraphs[field_name].node(
                                             node_name, 
+                                            field_name,
                                             _attributes = node.getAttributes(), 
                                             width = str(base_width + width_factor), 
                                             height= str(base_height + height_factor), 
@@ -667,20 +701,27 @@ class FDD:
                 for edge in node.getOutgoing():
                     if edge.getAttributes('filterVisibility') == 'False':
                         continue
-                    origin_name = edge.getOrigin().getName()
-                    destination_name = edge.getDestination().getName()
+                    origin_name = node_name #edge.getOrigin().getName()
+                    destination = edge.getDestination()
+
+                    destination_name = destination.getName()
+                    if destination_name == "":
+                        destination_name = f"{destination.getLevel().getField().getName()} {node_counter}"
+                        node_counter += 1
+                        destination.setName(destination_name)
+
                     edge_node_name = f"edge_node_{edge_node_counter}"
                     edge_node_counter += 1
 
                     if edge.getAttributes('label') is not None:
-                        label = f"{min(edge.getId())},{edge.getAttributes('label')}"
+                        label = f"{edge.getAttributes('label')}"
                     else:
                         elements = edge.getElementSet().getElementsList()
                         if len(elements) > 5:
                             elements_str = '\n'.join(str(elem) for elem in elements[:5]) + '\n...'
                         else:
                             elements_str = '\n'.join(str(elem) for elem in elements)
-                        label = f"{min(edge.getId())},\n{elements_str}"
+                        label = f"{elements_str}"
 
                     edge_attributes = edge.getAttributes()
                     if edge.getMarking():
@@ -703,10 +744,8 @@ class FDD:
                         unique_destination_name = f"{destination_name}_{edge_node_counter}"
                         dot.node(
                             unique_destination_name, 
-                            destination_name, 
-                            style='filled',
-                            shape='box' if destination_name == 'ACCEPT' else 'diamond',
-                            fillcolor='greenyellow' if destination_name == 'ACCEPT' else 'crimson',
+                            destination_name,
+                            destination.getAttributes(), 
                             width=str(base_width + width_factor), 
                             height=str(base_height + height_factor), 
                             fontsize=str(base_font + font_factor)
@@ -719,7 +758,6 @@ class FDD:
         for subgraph in field_subgraphs.values():
             dot.subgraph(subgraph)
             
-
         # Render the graph to a file
         dot.render(name, format=img_format, view=False, cleanup=True)
 
@@ -782,6 +820,22 @@ class FDD:
         """
         self._setFilterAttr('True')
 
+    def _setFilterRecordToTop(self, node: Node):
+        """
+        Recursively set filterRecord to True if filterVisibility is True previusly.
+
+        Acts on incoming arcs to the node and expands to higher nodes.
+
+        Args:
+            node (Node): Node to set and inspect his incoming edges.
+        """
+
+        node.setAttributes(filterRecord="True")
+        for edge in node.getIncoming():
+            if edge.getAttributes("filterVisibility") == "True":
+                edge.setAttributes(filterRecord="True")
+                self._setFilterRecordToTop(edge.getOrigin())
+
     def _filterBranch(self, node: Node, levelFiltered: Level, matchSet: ElementSet) -> bool:
         """
         Recursively checks a node and its incoming edges for the specified field.
@@ -803,13 +857,6 @@ class FDD:
 
         """
 
-        def setFilterRecordToTop(node: Node):
-
-            node.setAttributes(filterRecord="True")
-            for edge in node.getIncoming():
-                edge.setAttributes(filterRecord="True")
-                setFilterRecordToTop(edge.getOrigin())
-
         if node.getLevel() == self._levels[0]:
             node.setAttributes(filterRecord="True")
             return True
@@ -825,7 +872,7 @@ class FDD:
                     if edge.getElementSet().isOverlapping(matchSet):
 
                         edge.setAttributes(filterRecord="True")
-                        setFilterRecordToTop(edge.getOrigin())
+                        self._setFilterRecordToTop(edge.getOrigin())
                         found = True
                     
                 else: 
@@ -869,14 +916,7 @@ class FDD:
         if levelSelected == None:
             print(f"El campo {fieldFiltered} no coincide con nigún campo existente")
             return False
-    
-        try:
-            matchSet = ElementSet.createElementSet(levelSelected.getField().getType(), [matchExpresion])
-        except:
-            print(f"La expresión {[matchExpresion]} no es un tipo conocido para el campo {fieldFiltered}")
-            return False
-
-
+        
         # Set filterRecord attribute to False for complete FDD
         for level in self._levels:
 
@@ -888,12 +928,36 @@ class FDD:
 
                     edge.setAttributes(filterRecord="False")
 
-        # Perform search
+        # Set found flag to False
         found = False
-        for node in self._levels[-1].getNodes():
 
-            if self._filterBranch(node, levelSelected, matchSet):
+        # algorithm for "no decision" fields
+        if levelSelected.getField().getName() != 'Decision':
+
+            try:
+                matchSet = ElementSet.createElementSet(levelSelected.getField().getType(), [matchExpresion])
+            except:
+                print(f"La expresión {[matchExpresion]} no es un tipo conocido para el campo {fieldFiltered}")
+                return False
+
+            # Perform search
+            for node in self._levels[-1].getNodes():
+
+                if self._filterBranch(node, levelSelected, matchSet):
+                    found = True
+        
+        # algorithm for "decision" field
+        else:
+
+            decision = self._decisions.get(matchExpresion, None)
+
+            if decision == None:
+                print(f"La expresión {matchExpresion} no es un tipo conocido para el campo {fieldFiltered}")
+                return False
+            else:
+                self._setFilterRecordToTop(decision)
                 found = True
+
 
         if found:
             # Transform filterRecord into filterVisibility
@@ -945,7 +1009,7 @@ class FDD:
             # For each Level add a node, except the first and the last.
             for level in self._levels[1:-1]:
 
-                newNode = Node(f"{level.getField().getName()}_{rule.getId()}", level)
+                newNode = Node(level)
                 newNode.autoConnect()
                 nodes.append(newNode)
 
@@ -998,7 +1062,7 @@ class FDD:
                             intersectionSet = edge1.getElementSet().intersectionSet(edge2.getElementSet())
 
                             # Create a new node in the level.
-                            newNode = Node(self._levels[h+1].getField().getName() + " new " + str(newIndex), self._levels[h+1])
+                            newNode = Node(self._levels[h+1])
                             newNode.autoConnect()
                             newIndex = newIndex + 1
 
@@ -1217,7 +1281,7 @@ class FDD:
 
                 if not left.isEmpty():
                     
-                    newEdge = Edge([999], node, self._getDecisionNode(defaultDecision), left)
+                    newEdge = Edge([-1], node, self._getDecisionNode(defaultDecision), left)
                     newEdge.autoConnect()
 
 
@@ -1731,8 +1795,7 @@ class FDD:
                     
                     intersectionSet = elementSet.intersectionSet(edge.getElementSet())
 
-                    # TODO Lucho - quitar el random e implementar otra manera de nominar los nodos
-                    newNode = Node(self._levels[i+1].getField().getName() + " added " + str(random.randint(10000, 20000)), self._levels[i+1])
+                    newNode = Node(self._levels[i+1])
                     newNode.autoConnect()
 
                     #Chequear que los nodos no vayan directamente a decision sin pasar por los otros lvls intermedios.
@@ -1810,5 +1873,5 @@ class FDD:
 
         else:
 
-            newEdge = Edge([999], newNode, edge.getDestination(), ElementSet.createElementSet(newNode.getLevel().getField().getType(), []))
+            newEdge = Edge([-1], newNode, edge.getDestination(), ElementSet.createElementSet(newNode.getLevel().getField().getType(), []))
             newEdge.autoConnect()

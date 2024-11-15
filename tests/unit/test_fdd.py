@@ -16,8 +16,8 @@ def test_edge():
     lvl1 = fdd.Level(f1)
     lvl2 = fdd.Level(f1)
 
-    n1 = fdd.Node("a", lvl1)
-    n2 = fdd.Node("a", lvl2)
+    n1 = fdd.Node(lvl1)
+    n2 = fdd.Node(lvl2)
 
     e1 = fdd.Edge([1], n1, n2, DirectionSet(['0.0.10.0/24']))
     e2 = fdd.Edge([1], n1, n2, DirectionSet(['0.0.10.0/24']))
@@ -45,7 +45,7 @@ def test_edge():
     assert e1 not in n1.getOutgoing()
     assert e1 not in n2.getIncoming()
 
-    n3 = fdd.Node("a", lvl1)
+    n3 = fdd.Node(lvl1)
 
     e1.setOrigin(n3)
     e1.autoConnect()
@@ -69,8 +69,8 @@ def test_node():
     lvl1 = fdd.Level(f1)
     lvl2 = fdd.Level(f1)
 
-    n1 = fdd.Node("a", lvl1)
-    n2 = fdd.Node("a", lvl2)
+    n1 = fdd.Node(lvl1)
+    n2 = fdd.Node(lvl2)
 
     assert n1 not in lvl1.getNodes()
     assert n2 not in lvl2.getNodes()

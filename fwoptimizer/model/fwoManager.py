@@ -9,8 +9,9 @@ Returns:
 
 import pickle
 import zipfile
-import hashlib
+import logging
 import os
+import shutil
 from fwoptimizer.classes.firewall import Firewall
 from fwoptimizer.classes import parser, rules
 
@@ -18,27 +19,62 @@ class FWOManager:
     """
     Top Module of the App Model
     """
-    def __init__(self, workFolder = "workdir/"):
+    def __init__(self, defaultWorkFolder = "fwo_workdir/"):
         # Work folder
-        self.workFolder = workFolder
-        if not os.path.exists(self.workFolder):
-            os.makedirs(self.workFolder)
+        self.defaultWorkFolder = defaultWorkFolder
+        if not os.path.exists(self.defaultWorkFolder):
+            os.makedirs(self.defaultWorkFolder)
+         
+        # Set up Logger
+        self.setUpLogger()
+        self.logger.info("Initialized App")
+            
         # List of Firewalls Managed
         self.firewalls = []
         # Current Firewall
-        self.currentFirewall = Firewall(workFolder=self.workFolder)
+        self.currentFirewall = Firewall(defaultWorkFolder=self.defaultWorkFolder, logger=self.logger)
         # Add default field List
         self.setFieldList('fwoptimizer/configs/fdd_config.toml')
         # Current Parser Strategy (Default to IpTables)
         self.parserStrategy = parser.IpTablesParser()
         # Graphics Viewer
         self.graphicsView = None
+    
+    def setUpLogger(self):
+        """
+        Set up the model's logger
+        """
+        # Set up logging to save in work folder
+        log_folder = os.path.join(self.defaultWorkFolder, 'logs')
+        if not os.path.exists(log_folder):
+            os.makedirs(log_folder)
+        log_path = os.path.join(log_folder, 'fwo.log')
         
+        # Initialize logger
+        self.logger = logging.getLogger('FWOManager')
+        self.logger.setLevel(logging.INFO)
+        
+        # Clear existing handlers
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        
+        # File handler for log file
+        file_handler = logging.FileHandler(log_path)
+        file_handler.setLevel(logging.INFO)  # Log INFO and higher levels
+
+        # Set formatter
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        
+        # Add the handler to the logger
+        self.logger.addHandler(file_handler)
+     
     def addFirewall(self, firewall: Firewall):
         """
         Add a new Firewall to the manager.
         """
         self.firewalls.append(firewall)
+        self.logger.info("Added Firewall to FWOManager")
         self.setActiveFirewall(len(self.firewalls) - 1)
 
     def setActiveFirewall(self, index: int):
@@ -47,6 +83,7 @@ class FWOManager:
         """
         if 0 <= index < len(self.firewalls):
             self.currentFirewall = self.firewalls[index]
+            self.logger.info(f'Current Firewall now is {self.firewalls[index]}')
         else:
             raise IndexError("Firewall index out of range.")
 
@@ -63,6 +100,7 @@ class FWOManager:
         Args:
             strategy: Parser strategy to be used
         """
+        self.logger.info(f'Parser Strategy set: {strategy}')
         self.parserStrategy = strategy
     
     def getParserStrategy(self):
@@ -83,18 +121,29 @@ class FWOManager:
             RuleSet: RuleSet extracted from file
         """
         if self.parserStrategy is None:
-            print("No parser strategy set.")
+            self.logger.warning("No parser strategy set.")
             return None, None
 
-        print(f"Importing Rules from: {filePath}")
+        self.logger.info(f"Importing Rules from: {filePath}")
         rulesParsed = self.parserStrategy.parse(filePath)
         if self.currentFirewall:
             self.currentFirewall.setInputRules(rulesParsed)
-            print("Rules parsed and saved to the current firewall.")
-            #TODO Save input file in workdir
+            self.currentFirewall.setOptRules(rulesParsed) # Also set optRules (as current Rules)
+            self.logger.info("Rules parsed and saved to the current firewall.")
+            # Save input file in workdir
+            inputsFolder = os.path.join(self.currentFirewall.getWorkFolder(), "inputs")
+            os.makedirs(inputsFolder, exist_ok=True)
+
+            # Define the destination path
+            destinationPath = os.path.join(inputsFolder, os.path.basename(filePath))
+
+            # Copy the file to the inputs folder
+            shutil.copy(filePath, destinationPath)
+            self.currentFirewall.setInputFile(destinationPath)
+            
             return self._copyFile(filePath), rulesParsed
         else:
-            print("No firewall selected to save the parsed rules.")
+            self.logger.info("No firewall selected to save the parsed rules.")
             return None, None
     
     def _copyFile(self, filePath):
@@ -112,10 +161,10 @@ class FWOManager:
         """
         Set the current Firewall's Field List
         """
-        print(f"Setting FieldList from: {filePath}")
+        self.logger.info(f"Setting FieldList from: {filePath}")
         self.currentFirewall.setFieldList(f'{filePath}')
-        print("Field List set.")
-        self.currentFirewall.getFieldList().printConfig()
+        self.logger.info("Field List set.")
+        self.logger.info(f"Field List Config:\n{self.currentFirewall.getFieldList().printConfig()}")
 
     def generateFDD(self, table=None, chain=None):
         """
@@ -125,7 +174,7 @@ class FWOManager:
             table (str, optional): Table Name. Defaults to None.
             chain (str, optional): Chain Name. Defaults to None.
         """
-        print("Generating FDD...")
+        self.logger.info("Generating FDD...")
         if table is None and chain is None:
             self.currentFirewall.genFdd()
             return None, None
@@ -142,7 +191,7 @@ class FWOManager:
         """
         self.graphicsView = graphicsView
     
-    def viewFDD(self, table, chain, imgFormat='svg', graphDir='TB', unrollDecisions=False):
+    def viewFDD(self, table, chain, imgFormat='svg', graphDir='TB', unrollDecisions=False, display=True):
         """
         Display the FDD Graph in the graphicsView
 
@@ -156,18 +205,14 @@ class FWOManager:
             Returns:
         str, str: Path of the graph and its format
         """
-        print(f"Displaying FDD for {table} - {chain}")
+        self.logger.info(f"Displaying FDD for {table} - {chain}")
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(table, chain)
         fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized -> Save timestamp as image metadata?
-        
-        # Generate a unique hash from the parameters
-        hash_input = f"{fdd_name}{table}{chain}{imgFormat}{graphDir}{unrollDecisions}"
-        file_hash = hashlib.md5(hash_input.encode()).hexdigest()
 
         # Create the path using the hash
-        pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_{file_hash}')
+        pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_{table}_{chain}_{graphDir}{"_U" if unrollDecisions else ""}')
         
         # Check if the image file already exists
         if not os.path.exists(pathName):
@@ -176,9 +221,9 @@ class FWOManager:
             # Generate graph 
             fdd.printFDD(pathName, img_format=imgFormat, rank_dir=graphDir, unroll_decisions=unrollDecisions)
         
-        return pathName, imgFormat
+        return pathName, imgFormat, display
     
-    def filterFDD(self, table, chain, field, matchExpression, literal):
+    def filterFDD(self, table, chain, opts, field, matchExpression, clearFilters, display=True):
         """
         Filter and Display FDD Graph
 
@@ -191,27 +236,36 @@ class FWOManager:
         Returns:
             str, str: Path of the graph and its format
         """
-        print(f"Filtering FDD for {table} - {chain}")
-        #TODO Manage opts formats of printFDD here?
+        imageFrmt, graphDir, unrollDecisions = opts
+        self.logger.info(f"Filtering FDD for {table} - {chain}\n{imageFrmt} - {graphDir} - {unrollDecisions}")
         
         # Get FDD
         fdd = self.currentFirewall.getFDD(table, chain)
-        fdd_name = fdd.getName() #TODO Check if fdd was modified or optimized
+        fdd_name = fdd.getName() 
         
+        if clearFilters == True:
+            self.logger.info(f"Clearing Filters for {table} - {chain}")
+            fdd.clearFilters()
+
         # Filter the FDD
-        found = fdd.filterFDDForValue(field, matchExpression, literal) #TODO Manage not found matchExpr case       
+        found = fdd.filterFDD(field, matchExpression)   
         
-        if not found:
-            return None, None
-        
+        if found == False:
+            return None, None, None 
+          
         # Create the path using the hash
-        pathName = os.path.join(self.workFolder, f'graphs/{fdd_name}_f_{field}')
+        pathName = os.path.join(self.defaultWorkFolder, f'graphs/{fdd_name}_f_{field}_{graphDir}{"_U" if unrollDecisions else ""}')
         
         if not os.path.exists(pathName):
             # Generate Graph
-            fdd.printFDD(pathName, img_format='svg', rank_dir='TB', unroll_decisions=False)
+            fdd.printFDD(pathName, img_format=imageFrmt, rank_dir=graphDir, unroll_decisions=unrollDecisions)
+            
+        totalElements = fdd.getElementsNum(filter=True)
+        if totalElements > 10000:
+            self.logger.warning(f"Graph contains too many elements ({totalElements}). Not displaying but saving in {pathName}")
+            display = False
         
-        return pathName, 'svg'
+        return pathName, imageFrmt, display
         
     def optimizeFDD(self, table=None, chain=None):
         """
@@ -221,7 +275,7 @@ class FWOManager:
             table (str, optional): Table Name. Defaults to None.
             chain (str, optional): Chain Name. Defaults to None.
         """
-        print("Optimizing FDD...")
+        self.logger.info("Optimizing FDD...")
         if table is None and chain is None:
             self.currentFirewall.optimizeFdd()
             return None, None
@@ -241,7 +295,7 @@ class FWOManager:
         Returns:
             RuleSet: Generated RuleSet
         """
-        print("Exporting Rules...")
+        self.logger.info("Exporting Rules...")
         if table is None and chain is None:
             return self.currentFirewall.genOutputRules(), filePath
         else:
@@ -267,13 +321,15 @@ class FWOManager:
         # Create rule
         newRule = rules.Rule(1234) #TODO CHECK
         for fieldName, value in predicate.items():
-            newRule.setPredicate(fieldName, [value])
+            newRule.setPredicate(fieldName, [value] if value != '' else None)
         newRule.setDecision(decision)
         
         #TODO Check correctness of rule here?
         
         # Add the Rule
         fdd.addRuleToFDD(newRule) #TODO Return smt
+        
+        #TODO Add rule to optRules?
         
         return newRule       
  
@@ -285,7 +341,7 @@ class FWOManager:
             filePath: Path to store the project
         """
         
-        serializedFirewallPath = self.workFolder + "firewall.pkl"
+        serializedFirewallPath = self.defaultWorkFolder + "firewall.pkl"
 
         # Serialize firewall object
         with open(serializedFirewallPath, 'wb') as file:
@@ -294,11 +350,11 @@ class FWOManager:
         # Createa ZIP File in save_path
         with zipfile.ZipFile(filePath, 'w', zipfile.ZIP_DEFLATED) as zipf:
             # Recorrer el directorio output/
-            for root, dirs, files in os.walk(self.workFolder):
+            for root, dirs, files in os.walk(self.defaultWorkFolder):
                 for file in files:
                     file_path = os.path.join(root, file)
                     # Agregar el archivo al ZIP, manteniendo la estructura de directorios
-                    zipf.write(file_path, os.path.relpath(file_path, self.workFolder))
+                    zipf.write(file_path, os.path.relpath(file_path, self.defaultWorkFolder))
 
         #Remove serialized object
         if os.path.exists(serializedFirewallPath):
@@ -312,7 +368,7 @@ class FWOManager:
             filePath: Path from where to load the project
         """
 
-        serializedFirewallPath = self.workFolder + "firewall.pkl"
+        serializedFirewallPath = self.defaultWorkFolder + "firewall.pkl"
 
         def removeDir(dirPath):
             for filename in os.listdir(dirPath):
@@ -324,14 +380,14 @@ class FWOManager:
                         removeDir(path)
                         os.rmdir(path)
                 except Exception as e:
-                    print(f'Error al eliminar {path}: {e}')
+                    self.logger.error(f'Error al eliminar {path}: {e}')
 
         # Eliminar todo el contenido del directorio de trabajo
-        removeDir(self.workFolder)
+        removeDir(self.defaultWorkFolder)
 
         # Extraer el archivo en el directorio de trabajo
         with zipfile.ZipFile(filePath, 'r') as zip_ref:
-            zip_ref.extractall(self.workFolder)
+            zip_ref.extractall(self.defaultWorkFolder)
 
         # Deserializar el firewall
         with open(serializedFirewallPath, 'rb') as file:
@@ -340,4 +396,7 @@ class FWOManager:
         # Borrar el archivo de serializado
         if os.path.exists(serializedFirewallPath):
             os.remove(serializedFirewallPath)
+            
+        # Reinicializar el logger
+        self.setUpLogger()
         

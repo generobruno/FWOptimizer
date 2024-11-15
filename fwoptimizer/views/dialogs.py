@@ -1,14 +1,15 @@
-from PyQt6 import QtWidgets, QtGui
+from PyQt6 import QtWidgets, QtGui, QtCore
+import fwoptimizer.views.resources_rc
 
 class SelectFDDDialog(QtWidgets.QDialog):
-    def __init__(self, tables=None, parent=None):
+    def __init__(self, tables=None, mode='Generate', parent=None):
         super().__init__(parent)
         self.setWindowTitle("Generate FDD")
         self.setModal(True)
 
         # Radio buttons for selecting generation options
-        self.allChainsRadio = QtWidgets.QRadioButton("Generate FDDs for all chains")
-        self.specificChainRadio = QtWidgets.QRadioButton("Generate FDD for a specific Chain")
+        self.allChainsRadio = QtWidgets.QRadioButton(f"{mode} FDDs for all chains")
+        self.specificChainRadio = QtWidgets.QRadioButton(f"{mode} FDD for a specific Chain")
         self.specificChainRadio.setChecked(True)
 
         # Tree view for selecting a specific chain
@@ -19,6 +20,7 @@ class SelectFDDDialog(QtWidgets.QDialog):
             for table_name, table in tables.items():
                 table_item = QtWidgets.QTreeWidgetItem(self.chainTreeView)
                 table_item.setText(0, table_name)
+                table_item.setFlags(table_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsSelectable)
                 
                 for chain_name, _ in table.getChains().items():
                     chain_item = QtWidgets.QTreeWidgetItem(table_item)
@@ -109,6 +111,7 @@ class ViewFDDDialog(QtWidgets.QDialog):
             for table_name, table in tables.items():
                 table_item = QtWidgets.QTreeWidgetItem(self.chainTreeView)
                 table_item.setText(0, table_name)
+                table_item.setFlags(table_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsSelectable)
                 
                 for chain_name, _ in table.getChains().items():
                     chain_item = QtWidgets.QTreeWidgetItem(table_item)
@@ -167,9 +170,38 @@ class ViewFDDDialog(QtWidgets.QDialog):
         self.matchExpressionLabel = QtWidgets.QLabel("Match Expression:")
         self.matchExpressionInput = QtWidgets.QLineEdit(self.filterFddTab)
         
-        # Radio button for literal match expression
-        self.literalExpression = QtWidgets.QRadioButton("Literal")
-        self.literalExpression.setChecked(True)
+        # Create a horizontal layout for image format, graph orientation, and unroll decisions
+        optionsLayout = QtWidgets.QHBoxLayout()
+
+        # Dropdown for image format selection
+        self.fimageFormatLabel = QtWidgets.QLabel("Image Format:")
+        self.fimageFormatComboBox = QtWidgets.QComboBox()
+        self.fimageFormatComboBox.addItems(['svg', 'png', 'jpeg'])
+        self.fimageFormatComboBox.setCurrentText('svg')
+        optionsLayout.addWidget(self.fimageFormatLabel)
+        optionsLayout.addWidget(self.fimageFormatComboBox)
+
+        # Dropdown for graph orientation selection
+        self.fgraphOrientationLabel = QtWidgets.QLabel("Graph Orientation:")
+        self.fgraphOrientationComboBox = QtWidgets.QComboBox()
+        self.fgraphOrientationComboBox.addItems(['TB', 'BT', 'LR', 'RL'])
+        self.fgraphOrientationComboBox.setCurrentText('TB')
+        optionsLayout.addWidget(self.fgraphOrientationLabel)
+        optionsLayout.addWidget(self.fgraphOrientationComboBox)
+
+        # Checkbox for unrolling decisions
+        self.funrollDecisionsLabel = QtWidgets.QLabel("Unroll Decisions:")
+        self.funrollDecisionsCheckBox = QtWidgets.QCheckBox()
+        self.funrollDecisionsCheckBox.setChecked(False)
+        optionsLayout.addWidget(self.funrollDecisionsLabel)
+        optionsLayout.addWidget(self.funrollDecisionsCheckBox)
+        
+        # Checkbox to clear filters
+        self.fclearFiltersLabel = QtWidgets.QLabel("Clear Previous Filters:")
+        self.fclearFitlersCheckBox = QtWidgets.QCheckBox()
+        self.fclearFitlersCheckBox.setChecked(False)
+        optionsLayout.addWidget(self.fclearFiltersLabel)
+        optionsLayout.addWidget(self.fclearFitlersCheckBox)
 
         # Add components to layout
         layout.addWidget(self.tableNameLabel)
@@ -180,7 +212,9 @@ class ViewFDDDialog(QtWidgets.QDialog):
         layout.addWidget(self.fieldInputComboBox)
         layout.addWidget(self.matchExpressionLabel)
         layout.addWidget(self.matchExpressionInput)
-        layout.addWidget(self.literalExpression)
+
+        # Add the horizontal layout with the image format, orientation, and unroll options
+        layout.addLayout(optionsLayout)
 
     def styleDialog(self):
         """
@@ -224,6 +258,19 @@ class ViewFDDDialog(QtWidgets.QDialog):
                 background-color: #4e4e4e; /* Selected tab background */
                 color: #ffffff; /* White text for selected tab */
             }
+            QCheckBox::indicator {
+                width: 13px;
+                height: 13px;
+                background-color: #ffffff; /* White background for checkbox indicator */
+                border: 1px solid #5a5a5a;
+                border-radius: 2px;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #4e4e4e; /* Darker color when checked */
+            }
+            QCheckBox::indicator:unchecked:hover {
+                background-color: #e0e0e0; /* Light gray on hover */
+            }
         """)
 
     def updateChains(self, index):
@@ -251,10 +298,13 @@ class ViewFDDDialog(QtWidgets.QDialog):
         elif active_tab_index == 1:  # Filter FDD tab
             table_name = self.tableNameComboBox.currentText()
             chain_name = self.chainNameComboBox.currentText()
+            image_format = self.fimageFormatComboBox.currentText()
+            graph_orientation = self.fgraphOrientationComboBox.currentText()
+            unroll_decisions = self.funrollDecisionsCheckBox.isChecked()
             field = self.fieldInputComboBox.currentText()
             match_expression = self.matchExpressionInput.text()
-            literal = self.literalExpression.isChecked()
-            return "filterFDD", table_name, chain_name, field, match_expression, literal
+            clear_filters = self.fclearFitlersCheckBox.isChecked()
+            return "filterFDD", table_name, chain_name, (image_format, graph_orientation, unroll_decisions), field, match_expression, clear_filters
         
         return None
 
@@ -573,3 +623,92 @@ class AddRulesDialog(QtWidgets.QDialog):
         predicates = {cb.currentText(): le.text() for cb, le in self.predicateWidgets.items()}
         
         return table_name, chain_name, decision, predicates
+
+class StartupDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Set the title and fixed size for the dialog
+        self.setWindowTitle("Start Project")
+        self.setFixedSize(600, 250)
+
+        # Style the dialog for a modern look
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #1e1e1e;
+                color: #ffffff;
+                border-radius: 10px;
+            }
+            QLabel#titleLabel {
+                font-size: 32px;
+                font-weight: bold;
+                color: #ffffff;
+                font-family: "Segoe UI", Arial, sans-serif;
+            }
+            QLabel#subtitleLabel {
+                font-size: 18px;
+                color: #b3b3b3;
+                font-family: "Segoe UI", Arial, sans-serif;
+            }
+            QPushButton {
+                background-color: #3c3c3c;
+                color: #ffffff;
+                padding: 12px 20px;
+                border-radius: 6px;
+                font-size: 16px;
+                font-family: "Segoe UI", Arial, sans-serif;
+            }
+            QPushButton:hover {
+                background-color: #4c4c4c;
+            }
+        """)
+
+        # Left side: buttons for project options
+        self.newProjectButton = QtWidgets.QPushButton("Create New Project")
+        self.openProjectButton = QtWidgets.QPushButton("Open Project Folder")
+        self.loadProjectButton = QtWidgets.QPushButton("Load Recent Project")
+        
+        # Layout for the buttons
+        buttonLayout = QtWidgets.QVBoxLayout()
+        buttonLayout.addWidget(self.newProjectButton)
+        buttonLayout.addWidget(self.openProjectButton)
+        buttonLayout.addWidget(self.loadProjectButton)
+        buttonLayout.setSpacing(20)
+
+        # Right side: title label and image
+        self.titleLabel = QtWidgets.QLabel("FWOptimizer")
+        self.titleLabel.setObjectName("titleLabel")
+        self.titleLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        
+        self.subtitle = QtWidgets.QLabel("Firewall Optimization Tool")
+        self.subtitle.setObjectName("subtitleLabel")
+        self.subtitle.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        
+        # Set margins to reduce spacing between title and subtitle
+        self.titleLabel.setContentsMargins(0, 0, 15, 2)
+        self.subtitle.setContentsMargins(0, 0, 15, 3)
+
+        self.imageLabel = QtWidgets.QLabel()
+        self.imageLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.imageLabel.setPixmap(QtGui.QPixmap(":/images/images/deku_tree_sprout.png").scaled(150, 150, QtCore.Qt.AspectRatioMode.KeepAspectRatio))
+
+        # Layout for title, subtitle, and image
+        rightLayout = QtWidgets.QVBoxLayout()
+        rightLayout.addWidget(self.titleLabel)
+        rightLayout.addWidget(self.subtitle)
+        rightLayout.addWidget(self.imageLabel, alignment=QtCore.Qt.AlignmentFlag.AlignRight)
+        rightLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        rightLayout.setSpacing(10)
+
+        # Main layout
+        mainLayout = QtWidgets.QHBoxLayout()
+        mainLayout.addLayout(buttonLayout, 1)  # Left side
+        mainLayout.addLayout(rightLayout, 1)   # Right side
+        mainLayout.setContentsMargins(40, 40, 40, 40)
+
+        self.setLayout(mainLayout)
+
+        # Connect buttons to dialog actions
+        self.newProjectButton.clicked.connect(lambda: self.done(1))
+        self.openProjectButton.clicked.connect(lambda: self.done(2))
+        self.loadProjectButton.clicked.connect(lambda: self.done(3))

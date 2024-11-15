@@ -13,5 +13,6 @@ __pycache__
 build
 output
 workdir
+fwo_workdir
 
 example_set.txt

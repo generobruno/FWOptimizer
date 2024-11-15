@@ -76,8 +76,11 @@ class FieldList:
     def printConfig(self):
         """_summary_
         """
+        conf = []
         for i, field in enumerate(self._fields_):
-            print(f'{i} [{field.getName()}, {field.getType()}]')
+            conf.append(f'{i} [{field.getName()}, {field.getType()}]')
+            
+        return "\n".join(conf)
 
 class Level:
     """
@@ -524,6 +527,15 @@ class FDD:
         """
         return self._name
 
+    def setName(self, newName:str):
+        """
+        Set FDD's Name
+
+        Args:
+            newName (str): New Name
+        """
+        self._name = newName
+
     def _getDecisionNode(self, decision: str) -> Node:
         """
         Obtains the node corresponding to this decision if it exists, or adds a new one and returns it.
@@ -548,6 +560,32 @@ class FDD:
             Dict[fieldName, fieldType]: FDD's Decisions
         """
         return self._decisions
+
+    def getElementsNum(self, filter: bool = False):
+        """
+        Get the total number of Edges and Nodes in the FDD (printable)
+
+        Args:
+            filter (bool): If True, only elements with 'filterVisibility' == 'True' are counted
+
+        Returns:
+            int: Total Elements
+        """
+        # Calculate total nodes based on filter condition
+        total_nodes = sum(
+            1 for level in self._levels for node in level.getNodes()
+            if not filter or node.getAttributes('filterVisibility') == 'True'
+        )
+
+        # Calculate total edges based on filter condition
+        total_edges = sum(
+            1 for level in self._levels for node in level.getNodes()
+            if not filter or node.getAttributes('filterVisibility') == 'True'
+            for edge in node.getOutgoing()
+            if not filter or edge.getAttributes('filterVisibility') == 'True'
+        )
+
+        return total_nodes + total_edges
 
     def printFDD(self, name: str, img_format='png', rank_dir='TB', unroll_decisions=False) -> None:
         """
@@ -764,22 +802,6 @@ class FDD:
         # Print the FDD with highlighted edges
         self.printFDD("highlighted_FDD")
 
-    # TODO Borrar
-    def _setFilterVisibiltyToTop(self, node: Node):
-
-        node.setAttributes(filterVisibility="True")
-        for edge in node.getIncoming():
-            edge.setAttributes(filterVisibility="True")
-            self._setFilterVisibiltyToTop(edge.getOrigin())
-
-    # TODO Borrar
-    def _setFilterVisibiltyToBot(self, node: Node):
-
-        node.setAttributes(filterVisibility="True")
-        for edge in node.getOutgoing():
-            edge.setAttributes(filterVisibility="True")
-            self._setFilterVisibiltyToBot(edge.getDestination())
-
     def _setFilterAttr(self, value: str):
 
         for level in self._levels:
@@ -797,73 +819,6 @@ class FDD:
         Clear all filters.
         """
         self._setFilterAttr('True')
-
-    # TODO Borrar
-    def filterFDDForValue(self, fieldFiltered: str, matchExpresion: str, literal: bool = False):
-
-        levelSelected = None
-
-        for level in self._levels:
-            if level.getField().getName() == fieldFiltered:
-                levelSelected = level
-                break
-
-        if levelSelected == None:
-            print(f"El campo {fieldFiltered} no coincide con nigún campo existente")
-            return False
-        
-        if literal:
-            matchExpresion = "^" + matchExpresion + "$"
-        else:
-            matchExpresion = "^" + matchExpresion
-
-        # Clear filterVisibility except at the level to search
-
-        for level in self._levels:
-
-            if level == levelSelected:
-                continue
-
-            for node in level.getNodes():
-
-                node.setAttributes(filterVisibility="False")
-
-                for edge in node.getOutgoing():
-
-                    edge.setAttributes(filterVisibility="False")
-
-        # Execute the search
-
-        results = False
-
-        for node in levelSelected.getNodes():
-
-            for outgoing in node.getOutgoing():
-
-                found = False
-
-                for element in outgoing.getElementSet().getElementsList():
-
-                    if outgoing.getAttributes('filterVisibility') == "True":
-
-                        if re.search(matchExpresion, str(element)):
-
-                            outgoing.setAttributes(filterVisibility="True")
-                            self._setFilterVisibiltyToBot(outgoing.getDestination())
-                            found = True
-
-                        else:
-
-                            if not found:
-                                outgoing.setAttributes(filterVisibility="False")
-
-                if found:
-
-                    self._setFilterVisibiltyToTop(node)
-                    results = True
-                    
-        return results
-
 
     def _setFilterRecordToTop(self, node: Node):
         """

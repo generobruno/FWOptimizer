@@ -7,6 +7,8 @@ import model.fwoManager as fwm
 import views.fwoView as fwv
 import views.customWidgets as cw
 
+
+
 class ConsoleCommands:
     """
     Console Emulator for the user interaction with the model.

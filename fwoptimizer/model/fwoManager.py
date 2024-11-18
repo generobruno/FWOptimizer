@@ -15,6 +15,8 @@ import shutil
 from fwoptimizer.core.firewall import Firewall
 from fwoptimizer.core import parser, rules
 
+
+
 class FWOManager:
     """
     Top Module of the App Model

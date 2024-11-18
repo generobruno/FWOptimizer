@@ -3,7 +3,7 @@ from typing import List
 
 from fwoptimizer.core.rules import Rule, Chain
 from fwoptimizer.core.firewall import FieldList
-from fwoptimizer.utils.elementSet import ElementSet
+from fwoptimizer.core.fields import ElementSet
 
 class ChainComparator:
 

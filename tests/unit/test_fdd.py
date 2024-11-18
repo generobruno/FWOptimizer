@@ -4,7 +4,7 @@ Tests for the Edge, Node, Level and FDD classes
 
 import fwoptimizer.core.fdd as fdd
 from fwoptimizer.core.fdd import Field
-from fwoptimizer.utils.elementSet import DirectionSet
+from fwoptimizer.core.fields import DirectionSet
 
 
 def test_edge():

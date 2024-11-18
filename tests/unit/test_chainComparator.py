@@ -1,7 +1,7 @@
 
 import pytest
 
-from fwoptimizer.utils.chainComparator import ChainComparator
+from fwoptimizer.core.comparator import ChainComparator
 from fwoptimizer.core.firewall import FieldList
 from fwoptimizer.core.rules import Rule, Chain
 

@@ -2,7 +2,7 @@
 """
 
 import pytest
-from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet, DirectionSet, ProtocolSet, PortSet
+from fwoptimizer.core.fields import ElementSetRegistry, ElementSet, DirectionSet, ProtocolSet, PortSet
 from fwoptimizer.core.rules import Chain, Rule
 from fwoptimizer.core.firewall import FieldList
 from fwoptimizer.core.fdd import FDD

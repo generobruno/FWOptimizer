@@ -51,23 +51,24 @@ if __name__ == '__main__':
         sys.exit(exit_code)
 
 """
-from classes import *
+from core.parser import *
+from core.firewall import *
 
-if __name__ == '__main1__':
+if __name__ == '__main__':
 
-    iptables_strat = parser.IpTablesParser()
-    parser = parser.Parser(iptables_strat)
-    rules_parsed = parser.parse("./fwo_workdir/inputs/iptables-save-example.txt")
+    iptables_strat = IpTablesParser()
+    parser = Parser(iptables_strat)
+    rules_parsed = parser.parse("./.example_set_H.txt")
     
     firewall = Firewall(defaultWorkFolder='test_wd')
     firewall.setFieldList("fwoptimizer/configs/fdd_config.toml")
     firewall.setInputRules(rules_parsed)
     
-    firewall.genFdd('filter', 'excepciones-in')
+    firewall.genFdd('filter', 'INPUT')
     
-    #firewall.optimizeFdd('filter', 'excepciones-in')
+    firewall.optimizeFdd('filter', 'INPUT')
     
-    fdd: FDD = firewall.getFDD('filter','excepciones-in')
+    fdd: FDD = firewall.getFDD('filter','INPUT')
 
     fdd.clearFilters()
     

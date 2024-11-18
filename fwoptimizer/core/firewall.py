@@ -5,6 +5,8 @@ from fwoptimizer.core.fdd import FDD, FieldList
 from fwoptimizer.core.rules import RuleSet, Table
 import logging, os
 
+
+
 class Firewall:
     """_summary_
     """

@@ -3,9 +3,9 @@
 
 import pytest
 from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet, DirectionSet, ProtocolSet, PortSet
-from fwoptimizer.classes.rules import Chain, Rule
-from fwoptimizer.classes.firewall import FieldList
-from fwoptimizer.classes.fdd import FDD
+from fwoptimizer.core.rules import Chain, Rule
+from fwoptimizer.core.firewall import FieldList
+from fwoptimizer.core.fdd import FDD
 
 def test_registry():
     """_summary_

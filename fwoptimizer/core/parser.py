@@ -6,7 +6,7 @@ import re
 from abc import ABC, abstractmethod
 
 from fwoptimizer.utils.aliasDict import AliasDefaultDict
-from fwoptimizer.classes import rules
+from fwoptimizer.core import rules
 
 from fwoptimizer.configs import syntaxes
 

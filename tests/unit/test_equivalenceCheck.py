@@ -1,6 +1,6 @@
 import pytest
-from fwoptimizer.classes.parser import IpTablesParser, Parser
-from fwoptimizer.classes.firewall import FieldList
+from fwoptimizer.core.parser import IpTablesParser, Parser
+from fwoptimizer.core.firewall import FieldList
 
 def test_chain_equivalence_to_itself():
     # Parse Instruction Set

@@ -1,8 +1,8 @@
 
 from typing import List
 
-from fwoptimizer.classes.rules import Rule, Chain
-from fwoptimizer.classes.firewall import FieldList
+from fwoptimizer.core.rules import Rule, Chain
+from fwoptimizer.core.firewall import FieldList
 from fwoptimizer.utils.elementSet import ElementSet
 
 class ChainComparator:

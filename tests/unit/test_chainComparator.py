@@ -2,8 +2,8 @@
 import pytest
 
 from fwoptimizer.utils.chainComparator import ChainComparator
-from fwoptimizer.classes.firewall import FieldList
-from fwoptimizer.classes.rules import Rule, Chain
+from fwoptimizer.core.firewall import FieldList
+from fwoptimizer.core.rules import Rule, Chain
 
 
 def test_pseudoRule_difference1():

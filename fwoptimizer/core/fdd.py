@@ -9,7 +9,7 @@ import sys
 import re
 import hashlib
 
-from fwoptimizer.classes.rules import Chain, Rule
+from fwoptimizer.core.rules import Chain, Rule
 from fwoptimizer.utils.elementSet import ElementSetRegistry, ElementSet
 
 class Field:

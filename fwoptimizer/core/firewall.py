@@ -1,9 +1,11 @@
 """_summary_
 """
 
-from fwoptimizer.classes.fdd import FDD, FieldList
-from fwoptimizer.classes.rules import RuleSet, Table
+from fwoptimizer.core.fdd import FDD, FieldList
+from fwoptimizer.core.rules import RuleSet, Table
 import logging, os
+
+
 
 class Firewall:
     """_summary_

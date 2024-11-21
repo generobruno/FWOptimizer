@@ -12,8 +12,10 @@ import zipfile
 import logging
 import os
 import shutil
-from fwoptimizer.classes.firewall import Firewall
-from fwoptimizer.classes import parser, rules
+from fwoptimizer.core.firewall import Firewall
+from fwoptimizer.core import parser, rules
+
+
 
 class FWOManager:
     """

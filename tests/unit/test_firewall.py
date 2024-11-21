@@ -2,7 +2,7 @@
 Tests for the Field, FieldList and Firewall classes
 """
 
-import fwoptimizer.classes.firewall as f
+import fwoptimizer.core.firewall as f
 
 sampleInput = 'tests/test_fdd_config.toml'
 

@@ -13,7 +13,9 @@ import os, shutil
 
 from model.fwoManager import FWOManager
 from views.fwoView import FWOView
-from model.consoleCommands import ConsoleCommands
+from fwoptimizer.controllers.consoleCommands import ConsoleCommands
+
+
 
 class FWOController:
     """

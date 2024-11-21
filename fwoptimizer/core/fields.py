@@ -5,6 +5,83 @@ from typing import List, Set
 from abc import abstractmethod
 import netaddr as nt
 import portion as p
+import toml
+
+
+
+class Field:
+    """_summary_
+    """
+
+    def __init__(self, fieldName, fieldType):
+        """_summary_
+
+        Args:
+            fieldName (_type_): _description_
+            fieldType (_type_): _description_
+        """
+        self._fieldName_ = fieldName
+        self._fieldType_ = fieldType
+
+    def getName(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        return self._fieldName_
+
+    def getType(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        return self._fieldType_
+
+
+
+class FieldList:
+    """_summary_
+    """
+
+    def __init__(self):
+        """_summary_
+        """
+        self._fields_ = []
+
+    def loadConfig(self, path):
+        """_summary_
+
+        Args:
+            path (_type_): _description_
+        """
+
+        config = toml.load(path)
+
+        _fields_ = config['fdd_config']['fields']
+
+        for field in _fields_:
+            self._fields_.append(Field(field['name'], field['type']))
+
+    def getFields(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        return self._fields_
+
+    def printConfig(self):
+        """_summary_
+        """
+        conf = []
+        for i, field in enumerate(self._fields_):
+            conf.append(f'{i} [{field.getName()}, {field.getType()}]')
+            
+        return "\n".join(conf)
+
+
 
 class ElementSetRegistry(type):
     """
@@ -40,6 +117,7 @@ class ElementSetRegistry(type):
             class reference if class name exist. None otherwise.
         """
         return mcs._REGISTRY_.get(className)
+
 
 
 class ElementSet(metaclass = ElementSetRegistry):
@@ -448,7 +526,6 @@ class DirectionSet(ElementSet):
             DirectionSet: A replica of this object.
         """
         return DirectionSet(self.getElementsList())
-    
 
 
 
@@ -923,5 +1000,3 @@ class PortSet(ElementSet):
             PortSet: A replica of this object.
         """
         return PortSet(self.getElementsList())
-    
-    

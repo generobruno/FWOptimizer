@@ -3,7 +3,7 @@ Tests for the parser Module
 """
 
 import pytest
-from fwoptimizer.classes.parser import IpTablesParser, Parser
+from fwoptimizer.core.parser import IpTablesParser, Parser
 
 # Path to the sample input data file
 sample_path = 'tests/test_set.txt'

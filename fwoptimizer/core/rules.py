@@ -1,7 +1,9 @@
 """
 rules Module
 """
-from fwoptimizer.utils.elementSet import ElementSetRegistry
+from fwoptimizer.core.fields import ElementSetRegistry
+
+
 
 class Rule:
     """
@@ -155,6 +157,8 @@ class Rule:
             
         return True
 
+
+
 class Chain:
     """
     A Chain is a collection of Rules.
@@ -262,6 +266,8 @@ class Chain:
         """
         return self._name
     
+
+
 class Table:
     """
     A Table is a collection of Chains.
@@ -325,6 +331,8 @@ class Table:
             String: Table Name
         """
         return self._name
+
+
 
 class RuleSet:
     """

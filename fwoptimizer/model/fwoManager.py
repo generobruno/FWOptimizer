@@ -321,18 +321,14 @@ class FWOManager:
         fdd = self.currentFirewall.getFDD(table, chain)
         
         # Create rule
-        newRule = rules.Rule(1234) #TODO CHECK
+        newRule = rules.Rule(-2) # New Rule id is trivial
         for fieldName, value in predicate.items():
             newRule.setPredicate(fieldName, [value] if value != '' else None)
         newRule.setDecision(decision)
         
-        #TODO Check correctness of rule here?
-        
-        # Add the Rule
-        fdd.addRuleToFDD(newRule) #TODO Return smt
-        
-        #TODO Add rule to optRules?
-        
+        # Add the Rule #TODO Handle exception
+        fdd.addRuleToFDD(newRule)
+
         return newRule       
  
     def saveProject(self, filePath):

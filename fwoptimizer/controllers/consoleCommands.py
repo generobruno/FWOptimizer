@@ -94,7 +94,7 @@ class ConsoleCommands:
             args (str): Command arguments, can specify table and chain.
         """
         parts = args.split()
-        rules = self.model.currentFirewall.getInputRules() #TODO CHANGE
+        rules = self.model.currentFirewall.getOptRules()
         
         if rules is None:
             self.console.appendToConsole("No rules available.")

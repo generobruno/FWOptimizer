@@ -573,8 +573,6 @@ class FWOController:
                         self.view.displayErrorMessage("There isn't a FDD for the selection")
                         return
                     
-                    # TODO Update Rules tab
-                    
                     # If graph too big, ask for confirmation
                     totalElements = fdd.getElementsNum()
                     
@@ -619,8 +617,6 @@ class FWOController:
                         self.view.displayErrorMessage("There isn't a FDD for the selection")
                         return
                     
-                    # TODO Update Rules tab
-                    
                     # If graph too big, ask for confirmation
                     totalElements = fdd.getElementsNum()
                     if totalElements > 10000:
@@ -659,7 +655,6 @@ class FWOController:
                 
         elif task_name == 'addRules':
             rule = result
-            # TODO Update Rules tab
             self.view.displayInfoMessage('New Rule Created',f'{rule}')
     
     def cleanupWorker(self):

@@ -205,7 +205,7 @@ class Firewall:
                     if fdd:
                         # Generate new chain
                         outputChain = fdd.firewallGen()
-                        outputChain.setDefaultDecision(outputChain[-1].getDecision()) #TODO CHECK
+                        outputChain.setDefaultDecision(outputChain[-1].getDecision()) # Set Default Chain Decision as Last Rule Decision
                         # Add new chain
                         exportRuleSet[tableName].addChain(outputChain)
                         self._logger.info(f'Exporting {tableName} - {chainName} Rules')
@@ -220,7 +220,7 @@ class Firewall:
             if fdd:
                 # Generate new chain
                 outputChain = fdd.firewallGen()
-                outputChain.setDefaultDecision(outputChain[-1].getDecision()) #TODO CHECK
+                outputChain.setDefaultDecision(outputChain[-1].getDecision()) # Set Default Chain Decision as Last Rule Decision
                 # Add new chain
                 exportRuleSet[table].addChain(outputChain)
             else:

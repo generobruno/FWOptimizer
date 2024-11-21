@@ -57,7 +57,7 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.actionView_Imported_Rules.triggered.connect(
             lambda: (
                 self.ui.rightMenuContainer.setVisible(not self.ui.rightMenuContainer.isVisible()) or self.ui.rightMenuStack.setCurrentWidget(self.ui.importedPage),
-                self.ui.label_5.setText("Imported Rules")
+                self.ui.label_5.setText("Firewall Rules")
             )
         )
         self.ui.actionView_Exported_Rules.triggered.connect(
@@ -95,7 +95,7 @@ class FWOView(QtWidgets.QMainWindow):
         self.ui.rulesBtn.clicked.connect(
             lambda: (
                 self._togglePage(1),
-                self.ui.label.setText("Imported Rules")
+                self.ui.label.setText("Firewall Rules")
             )
         )
         self.ui.reportsBtn.clicked.connect(

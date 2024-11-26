@@ -623,7 +623,7 @@ class FDD:
                 
                 field_subgraphs[field_name].node(
                                             node_name, 
-                                            field_name,
+                                            field_name if field_name != 'Decision' else node_name,
                                             _attributes = node.getAttributes(), 
                                             width = str(base_width + width_factor), 
                                             height= str(base_height + height_factor), 

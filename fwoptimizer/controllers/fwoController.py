@@ -389,6 +389,8 @@ class FWOController:
         # Get the current firewall's possible decisions
         decisions = currentFirewall.getDecisions()
         
+        # TODO No se pueden añadir rules con puertos separados por comas desde el AddRulesWizard
+
         options = self.view.addRulesDialog(tables, fields, decisions)
         if options is None:
             return

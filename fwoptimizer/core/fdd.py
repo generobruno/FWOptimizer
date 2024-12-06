@@ -1799,11 +1799,5 @@ class FDD:
          
     def _completeNode(self, edge: Edge, newNode: Node):
 
-        if edge.getDestination().getLevel().getField().getName() != 'Decision':
-
-            print(f"Error _completeNode(): Caso no reconocido, edge no lleva a Decision Field")
-
-        else:
-
-            newEdge = Edge([-1], newNode, edge.getDestination(), ElementSet.createElementSet(newNode.getLevel().getField().getType(), []))
-            newEdge.autoConnect()
+        newEdge = Edge([-1], newNode, edge.getDestination(), ElementSet.createElementSet(newNode.getLevel().getField().getType(), []))
+        newEdge.autoConnect()

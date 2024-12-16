@@ -128,6 +128,7 @@ class FWOManager:
 
         self.logger.info(f"Importing Rules from: {filePath}")
         rulesParsed = self.parserStrategy.parse(filePath)
+        #self.logger.info(f"Rules Imported:\n{rulesParsed}")
         if self.currentFirewall:
             self.currentFirewall.setInputRules(rulesParsed)
             self.currentFirewall.setOptRules(rulesParsed) # Also set optRules (as current Rules)

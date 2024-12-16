@@ -152,6 +152,7 @@ class IpTablesParser(ParserStrategy):
                         chain_name = line.split()[1]
                         current_chain = current_table[chain_name]
                     current_rule = self._parseOptions(line, line_num, current_table.getName())
+                    print(current_rule)
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         # Set rule predicates and filter -m options
@@ -374,6 +375,18 @@ class IpTablesParser(ParserStrategy):
         while i < len(tokens):
             option = tokens[i]
             value = None
+            
+            # Handle set match-set option specifically
+            if option == '-m' and i+1 < len(tokens) and tokens[i+1] == 'set':
+                # Look for --match-set option
+                match_set_index = tokens.index('--match-set') if '--match-set' in tokens else -1
+                if match_set_index != -1 and match_set_index + 2 < len(tokens):
+                    set_name = tokens[match_set_index + 1]
+                    set_direction = tokens[match_set_index + 2]  # 'src' or 'dst'
+                    
+                    # Convert match-set to SrcIP or DstIP
+                    ip_key = 'SrcIP' if set_direction == 'src' else 'DstIP'
+                    current_rule[ip_key] = set_name
 
             # Check if the token is an option (starts with '-' or '--')
             if option.startswith('-'):
@@ -387,6 +400,9 @@ class IpTablesParser(ParserStrategy):
             else:
                 i += 1
                 continue
+            
+            # Remove unnecessary set-related keys
+            current_rule.pop('--match-set', None)
 
             found_match = False
 

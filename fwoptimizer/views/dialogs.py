@@ -6,6 +6,7 @@ class SelectFDDDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Generate FDD")
         self.setModal(True)
+        self.styleDialog()
 
         # Radio buttons for selecting generation options
         self.allChainsRadio = QtWidgets.QRadioButton(f"{mode} FDDs for all chains")
@@ -55,6 +56,63 @@ class SelectFDDDialog(QtWidgets.QDialog):
             else:
                 return None
         return None
+    
+    def styleDialog(self):
+        """
+        Apply a custom style sheet for the dialog
+        """
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #2e2e2e; /* Dark background */
+                color: #ffffff; /* White text */
+            }
+            QLabel {
+                color: #dcdcdc; /* Light gray labels */
+            }
+            QTreeWidget {
+                background-color: #3b3b3b; /* Darker tree background */
+                color: #ffffff; /* White text for tree */
+            }
+            QComboBox, QLineEdit, QTreeWidget {
+                border: 1px solid #5a5a5a; /* Gray borders for inputs */
+                padding: 5px;
+            }
+            QPushButton {
+                background-color: #4e4e4e; /* Darker buttons */
+                color: #ffffff; /* White text on buttons */
+                border: 1px solid #5a5a5a;
+                padding: 5px;
+                border-radius: 3px;
+            }
+            QPushButton:hover {
+                background-color: #5a5a5a; /* Lighter button when hovered */
+            }
+            QTabWidget::pane {
+                border: 1px solid #5a5a5a; /* Border for tabs */
+            }
+            QTabBar::tab {
+                background-color: #3b3b3b; /* Darker tab background */
+                color: #dcdcdc; /* Light gray text for tabs */
+                padding: 5px;
+            }
+            QTabBar::tab:selected {
+                background-color: #4e4e4e; /* Selected tab background */
+                color: #ffffff; /* White text for selected tab */
+            }
+            QCheckBox::indicator {
+                width: 13px;
+                height: 13px;
+                background-color: #ffffff; /* White background for checkbox indicator */
+                border: 1px solid #5a5a5a;
+                border-radius: 2px;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #4e4e4e; /* Darker color when checked */
+            }
+            QCheckBox::indicator:unchecked:hover {
+                background-color: #e0e0e0; /* Light gray on hover */
+            }
+        """)
     
 class ViewFDDDialog(QtWidgets.QDialog):
     def __init__(self, tables=None, fields=None, parent=None):

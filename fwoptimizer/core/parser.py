@@ -152,7 +152,7 @@ class IpTablesParser(ParserStrategy):
                         chain_name = line.split()[1]
                         current_chain = current_table[chain_name]
                     current_rule = self._parseOptions(line, line_num, current_table.getName())
-                    print(current_rule)
+                    #print(current_rule)
                     if current_rule:                # Parse Rule
                         rule = rules.Rule(rule_id)
                         # Set rule predicates and filter -m options

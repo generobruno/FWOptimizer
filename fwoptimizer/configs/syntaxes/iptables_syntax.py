@@ -93,10 +93,10 @@ syntaxTable = {
                 "--dstlimit-htable-expire": ""
             },
             "conntrack": {
-                "--ctstate": r"(NEW|ESTABLISHED|RELATED|INVALID)"
+                "--ctstate": r"(NEW|ESTABLISHED|RELATED|INVALID)(,(NEW|ESTABLISHED|RELATED|INVALID))*"
             },
             "state": {
-                "--state": r"(NEW|ESTABLISHED|RELATED|INVALID)"
+                "--state": r"(NEW|ESTABLISHED|RELATED|INVALID)(,(NEW|ESTABLISHED|RELATED|INVALID))*"
             },
             "set": {
                 "--match-set": r"[\w-]+\s+(src|dst)(?:,\s*(src|dst)){0,5}",

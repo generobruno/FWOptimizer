@@ -7,7 +7,7 @@ Returns:
     _type_: _description_
 """
 
-from PyQt6.QtCore import pyqtSignal, QThread
+from PyQt6.QtCore import pyqtSignal, QThread, QRecursiveMutex
 import ctypes
 import os, shutil
 
@@ -27,6 +27,7 @@ class FWOController:
         self.console = ConsoleCommands(self.model, self.view, self.view.ui.console)
         
         self.workers = []
+        self._modelMutex = QRecursiveMutex() # Mutex for Model
         
         self.connectSignals()
         
@@ -388,6 +389,8 @@ class FWOController:
         # Get the current firewall's possible decisions
         decisions = currentFirewall.getDecisions()
         
+        # TODO No se pueden añadir rules con puertos separados por comas desde el AddRulesWizard
+
         options = self.view.addRulesDialog(tables, fields, decisions)
         if options is None:
             return
@@ -510,6 +513,9 @@ class FWOController:
         Args:
             func : Function to run
         """
+        # Lock the mutex here
+        self._modelMutex.lock()
+        
         worker = Worker(func, *args, **kwargs)
         worker.finished.connect(self.onTaskFinished)
         worker.error.connect(self.onTaskError)
@@ -528,13 +534,17 @@ class FWOController:
             task_name: Task Executed
             result: Result obtained
         """
-        self.view.showLoadingIndicator(False)
-        # Handle the result based on the task name
-        self.handleTaskResult(task_name, result)
-        # Enable buttons
-        self.enableButtons()
-        # Clean Up Worker
-        self.cleanupWorker()
+        try:
+            self.view.showLoadingIndicator(False)
+            # Handle the result based on the task name
+            self.handleTaskResult(task_name, result)
+        finally:
+            # Enable buttons
+            self.enableButtons()
+            # Clean Up Worker
+            self.cleanupWorker()
+            # Unlock the mutex here
+            self._modelMutex.unlock()
 
     def onTaskError(self, task_name, error_message):
         """
@@ -544,13 +554,17 @@ class FWOController:
             task_name: Task Executed
             error_message: Error message to display
         """
-        self.view.showLoadingIndicator(False)
-        self.view.displayErrorMessage(f"Error in {task_name}: {error_message}")
-        self.model.logger.error(f"Error in {task_name}: {error_message}")
-        # Enable buttons
-        self.enableButtons()
-        # Clean Up Worker
-        self.cleanupWorker()
+        try:
+            self.view.showLoadingIndicator(False)
+            self.view.displayErrorMessage(f"Error in {task_name}: {error_message}")
+            self.model.logger.error(f"Error in {task_name}: {error_message}")
+        finally:
+            # Enable buttons
+            self.enableButtons()
+            # Clean Up Worker
+            self.cleanupWorker()
+            # Unlock the mutex here
+            self._modelMutex.unlock()
         
     def handleTaskResult(self, task_name, result):
         """

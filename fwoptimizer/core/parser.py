@@ -129,10 +129,10 @@ class IpTablesParser(ParserStrategy):
             line_num = 0
 
             for line in file:
-                line = line.strip()
-                line_num = line_num + 1
+                line = line.split('#', 1)[0].strip()  # Ignore comments after a line and strip whitespace
+                line_num += 1
 
-                if line.startswith('#'):            # Ignore comments
+                if not line:  # Skip empty lines
                     continue
 
                 if line.startswith('*'):            # Start of Table

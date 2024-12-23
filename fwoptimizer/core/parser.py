@@ -3,6 +3,7 @@ parser Module
 """
 
 import re
+import netaddr as nt
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from collections import defaultdict
@@ -387,6 +388,24 @@ class IpTablesParser(ParserStrategy):
                     # Convert match-set to SrcIP or DstIP
                     ip_key = 'SrcIP' if set_direction == 'src' else 'DstIP'
                     current_rule[ip_key] = set_name
+                    
+            # Handle specific range options
+            if option in ['--src-range', '--dst-range']:
+                # Collect the value
+                if i + 1 < len(tokens):
+                    value = tokens[i + 1]
+                    i += 2
+                    # Split the range into start and end
+                    try:
+                        start_ip, end_ip = value.split('-')
+                        ip_range = list(nt.IPRange(start_ip, end_ip))
+                        ip_key = 'SrcIP' if option == '--src-range' else 'DstIP'
+                        current_rule[ip_key] = ",".join(str(ip) for ip in ip_range)
+                    except ValueError:
+                        raise ValueError(f"Invalid IP range format '{value}' in line {line_num}")
+                else:
+                    raise ValueError(f"Missing value for {option} in line {line_num}")
+                continue
 
             # Check if the token is an option (starts with '-' or '--')
             if option.startswith('-'):
@@ -403,6 +422,8 @@ class IpTablesParser(ParserStrategy):
             
             # Remove unnecessary set-related keys
             current_rule.pop('--match-set', None)
+            current_rule.pop('--src-range', None)
+            current_rule.pop('--dst-range', None)
 
             found_match = False
 

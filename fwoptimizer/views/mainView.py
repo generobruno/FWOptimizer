@@ -62,7 +62,7 @@ class Ui_MainWindow(object):
 "    border-radius: 8px;\n"
 "}\n"
 "QTreeView {\n"
-"    background-color: #2e2e2e;\n"
+"    background-color: #2c313c;\n"
 "    border: none;\n"
 "    color: #ffffff;\n"
 "}\n"

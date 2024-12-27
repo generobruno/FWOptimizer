@@ -911,8 +911,6 @@ class FDD:
             return True
         else:
             return False
-            
-
 
     def _genPre(self, chain: Chain) -> None:
         """
@@ -954,9 +952,9 @@ class FDD:
 
                 elements = rule.getOption(nodes[j-1].getLevel().getField().getName())
                 elementSet = ElementSet.createElementSet(nodes[j-1].getLevel().getField().getType(), elements if elements else [])
-                newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet)
+                #TODO Create ElementSet From IPSet if necessary
+                newEdge = Edge([rule.getId()], nodes[j-1], nodes[j], elementSet) #TODO Add IPSet Name to edge attrs to display
                 newEdge.autoConnect()
-
 
     def _sanityFirstLevels(self) -> None:
         """ 
@@ -1065,7 +1063,6 @@ class FDD:
 
                 i = i + 1
                     
-
     def _sanityLastLevel(self, chain: Chain, reportsPath: str = None) -> None:
         """
         Sanitizes the last-level nodes of the FDD.
@@ -1192,7 +1189,6 @@ class FDD:
         if writer != sys.stdout:
             writer.close()
 
-
     def _achieveCompleteness(self, defaultDecision: str) -> None:
         """
         Check and achieve completeness in the nodes.
@@ -1216,7 +1212,6 @@ class FDD:
                     newEdge = Edge([-1], node, self._getDecisionNode(defaultDecision), left)
                     newEdge.autoConnect()
 
-
     def genFDD(self, chain: Chain, reportsPath: str = None) -> None:
         """
         Generates the FDD content.
@@ -1230,7 +1225,6 @@ class FDD:
         self._sanityFirstLevels()
         self._sanityLastLevel(chain, reportsPath)
         self._achieveCompleteness(chain.getDefaultDecision())
-
 
     def reduction(self) -> None:
         """
@@ -1340,7 +1334,6 @@ class FDD:
         
         return changed
 
-
     def _mergeEdges(self) -> bool:
         """
         Apply the third reduction rule:
@@ -1408,7 +1401,6 @@ class FDD:
         
         return True
     
-
     def marking(self) -> None:
         """
         Compute the load for each node in the FDD.

@@ -124,6 +124,55 @@ class Firewall:
         """
         return self._fieldList
     
+    def loadIPSets(self, ipSetFiles):
+        """
+        Load an IP set from a file.
+
+        Args:
+            ipSetFiles (dict): Dict of IPSet Names to file paths.
+        """
+        # Load IP sets into a dictionary
+        ipSets = {}
+        for ipSetName, filePath in ipSetFiles.items():
+            self._logger.info(f"Loading IP set '{ipSetName}' from file: {filePath}")
+            with open(filePath, 'r') as file:
+                ipList = [
+                    ip.strip() for ip in file.readlines() 
+                    if ip.strip() and not ip.startswith('#')
+                ]
+            #TODO Copiar archivos al wd para cuando se guarde y cargue el proyecto.
+            ipSets[ipSetName] = ipList
+            self._logger.info(f"Loaded IPSet '{ipSetName}' with IPs: {ipList}")
+
+        # Replace IPSet names in predicates with their corresponding IP lists
+        for _, table in self._inputRules.getTables().items():
+            for _, chain in table.getChains().items():
+                for rule in chain.getRules():
+                    updatedPredicates = {}
+                    for field in ['SrcIP', 'DstIP']:
+                        
+                        # Get Option
+                        option = rule.getOption(field, None) 
+                        if option is None:
+                            continue
+                        
+                        value = option[0] #TODO En caso de IpSet vacio usar dominio?
+                        if value in ipSets:
+                            # Replace the IPSet name with its IP list
+                            updatedPredicates[field] = ipSets[value]
+                            self._logger.info(f"Replaced IPSet '{value}' in rule {rule.getId()} with {ipSets[value]}")
+                        else:
+                            # Retain the original value if it's not an IPSet name
+                            updatedPredicates[field] = value
+                    
+                    # Update the rule's predicates
+                    for fieldName, newValue in updatedPredicates.items():
+                        rule.setPredicate(fieldName, newValue)
+
+        #Update self._optRules to match _inputRules
+        self._optRules = self._inputRules
+
+    
     def genFdd(self, table=None, chain=None):
         """
         Generate a FDD from a specific List of Rules in the firewall's policies,

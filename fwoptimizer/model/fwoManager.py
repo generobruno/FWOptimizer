@@ -330,8 +330,8 @@ class FWOManager:
         # Add the Rule #TODO Handle exception
         fdd.addRuleToFDD(newRule)
 
-        return newRule       
- 
+        return newRule    
+   
     def saveProject(self, filePath):
         """
         Save the project

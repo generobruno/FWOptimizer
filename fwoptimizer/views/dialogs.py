@@ -1,10 +1,11 @@
 from PyQt6 import QtWidgets, QtGui, QtCore
+import os
 import fwoptimizer.views.resources_rc
 
 class SelectFDDDialog(QtWidgets.QDialog):
     def __init__(self, tables=None, mode='Generate', parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Generate FDD")
+        self.setWindowTitle(f"{mode} FDD")
         self.setModal(True)
         self.styleDialog()
 
@@ -26,8 +27,6 @@ class SelectFDDDialog(QtWidgets.QDialog):
                 for chain_name, _ in table.getChains().items():
                     chain_item = QtWidgets.QTreeWidgetItem(table_item)
                     chain_item.setText(0, chain_name)
-        
-        self.chainTreeView.expandAll()
         
         # Button box for OK and Cancel
         buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
@@ -681,6 +680,122 @@ class AddRulesDialog(QtWidgets.QDialog):
         predicates = {cb.currentText(): le.text() for cb, le in self.predicateWidgets.items()}
         
         return table_name, chain_name, decision, predicates
+
+class IPSetFilesDialog(QtWidgets.QDialog):
+    def __init__(self, ipSets, parent=None):
+        super().__init__(parent)
+        self.ipSets = ipSets
+        self.selectedFiles = {}
+
+        self.setWindowTitle("Associate Files with IP Sets")
+        self.setModal(True)
+        self.resize(600, 450)
+
+        self.initUI()
+        self.styleDialog()
+        self.updateOkButtonState()  # Initial check
+
+    def initUI(self):
+        layout = QtWidgets.QVBoxLayout(self)
+
+        titleLabel = QtWidgets.QLabel("Add IP Sets")
+        titleLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        titleLabel.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;")
+        layout.addWidget(titleLabel)
+
+        instructions = QtWidgets.QLabel("Click on an IP set to select a file:")
+        instructions.setStyleSheet("font-size: 14px;")
+        layout.addWidget(instructions)
+
+        self.ipSetList = QtWidgets.QListWidget(self)
+        self.ipSetList.setSpacing(3)
+        for idx, (ipSet, count) in enumerate(self.ipSets.items()):
+            if idx == 0:
+               continue
+            item = QtWidgets.QListWidgetItem(f"{ipSet} (Occurrences: {count})")
+            item.setData(QtCore.Qt.ItemDataRole.UserRole, ipSet)
+            self.ipSetList.addItem(item)
+        self.ipSetList.itemDoubleClicked.connect(self.selectFile)
+        layout.addWidget(self.ipSetList)
+
+        buttonLayout = QtWidgets.QHBoxLayout()
+        self.addFromFolderButton = QtWidgets.QPushButton("Add from Folder")
+        self.addFromFolderButton.clicked.connect(self.addFromFolder)
+        self.selectFileButton = QtWidgets.QPushButton("Select File")
+        self.selectFileButton.clicked.connect(self.selectFile)
+        self.okButton = QtWidgets.QPushButton("OK")
+        self.okButton.clicked.connect(self.accept)
+        self.cancelButton = QtWidgets.QPushButton("Cancel")
+        self.cancelButton.clicked.connect(self.reject)
+        buttonLayout.addWidget(self.addFromFolderButton)
+        buttonLayout.addWidget(self.selectFileButton)
+        buttonLayout.addWidget(self.okButton)
+        buttonLayout.addWidget(self.cancelButton)
+        layout.addLayout(buttonLayout)
+
+    def selectFile(self, item=None):
+        selectedItem = item or self.ipSetList.currentItem()
+        if selectedItem:
+            ipSet = selectedItem.data(QtCore.Qt.ItemDataRole.UserRole)
+            filePath, _ = QtWidgets.QFileDialog.getOpenFileName(self, f"Select file for {ipSet}")
+            if filePath:
+                self.selectedFiles[ipSet] = filePath
+                selectedItem.setText(f"{ipSet} -> {filePath}")
+                selectedItem.setIcon(QtGui.QIcon.fromTheme("dialog-ok-apply"))
+                self.updateOkButtonState()  # Recheck after file selection
+
+    def addFromFolder(self):
+        folderPath = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Folder")
+        if folderPath:
+            for ipSet in self.ipSets.keys():
+                matchingFile = os.path.join(folderPath, ipSet)
+                if os.path.isfile(matchingFile):
+                    self.selectedFiles[ipSet] = matchingFile
+                    for i in range(self.ipSetList.count()):
+                        item = self.ipSetList.item(i)
+                        if item.data(QtCore.Qt.ItemDataRole.UserRole) == ipSet:
+                            item.setText(f"{ipSet} -> {matchingFile}")
+                            item.setIcon(QtGui.QIcon.fromTheme("dialog-ok-apply"))
+            self.updateOkButtonState()  # Recheck after folder addition
+
+    def updateOkButtonState(self):
+        """Enable 'OK' button only if all IP sets have associated files."""
+        allAdded = all(ipSet in self.selectedFiles for ipSet in self.ipSets if ipSet != "")
+        self.okButton.setEnabled(allAdded)
+
+    def getIPSetFiles(self):
+        return self.selectedFiles
+
+    def styleDialog(self):
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #2e2e2e;
+                color: #ffffff;
+            }
+            QLabel {
+                color: #dcdcdc;
+            }
+            QListWidget {
+                background-color: #3a3a3a;
+                color: #ffffff;
+                border: 1px solid #5a5a5a;
+                padding: 5px;
+            }
+            QListWidget::item {
+                margin: 10px 0;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #4e4e4e;
+                color: #ffffff;
+                border: 1px solid #5a5a5a;
+                padding: 5px;
+                border-radius: 3px;
+            }
+            QPushButton:hover {
+                background-color: #5a5a5a;
+            }
+        """)
 
 class StartupDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):

@@ -132,6 +132,7 @@ class Firewall:
             ipSetFiles (dict): Dict of IPSet Names to file paths.
         """
         # Load IP sets into a dictionary
+        self._logger.info(f"Previous Rules\n{self._inputRules}")
         ipSets = {}
         for ipSetName, filePath in ipSetFiles.items():
             self._logger.info(f"Loading IP set '{ipSetName}' from file: {filePath}")
@@ -156,20 +157,29 @@ class Firewall:
                         if option is None:
                             continue
                         
-                        value = option[0] #TODO En caso de IpSet vacio usar dominio?
+                        # Handle the case where option is a list
+                        if isinstance(option, list) and len(option) == 1:
+                            value = option[0]
+                        elif isinstance(option, str):
+                            value = option
+                        else:
+                            value = None
+                        
+                        #TODO En caso de IpSet vacio usar dominio?
                         if value in ipSets:
                             # Replace the IPSet name with its IP list
                             updatedPredicates[field] = ipSets[value]
                             self._logger.info(f"Replaced IPSet '{value}' in rule {rule.getId()} with {ipSets[value]}")
                         else:
                             # Retain the original value if it's not an IPSet name
-                            updatedPredicates[field] = value
+                            updatedPredicates[field] = [value]
                     
                     # Update the rule's predicates
                     for fieldName, newValue in updatedPredicates.items():
                         rule.setPredicate(fieldName, newValue)
 
         #Update self._optRules to match _inputRules
+        self._logger.info(f"Updated Rules\n{self._inputRules}")
         self._optRules = self._inputRules
 
     

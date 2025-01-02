@@ -136,7 +136,7 @@ class Firewall:
         ipSets = {}
         for ipSetName, filePath in ipSetFiles.items():
             self._logger.info(f"Loading IP set '{ipSetName}' from file: {filePath}")
-            with open(filePath, 'r') as file:
+            with open(filePath, 'r', encoding='utf-8', errors='replace') as file:
                 ipList = [
                     ip.strip() for ip in file.readlines() 
                     if ip.strip() and not ip.startswith('#')

@@ -9,6 +9,7 @@ Returns:
 
 from PyQt6.QtCore import pyqtSignal, QThread, QRecursiveMutex
 import ctypes
+import netaddr as nt
 import os, shutil
 
 from model.fwoManager import FWOManager
@@ -406,6 +407,67 @@ class FWOController:
         Add Rules to the FDD using a File
         """
         print("TODO")#TODO
+    
+    def isIPAddress(self, ip):
+        """
+        Check if a value is a valid IP address using netaddr.
+
+        Args:
+            ip (str): The value to check.
+
+        Returns:
+            bool: True if the value is a valid IP address, False otherwise.
+        """
+        try:
+            nt.IPAddress(ip)
+            return True
+        except (ValueError, nt.AddrFormatError):
+            return False
+        
+    def isCIDR(self, ip):
+        """
+        Check if a value is a valid CIDR range.
+
+        Args:
+            ip (str): The value to check.
+
+        Returns:
+            bool: True if the value is a valid CIDR, False otherwise.
+        """
+        try:
+            nt.IPNetwork(ip)
+            return True
+        except (ValueError, nt.AddrFormatError):
+            return False
+    
+    def findIPSets(self, rulesParsed):
+        """
+        Find IP sets (names instead of IPs) in the rules.
+
+        Args:
+            rulesParsed (RuleSet): The parsed rules to check.
+
+        Returns:
+            dict: A dictionary with IP set names as keys and their occurrences as values.
+        """
+        ipSets = {}
+        for table in rulesParsed.getTables().values():
+            for chain in table.getChains().values():
+                for rule in chain.getRules():
+                    # Check for SrcIPs and DstIPs that are names
+                    srcIP = rule.getPredicates().get("SrcIP", "")
+                    dstIP = rule.getPredicates().get("DstIP", "")
+                    
+                    # If the value is a list, extract the first element or join it
+                    if isinstance(srcIP, list):
+                        srcIP = srcIP[0] if srcIP else ""  # Use the first element or empty string
+                    if isinstance(dstIP, list):
+                        dstIP = dstIP[0] if dstIP else ""  # Use the first element or empty string
+                    
+                    for ip in [srcIP, dstIP]:
+                        if not self.isIPAddress(ip) and not self.isCIDR(ip): 
+                            ipSets[ip] = ipSets.get(ip, 0) + 1
+        return ipSets
 
     def onTreeItemClicked(self, index):
         """
@@ -576,6 +638,21 @@ class FWOController:
         """
         if task_name == 'importRules':
             importedFile, importedRules = result
+            
+            # Check for IP sets in the imported rules
+            ipSets = self.findIPSets(importedRules)
+            if ipSets:
+                # Get IpSets
+                ipSetFiles = self.view.promptForIPSetFiles(ipSets)
+                
+                # Check for all the IpSets
+                if not ipSetFiles:
+                    self.view.displayErrorMessage("No se añadieron los IP Sets necesarios.")
+                    return
+                
+                # Process IpSets
+                self.model.currentFirewall.loadIPSets(ipSetFiles) 
+            
             self.view.displayRules(importedRules)
             self.view.displayImportedRules(importedFile)
             

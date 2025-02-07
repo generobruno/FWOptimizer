@@ -206,6 +206,7 @@ class FWOView(QtWidgets.QMainWindow):
         for column in range(treeView.columnCount()):
             self.ui.treePoliciesView.resizeColumnToContents(column)
         
+        self.ui.treePoliciesView.collapseAll()
         self.displayImportedRulesTab()
     
     def displayImportedRules(self, content):
@@ -470,6 +471,21 @@ class FWOView(QtWidgets.QMainWindow):
                 filePath += ".fwo"
             return filePath
         
+        return None
+    
+    def promptForIPSetFiles(self, ipSets):
+        """
+        Show Dialog to associate files with IP sets.
+
+        Args:
+            ipSets (dict): A dictionary of IP sets with their occurrences.
+
+        Returns:
+            dict: A dictionary mapping IP set names to selected file paths.
+        """
+        dialog = Dialogs.IPSetFilesDialog(ipSets=ipSets, parent=self)
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            return dialog.getIPSetFiles()
         return None
                 
     def showLoadingIndicator(self, opt: bool=True):

@@ -24,44 +24,44 @@ El proyecto utiliza el método **Firewall Decision Diagram (FDD)** para optimiza
 
 Haciendo click en la función "importar" es posible cargar un conjunto de reglas de firewall desde un archivo que contenga reglas con sintaxis de IPTables.
 
-![Importar reglas](doc\images\importar.png)
+![Importar reglas](doc/images/importar.png)
 
 ### Generar FDD.
 
 Haciendo click en la función "Generar FDD" se generará la transformación de las reglas cargadas en el sistema a su equivalente FDD para una cadena seleccionada o para todas las cargadas en el sistema.
 
-![Generar FDD](doc\images\generar.png)
+![Generar FDD](doc/images/generar.png)
 
 ### Optimizar FDD.
 
 Haciendo click en la función "Optimizar FDD" se aplicarán los algoritmos de optimización al FDD seleccionado o a todos los FDD en el sistema.
 
-![Optimizar FDD](doc\images\optimizar.png)
+![Optimizar FDD](doc/images/optimizar.png)
 
 ### Visualizar FDD
 
 Haciendo click en la función "Visualizar FDD" se desplegará una ventana que permitirá visualizar los FDD 
 
-![Visualizar FDD](doc\images\visualizar.png)
+![Visualizar FDD](doc/images/visualizar.png)
 
 #### Vista completa
 
 Se puede generar una vista completa de el FDD seleccionado a través de la pestaña "View".
 
-![View](doc\images\view.png)
+![View](doc/images/view.png)
 
 #### Vista filtrada
 
 También se puede acceder a una vista filtrada de determinado FDD mediante el uso de la pestaña "Filter". Los filtros se aplican sobre los campos admitidos por el sistema.
 Usar el campo de filtrado recursivamente sin limpiar los filtros previos permite generar un "stack" de filtros.
 
-![Filter](doc\images\filter.png)
+![Filter](doc/images/filter.png)
 
 ### Exportar reglas
 
 Haciendo click en la función "Exportar Reglas" se realiza la conversión del FDD seleccionado a una lista de reglas con sintaxis de IPTables y se almacenan en el archivo seleccionado.
 
-![Exportar Reglas](doc\images\exportar.png)
+![Exportar Reglas](doc/images/exportar.png)
 
 ### Añadir reglas
 
@@ -69,13 +69,13 @@ Para añadir reglas puntuales a un FDD ya generado es posible utilizar la funci�
 
 **Importante**: El FDD deverá reoptimizarse luego de ser añadidas las reglas necesarias.
 
-![Añadir Regla](doc\images\addrule.png)
+![Añadir Regla](doc/images/addrule.png)
 
 ### Guardar y cargar proyecto
 
 Mediante las funciones de "Guardado y Cargado", se pueden guardar y recuperar los cambios de un proyecto determinado.
 
-![Guardar y Cargar](doc\images\saveload.png)
+![Guardar y Cargar](doc/images/saveload.png)
 
 
 ## Requisitios

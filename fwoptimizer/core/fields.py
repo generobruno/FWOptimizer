@@ -1019,9 +1019,9 @@ class ConntrackSet(ElementSet):
         """
 
         # Check that values are included in the domain
-        lowCaseValues = [x.lower() for x in values]
+        upperCaseValues = [x.upper() for x in values]
 
-        for value in lowCaseValues:
+        for value in upperCaseValues:
             if value not in self._domain_:
                 raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
             
@@ -1191,4 +1191,4 @@ class ConntrackSet(ElementSet):
         Returns:
             ConntrackSet: A replica of this object.
         """
-        return ProtocolSet(self.getElementsList())
+        return ConntrackSet(self.getElementsList())

@@ -165,6 +165,9 @@ class Firewall:
                         else:
                             value = None
                         
+                        # Strip whitespaces
+                        value = value.strip() if isinstance(value, str) else value
+
                         #TODO En caso de IpSet vacio usar dominio?
                         if value in ipSets:
                             # Replace the IPSet name with its IP list
@@ -172,7 +175,8 @@ class Firewall:
                             self._logger.info(f"Replaced IPSet '{value}' in rule {rule.getId()} with {ipSets[value]}")
                         else:
                             # Retain the original value if it's not an IPSet name
-                            updatedPredicates[field] = [value]
+                            if value is not None:
+                                updatedPredicates[field] = [value]
                     
                     # Update the rule's predicates
                     for fieldName, newValue in updatedPredicates.items():

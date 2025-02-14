@@ -641,7 +641,7 @@ class FWOController:
             
             # Check for IP sets in the imported rules
             ipSets = self.findIPSets(importedRules)
-            if ipSets:
+            if ipSets and any(ipSets.keys()):
                 # Get IpSets
                 ipSetFiles = self.view.promptForIPSetFiles(ipSets)
                 

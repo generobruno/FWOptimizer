@@ -534,7 +534,7 @@ class ProtocolSet(ElementSet):
     A subclass of ElementSet used to operate with transport layer protocols.
     """
 
-    _domain_ = {'tcp', 'udp', 'icmp'}
+    _domain_ = {'tcp', 'udp', 'icmp', 'esp', 'ah'}
 
     def __init__(self, values: List[str]) -> None:
         """
@@ -1000,3 +1000,195 @@ class PortSet(ElementSet):
             PortSet: A replica of this object.
         """
         return PortSet(self.getElementsList())
+
+
+
+class ConntrackSet(ElementSet):
+    """
+    A subclass of ElementSet used to operate with packet states.
+    """
+
+    _domain_ = {'INVALID', 'NEW', 'RELATED', 'ESTABLISHED'}
+
+    def __init__(self, values: List[str]) -> None:
+        """
+        ConntrackSet __init__.
+
+        Args:
+            values (List[str]): A list of strings containing packet estates.
+        """
+
+        # Check that values are included in the domain
+        upperCaseValues = [x.upper() for x in values]
+
+        for value in upperCaseValues:
+            if value not in self._domain_:
+                raise ValueError(f"Value {value} isn't include in the domain of {self.__class__.__name__}")
+            
+        self._elements = set(values)
+
+    def __eq__(self, other: "ConntrackSet") -> bool:
+        """
+        ConntrackSet __eq__
+
+        Args:
+            other (ConntrackSet): ConntrackSet to compare
+
+        Returns:
+            (bool) True if self and 'other' are equals. False otherwise.
+        """
+        return self._elements == other.getElements()
+    
+    def __repr__(self):
+        """
+        ConntrackSet __repr__
+        """
+        return 'ConntrackSet' + super().__repr__()
+    
+    @classmethod
+    def getDomainList(cls) -> List[str]:
+        """
+        Get the ConntrackSet Domain as a list
+
+        Returns:
+            List of ConntrackSet Domain
+        """
+        return list(cls._domain_)
+    
+    @classmethod
+    def getDomain(cls) -> "ConntrackSet":
+        """
+        Gets a ConntrackSet object with the Domain of ConntrackSet
+
+        Returns:
+            ConntrackSet: Domain of the ConntrackSet
+        """
+        return ConntrackSet(cls.getDomainList())
+
+    def add(self, otherSet: "ConntrackSet") -> None:
+        """
+        Add the elements of otherSet to this set.
+        Equivalent to say self = self U otherSet.
+
+        Args:
+            otherSet: The ConntrackSet to add to this.
+        """
+        self._elements.update(otherSet.getElements())
+
+    def isOverlapping(self, otherSet: "ConntrackSet") -> bool:
+        """
+        Check if this ConntrackSet and otherSet have common elements.
+
+        Args:
+            otherSet: The ConntrackSet to compare this.
+
+        Returns:
+            (bool) True if exist common elements. False otherwise.
+        """
+        return not self._elements.isdisjoint(otherSet.getElements())
+    
+    def isEmpty(self):
+        """
+        Check if this ConntrackSet is Empty.
+
+        Returns:
+            (bool) True if the set is empty. False otherwise.
+        """
+        return len(self._elements) == 0
+    
+    def isSubset(self, otherSet: "ConntrackSet") -> bool:
+        """
+        Check if this ConntrackSet is a subset of 'otherSet'.
+
+        Args:
+            otherSet: The ConntrackSet to compare this.
+
+        Returns:
+            (bool) True if this ConntrackSet if a subset of otherSet. False otherwise.
+        """
+        return self._elements.issubset(otherSet.getElements())
+    
+    def isDisjoint(self, otherSet: "ConntrackSet") -> bool:
+        """
+        Check if this ConntrackSet and otherSet have common elements.
+
+        Args:
+            otherSet: The ConntrackSet to compare this.
+
+        Returns:
+            (bool) True if not exist common elements. False otherwise.
+        """
+        return self._elements.isdisjoint(otherSet.getElements())
+    
+    def intersectionSet(self, otherSet: "ConntrackSet") -> "ConntrackSet":
+        """
+        Gets a new ConntrackSet with the intersection between self and 'otherSet'.
+
+        Args:
+            otherSet: The ConntrackSet to compare this.
+
+        Returns:
+            ConntrackSet whit the intersection between self and 'otherSet'. 
+        """
+        return ConntrackSet([str(x) for x in self._elements & otherSet.getElements()])
+    
+    def unionSet(self, otherSet: "ConntrackSet") -> "ConntrackSet":
+        """
+        Gets a new ConntrackSet with the union between self and 'otherSet'.
+
+        Args:
+            otherSet: The ConntrackSet to compare this.
+
+        Returns:
+            ConntrackSet whit the union between self and 'otherSet'. 
+        """
+        return ConntrackSet([str(x) for x in self._elements | otherSet.getElements()])
+    
+    def differenceSet(self, otherSet: "ConntrackSet") -> "ConntrackSet":
+        """
+        Gets a new ConntrackSet with the difference between self and 'otherSet'.
+
+        Args:
+            otherSet: The ConntrackSet to compare this.
+
+        Returns:
+            ConntrackSet whit the difference between self and 'otherSet'. 
+        """
+        return ConntrackSet([str(x) for x in self._elements - otherSet.getElements()])
+    
+    def remove(self, otherSet: "ConntrackSet") -> None:
+        """
+        Remove the elements of otherSet to this set.
+        Equivalent to say self = self - (self ∩ otherSet).
+
+        Args:
+            otherSet: The ConntrackSet to remove to this.
+        """
+        self._elements = self._elements.difference(otherSet.getElements())
+
+    def getElements(self) -> Set:
+        """
+        Gets the set instance contains in this object.
+
+        Returns:
+            set: The set of elements contain in this object.
+        """
+        return self._elements
+    
+    def getElementsList(self):
+        """
+        Gets the elements of this set as a list.
+
+        Returns:
+            A list with elements contains in this set.
+        """
+        return list(self._elements)
+    
+    def replicate(self):
+        """
+        Gets a replica of this object.
+
+        Returns:
+            ConntrackSet: A replica of this object.
+        """
+        return ConntrackSet(self.getElementsList())
